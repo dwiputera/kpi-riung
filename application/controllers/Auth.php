@@ -24,13 +24,14 @@ class Auth extends MY_Controller
 
         $host = $_SERVER['HTTP_HOST'];
 
-        if (strpos($host, 'localhost') !== false || strpos($host, '192.168.') === 0) {
+        if ($host === 'localhost') {
             $sso_url = 'http://localhost/sso/';
+        } elseif ($host === '192.168.200.102') {
+            $sso_url = 'http://192.168.200.102/sso/';
         } else {
             $sso_url = 'https://sso-la.riungmitra.com/';
         }
 
-        $redirect_uri = base_url();
-        redirect($sso_url . 'auth/logout/' . $token . '?redirect_uri=' . $redirect_uri);
+        redirect($sso_url . 'auth/logout/' . $token . '?redirect_uri=' . base_url());
     }
 }

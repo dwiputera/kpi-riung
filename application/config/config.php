@@ -23,9 +23,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-// $config['base_url'] = 'http://192.168.200.102/kpi/';
-$config['base_url'] = 'http://localhost/kpi/';
-// $config['base_url'] = 'https://kpihcla.riungmitra.com/';
+// Detect environment based base_url
+if ($_SERVER['HTTP_HOST'] === 'localhost') {
+    $config['base_url'] = 'http://localhost/kpi/';
+} elseif ($_SERVER['HTTP_HOST'] === '192.168.200.102') {
+    $config['base_url'] = 'http://192.168.200.102/kpi/';
+} else {
+    $config['base_url'] = 'https://kpihcla.riungmitra.com/';
+}
 
 /*
 |--------------------------------------------------------------------------

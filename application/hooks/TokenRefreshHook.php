@@ -7,9 +7,20 @@ use Firebase\JWT\Key;
 class TokenRefreshHook
 {
     private $refresh_threshold = 300; // 5 minutes
-    // private $sso_server = "http://192.168.200.102/sso/";
-    private $sso_server = "http://localhost/sso/";
-    // private $sso_server = "https://sso-la.riungmitra.com/";
+    private $sso_server;
+
+    public function __construct()
+    {
+        $host = $_SERVER['HTTP_HOST'];
+
+        if ($host === 'localhost') {
+            $this->sso_server = 'http://localhost/sso/';
+        } elseif (strpos($host, '192.168.') === 0) {
+            $this->sso_server = 'http://192.168.200.102/sso/';
+        } else {
+            $this->sso_server = 'https://sso-la.riungmitra.com/';
+        }
+    }
 
     public function check_and_refresh_token()
     {

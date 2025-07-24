@@ -17,13 +17,20 @@ class Auth extends MY_Controller
         }
     }
 
-    // perbaiki
     public function logout()
     {
         $token = $this->session->userdata('token');
         $this->session->sess_destroy();
-        // redirect('http://192.168.200.102/sso/auth/logout/' . $token . '?redirect_uri=' . base_url());
-        redirect('http://localhost/sso/auth/logout/' . $token . '?redirect_uri=' . base_url());
-        // redirect('https://sso-la.riungmitra.com/auth/logout/' . $token . '?redirect_uri=' . base_url());
+
+        $host = $_SERVER['HTTP_HOST'];
+
+        if (strpos($host, 'localhost') !== false || strpos($host, '192.168.') === 0) {
+            $sso_url = 'http://localhost/sso/';
+        } else {
+            $sso_url = 'https://sso-la.riungmitra.com/';
+        }
+
+        $redirect_uri = base_url();
+        redirect($sso_url . 'auth/logout/' . $token . '?redirect_uri=' . $redirect_uri);
     }
 }

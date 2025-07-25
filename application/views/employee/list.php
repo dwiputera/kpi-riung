@@ -8,7 +8,7 @@
             </div>
             <!-- /.card-header -->
             <div class="card-body">
-                <table id="" class="table table-bordered table-striped datatable-filter-column" data-filter-columns="3:multiple,4,5">
+                <table id="" class="table table-bordered table-striped datatable-filter-column" data-filter-columns="4:multiple,5,6">
                     <thead>
                         <tr>
                             <th>Action</th>

@@ -110,11 +110,12 @@ function buildLabelGrid(bounds) {
 
 function updateTableLabelColumn(bounds) {
     const grid = buildLabelGrid(bounds);
+    const table = $('#employeeTable').DataTable();
 
-    $('#employeeTable tbody tr').each(function () {
-        const $cols = $(this).find('td');
-        const x = parseFloat($cols.eq(11).text());
-        const y = parseFloat($cols.eq(10).text());
+    table.rows().every(function () {
+        const data = this.data();
+        const x = parseFloat(data[11]); // Potential
+        const y = parseFloat(data[10]); // Performance
 
         if (isNaN(x) || isNaN(y)) return;
 
@@ -124,11 +125,32 @@ function updateTableLabelColumn(bounds) {
                 const yMax = cell.yMin + bounds.yStep;
 
                 if (x >= cell.xMin && x < xMax && y >= cell.yMin && y < yMax) {
-                    $cols.eq(7).text(cell.label).css('background-color', cell.color);
+                    data[7] = cell.label; // Update kolom status
+                    this.data(data); // Update cache
                     return;
                 }
             }
         }
+    });
+
+    // Redraw visual untuk munculin teks & warna di DOM
+    table.rows({ page: 'current' }).every(function () {
+        const $row = $(this.node());
+        const data = this.data();
+        const label = data[7];
+
+        // Temukan warna dari label
+        let color = '';
+        outer: for (const row of grid) {
+            for (const cell of row) {
+                if (cell.label === label) {
+                    color = cell.color;
+                    break outer;
+                }
+            }
+        }
+
+        $row.find('td').eq(7).text(label).css('background-color', color);
     });
 }
 

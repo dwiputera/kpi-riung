@@ -26,6 +26,9 @@
                 <h3 class="card-title">HAV Data</h3>
             </div>
             <div class="card-body">
+                <div class="status-summary d-flex flex-wrap" id="statusSummary">
+                    <!-- Status percentages will be displayed here -->
+                </div>
                 <table id="employeeTable" class="table table-bordered table-striped datatable-filter-column"
                     data-filter-columns="2:multiple,3:multiple,4:multiple,5:multiple,6,10:number,11:number">
                     <thead>
@@ -73,6 +76,20 @@
         </div>
     </div>
 </section>
+
+<style>
+    .status-summary {
+        margin-top: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    .status-summary .badge {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid #dee2e6;
+    }
+</style>
 
 <script src="<?= base_url('assets/js/chart.umd.min.js') ?>"></script>
 <script src="<?= base_url('assets/js/chartjs-plugin-datalabels.min.js') ?>"></script>

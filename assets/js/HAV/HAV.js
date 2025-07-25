@@ -154,11 +154,89 @@ function updateTableLabelColumn(bounds) {
     });
 }
 
+// Add this function to calculate status percentages
+function calculateStatusPercentages(data, bounds) {
+    const grid = buildLabelGrid(bounds);
+    const statusCounts = {};
+    const total = data.length;
+
+    // Initialize counts
+    for (const row of grid) {
+        for (const cell of row) {
+            statusCounts[cell.label] = 0;
+        }
+    }
+
+    // Count each status
+    for (const point of data) {
+        for (const row of grid) {
+            for (const cell of row) {
+                const xMax = cell.xMin + bounds.xStep;
+                const yMax = cell.yMin + bounds.yStep;
+
+                if (point.x >= cell.xMin && point.x < xMax &&
+                    point.y >= cell.yMin && point.y < yMax) {
+                    statusCounts[cell.label]++;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Calculate percentages
+    const percentages = {};
+    for (const [status, count] of Object.entries(statusCounts)) {
+        percentages[status] = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+    }
+
+    return percentages;
+}
+
+// Add this function to update the status summary display
+function updateStatusSummary(percentages) {
+    const summaryContainer = document.getElementById('statusSummary');
+    summaryContainer.innerHTML = '';
+
+    // Sort by percentage descending
+    const sortedStatuses = Object.entries(percentages)
+        .sort((a, b) => b[1] - a[1]);
+
+    // Create a badge for each status
+    for (const [status, percentage] of sortedStatuses) {
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-primary mr-2 mb-2';
+        badge.style.backgroundColor = getStatusColor(status);
+        badge.style.color = '#000';
+        badge.style.fontSize = '14px';
+        badge.style.padding = '8px';
+        badge.innerHTML = `${status}: ${percentage}%`;
+        summaryContainer.appendChild(badge);
+    }
+}
+
+// Helper function to get color for a status
+function getStatusColor(status) {
+    for (const row of labels) {
+        for (const cell of row) {
+            if (cell === status) {
+                const rowIndex = labels.indexOf(row);
+                const colIndex = row.indexOf(cell);
+                return colors[rowIndex][colIndex];
+            }
+        }
+    }
+    return '#ffffff';
+}
+
 function renderChart(chartData) {
     if (chart) chart.destroy();
 
     const ctx = document.getElementById('humanAssetChart').getContext('2d');
     const { data, bounds } = chartData;
+
+    // Calculate and display status percentages
+    const percentages = calculateStatusPercentages(data, bounds);
+    updateStatusSummary(percentages);
 
     chart = new Chart(ctx, {
         type: 'scatter',

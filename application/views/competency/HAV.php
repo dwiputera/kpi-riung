@@ -8,11 +8,15 @@
                 <h3 class="card-title">HAV Mapping</h3>
             </div>
             <div class="card-body">
+                <canvas id="humanAssetChart" width="80%"></canvas>
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" id="toggleLabels" checked>
                     <label class="form-check-label" for="toggleLabels">Tampilkan semua nama</label>
                 </div>
-                <canvas id="humanAssetChart" width="80%"></canvas>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="freezeFilter">
+                    <label class="form-check-label" for="freezeFilter">Freeze Filter (Lock current chart view)</label>
+                </div>
             </div>
         </div>
 

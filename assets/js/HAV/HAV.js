@@ -17,6 +17,9 @@ const colors = [...rawColors].reverse();
 
 let chart;
 let showLabels = true;
+let isFilterFrozen = false;
+let frozenData = [];
+let frozenBounds = null;
 
 // Initialize
 setupFilterableDatatable($('.datatable-filter-column'));
@@ -68,8 +71,9 @@ function calculateChartBounds(data, padding = 5) {
     };
 }
 
+
 function getFilteredChartData() {
-    return table.rows({ filter: 'applied' }).data().toArray().map(row => {
+    const currentData = table.rows({ filter: 'applied' }).data().toArray().map(row => {
         const x = parseFloat(row[11]);
         const y = parseFloat(row[10]);
         if (!isNaN(x) && !isNaN(y)) {
@@ -77,6 +81,22 @@ function getFilteredChartData() {
         }
         return null;
     }).filter(Boolean);
+
+    if (isFilterFrozen) {
+        // When frozen, use current data but keep original bounds
+        return {
+            data: currentData,
+            bounds: frozenBounds
+        };
+    } else {
+        // When not frozen, calculate new bounds
+        const bounds = calculateChartBounds(currentData);
+        frozenBounds = bounds; // Update frozen bounds
+        return {
+            data: currentData,
+            bounds: bounds
+        };
+    }
 }
 
 function buildLabelGrid(bounds) {
@@ -112,11 +132,11 @@ function updateTableLabelColumn(bounds) {
     });
 }
 
-function renderChart(data) {
+function renderChart(chartData) {
     if (chart) chart.destroy();
 
-    const bounds = calculateChartBounds(data);
     const ctx = document.getElementById('humanAssetChart').getContext('2d');
+    const { data, bounds } = chartData;
 
     chart = new Chart(ctx, {
         type: 'scatter',
@@ -124,7 +144,9 @@ function renderChart(data) {
             datasets: [{
                 data,
                 backgroundColor: '#007bff',
-                pointRadius: 5
+                pointRadius: 5,
+                borderColor: '#0056b3',
+                borderWidth: 1
             }]
         },
         options: {
@@ -173,10 +195,25 @@ function renderChart(data) {
 renderChart(getFilteredChartData());
 
 // Redraw on table interaction
-table.on('draw', () => renderChart(getFilteredChartData()));
+table.on('draw', () => {
+    renderChart(getFilteredChartData());
+});
 
 // Toggle labels on checkbox change
 document.getElementById('toggleLabels').addEventListener('change', e => {
     showLabels = e.target.checked;
     chart.update();
+});
+
+document.getElementById('freezeFilter').addEventListener('change', e => {
+    isFilterFrozen = e.target.checked;
+
+    if (isFilterFrozen) {
+        // Store current bounds when freezing
+        const currentData = getFilteredChartData().data;
+        frozenBounds = calculateChartBounds(currentData);
+    }
+
+    // Always render with current filter state
+    renderChart(getFilteredChartData());
 });

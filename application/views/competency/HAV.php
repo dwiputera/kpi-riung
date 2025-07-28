@@ -8,15 +8,13 @@
                 <h3 class="card-title">HAV Mapping</h3>
             </div>
             <div class="card-body">
+                <div class="form-check mb-2">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="toggleLabels" checked>
+                        <label class="custom-control-label" for="toggleLabels">Show All Names</label>
+                    </div>
+                </div>
                 <canvas id="humanAssetChart" width="80%"></canvas>
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" id="toggleLabels" checked>
-                    <label class="form-check-label" for="toggleLabels">Tampilkan semua nama</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" id="freezeFilter">
-                    <label class="form-check-label" for="freezeFilter">Freeze Filter (Lock current chart view)</label>
-                </div>
             </div>
         </div>
 
@@ -28,6 +26,12 @@
             <div class="card-body">
                 <div class="status-summary d-flex flex-wrap" id="statusSummary">
                     <!-- Status percentages will be displayed here -->
+                </div>
+                <div class="form-check my-2">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="freezeFilter">
+                        <label class="custom-control-label" for="freezeFilter">Freeze Filter (Lock current chart view)</label>
+                    </div>
                 </div>
                 <table id="employeeTable" class="table table-bordered table-striped datatable-filter-column"
                     data-filter-columns="2:multiple,3:multiple,4:multiple,5:multiple,6,10:number,11:number">

@@ -23,6 +23,11 @@ let frozenBounds = null;
 
 // Initialize
 setupFilterableDatatable($('.datatable-filter-column'));
+
+// Setelah DataTable inisialisasi
+const $havCardBody = $('.card.card-tabs:last-child .card-body');
+const initialCardHeight = $havCardBody.height(); // ambil tinggi awal
+$havCardBody.css('min-height', initialCardHeight + 'px'); // kunci sebagai min-height
 const table = $('#employeeTable').DataTable();
 
 // Custom Chart.js Plugin for Matrix Background
@@ -242,6 +247,7 @@ function renderChart(chartData) {
         type: 'scatter',
         data: {
             datasets: [{
+                label: 'Employee',
                 data,
                 backgroundColor: '#007bff',
                 pointRadius: 5,
@@ -250,6 +256,7 @@ function renderChart(chartData) {
             }]
         },
         options: {
+            animation: false,
             plugins: {
                 datalabels: {
                     display: () => showLabels,
@@ -296,7 +303,9 @@ renderChart(getFilteredChartData());
 
 // Redraw on table interaction
 table.on('draw', () => {
+    const scrollPos = $(window).scrollTop(); // Simpan posisi scroll sekarang
     renderChart(getFilteredChartData());
+    $(window).scrollTop(scrollPos); // Kembalikan scroll ke posisi awal
 });
 
 // Toggle labels on checkbox change

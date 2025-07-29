@@ -209,7 +209,7 @@ function updateStatusSummary(percentages) {
     // Create a badge for each status
     for (const [status, percentage] of sortedStatuses) {
         const badge = document.createElement('span');
-        badge.className = 'badge badge-primary mr-2 mb-2';
+        badge.className = 'badge badge-primary';
         badge.style.backgroundColor = getStatusColor(status);
         badge.style.color = '#000';
         badge.style.fontSize = '14px';

@@ -104,7 +104,7 @@ class ATMP extends MY_Controller
         $this->load->helper('extract_spreadsheet');
         $sheets = extract_spreadsheet($file_path);
         $rows = $sheets[0];
-        $trns = array_filter($rows, fn($value, $key) => $key >= 8 && $value[1] != null, ARRAY_FILTER_USE_BOTH);
+        $trns = array_filter($rows, fn($value, $key) => $key >= 8 && $value[2] != null, ARRAY_FILTER_USE_BOTH);
         $trn_data = [];
         $data['status'] = "OK";
 

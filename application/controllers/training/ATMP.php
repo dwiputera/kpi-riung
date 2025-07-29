@@ -98,6 +98,36 @@ class ATMP extends MY_Controller
         }
     }
 
+    function reformat_date($d)
+    {
+        // Lewati jika formula Excel
+        if (strpos($d, '=') === 0) {
+            echo "SKIPPED: $d\n";
+            return null;
+        }
+
+        if (is_numeric($d)) {
+            // Serial date Excel
+            $date = (new DateTime('1899-12-30'))->modify("+{$d} days");
+        } else {
+            $parts = explode('/', $d);
+
+            // Perbaiki tahun jika pendek (0204 -> 2024)
+            if (isset($parts[2]) && $parts[2] < 1000) {
+                $parts[2] = str_pad($parts[2], 4, '20', STR_PAD_LEFT);
+            }
+
+            // Tentukan format (d/m/Y atau m/d/Y)
+            if ($parts[0] > 12) {
+                $date = DateTime::createFromFormat('d/m/Y', implode('/', $parts));
+            } else {
+                $date = DateTime::createFromFormat('m/d/Y', implode('/', $parts));
+            }
+        }
+
+        return $date->format('Y-m-d') . PHP_EOL;
+    }
+
     function array_from_excel($file_path)
     {
         $this->load->helper('conversion');
@@ -109,8 +139,8 @@ class ATMP extends MY_Controller
         $data['status'] = "OK";
 
         foreach ($trns as $row => $trn) {
-            $date_start = $trn[15] ? date('Y-m-d', strtotime($trn[15])) : null;
-            $date_end = $trn[16] ? date('Y-m-d', strtotime($trn[16])) : null;
+            $date_start = $trn[15] ? $this->reformat_date($trn[15]) : null;
+            $date_end = $trn[16] ? $this->reformat_date($trn[16]) : null;
             if ($date_start == '1970-01-01') {
                 $column = numberToExcelColumn(5);
                 $data['status'] = 'error';

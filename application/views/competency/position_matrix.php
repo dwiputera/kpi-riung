@@ -14,7 +14,7 @@
 <section class="content">
     <div class="container-fluid">
         <div class="card card-primary card-tabs">
-            <div class="card-header p-0 pt-1">
+            <div class="card-header p-0 pt-1 no-tools">
                 <ul class="nav nav-tabs" id="custom-tabs-tab" role="tablist">
                     <li class="pt-2 px-3">
                         <h3 class="card-title"><strong>Levels</strong></h3>

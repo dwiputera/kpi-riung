@@ -89,6 +89,7 @@
     <script src="<?= base_url() ?>assets/AdminLTE-3.2.0/dist/js/adminlte.min.js"></script>
 
     <script src="<?= base_url('assets/js/overlay.js') ?>"></script>
+    <script src="<?= base_url('assets/js/general-display.js') ?>"></script>
 
     <?php if ($this->session->flashdata('swal')): ?>
         <script>

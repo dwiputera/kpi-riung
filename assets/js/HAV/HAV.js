@@ -326,3 +326,34 @@ document.getElementById('freezeFilter').addEventListener('change', e => {
     // Always render with current filter state
     renderChart(getFilteredChartData());
 });
+
+// Download Chart as PNG
+document.getElementById('downloadChart').addEventListener('click', function () {
+    const link = document.createElement('a');
+    const now = new Date();
+    const timestamp = now.getFullYear() +
+        ('0' + (now.getMonth() + 1)).slice(-2) +
+        ('0' + now.getDate()).slice(-2) + '_' +
+        ('0' + now.getHours()).slice(-2) +
+        ('0' + now.getMinutes()).slice(-2) +
+        ('0' + now.getSeconds()).slice(-2);
+
+    link.href = chart.toBase64Image(); // Convert chart to Base64 PNG
+    link.download = `human_asset_chart_${timestamp}.png`; // Filename with datetime
+    link.click(); // Trigger download
+});
+
+// Copy Chart to Clipboard
+document.getElementById('copyChart').addEventListener('click', function () {
+    const canvas = chart.canvas;
+    canvas.toBlob(async (blob) => {
+        try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            alert('✅ Chart copied to clipboard!');
+        } catch (err) {
+            console.error('Failed to copy chart:', err);
+            alert('❌ Copy not supported in this browser.');
+        }
+    });
+});
+

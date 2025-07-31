@@ -16,6 +16,14 @@
                 </div>
                 <canvas id="humanAssetChart" width="80%"></canvas>
             </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button id="copyChart" class="btn btn-outline-secondary mr-2">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button id="downloadChart" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
         </div>
 
         <!-- Table Card -->

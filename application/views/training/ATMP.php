@@ -121,27 +121,6 @@
 		<!-- /.card -->
 
 		<?php if ($trainings) : ?>
-			<!-- DONUT CHART -->
-			<div class="card card-primary">
-				<div class="card-header">
-					<h3 class="card-title">Chart ATMP</h3>
-
-					<div class="card-tools">
-						<button type="button" class="btn btn-tool" data-card-widget="collapse">
-							<i class="fas fa-minus"></i>
-						</button>
-						<button type="button" class="btn btn-tool" data-card-widget="remove">
-							<i class="fas fa-times"></i>
-						</button>
-					</div>
-				</div>
-				<div class="card-body">
-					<canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
-				</div>
-				<!-- /.card-body -->
-			</div>
-			<!-- /.card -->
-
 			<div class="card card-primary">
 				<div class="card-header">
 					<h3 class="card-title">Training List</h3>
@@ -149,11 +128,10 @@
 				<!-- /.card-header -->
 				<div class="card-body">
 					<a href="<?= base_url() ?>training/ATMP/edit/<?= $year ?>" class="btn btn-primary w-100">Edit</a><br><br>
-					<table id="datatable_training" class="table table-bordered table-striped">
+					<table id="datatable_training" class="table table-bordered table-striped datatable-filter-column">
 						<thead>
 							<tr>
 								<th>No</th>
-								<th>MTS</th>
 								<th>MONTH</th>
 								<th>DEPARTEMEN PENGAMPU</th>
 								<th>NAMA PROGRAM</th>
@@ -208,9 +186,6 @@
 							<?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
 							<?php foreach ($trainings as $training) : ?><tr>
 									<td><?= $i++ ?></td>
-									<td class="bg-<?= $status_bg[$training['mts']] ?>">
-										<span class="display-none"><?= $training['mts'] ?></span>
-									</td>
 									<td><?= $training['month'] ?></td>
 									<td><?= $training['departemen_pengampu'] ?></td>
 									<td><?= $training['nama_program'] ?></td>
@@ -274,6 +249,7 @@
 <!-- /.content -->
 
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
+<script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 
 <script>
 	//Date picker
@@ -282,117 +258,9 @@
 		viewMode: 'years',
 	});
 
-	$(function() {
-		bsCustomFileInput.init();
-	});
+	setupFilterableDatatable($('.datatable-filter-column'));
 
-	<?php if ($trainings) : ?>
-		$(function() {
-			$("#datatable").DataTable({
-				"responsive": true,
-				"lengthChange": false,
-				pageLength: 10,
-				lengthMenu: [
-					[10, 25, 50, 100, -1],
-					[10, 25, 50, 100, "All"]
-				],
-				"autoWidth": false,
-				"buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-			}).buttons().container().appendTo('#datatable_wrapper .col-md-6:eq(0)');
-		});
-
-		const $thead = $("#datatable_training").find('thead');
-		const $filterRow = $('<tr>').appendTo($thead);
-
-		$thead.find('tr').first().find('th').each(function(i) {
-			const title = $(this).text();
-
-			// Pakai SELECT di kolom Area & Level (index 1 dan 2 misalnya)
-			if ([2, 3, 6, 9, 10, 11, 12].includes(i)) {
-				$filterRow.append('<th><select class="form-control form-control-sm select2"><option value="">All</option></select></th>');
-			} else {
-				$filterRow.append('<th><input type="text" placeholder="Filter..." class="form-control form-control-sm"/></th>');
-			}
-		});
-
-		$(function() {
-			$("#datatable_training").DataTable({
-				autoWidth: false,
-				buttons: ["copy", "csv", "excel", "pdf", "print", "colvis"],
-				lengthChange: true,
-				pageLength: 10,
-				scrollX: true,
-				orderCellsTop: true,
-				fixedHeader: true,
-				initComplete: function() {
-					const api = this.api();
-
-					api.columns().every(function(i) {
-						const column = this;
-						const th = $filterRow.find('th').eq(i);
-
-						// SELECT
-						if ([2, 3, 6, 9, 10, 11, 12].includes(i)) {
-							const select = th.find('select');
-							column.data().unique().sort().each(function(d) {
-								if (d) {
-									select.append('<option value="' + d + '">' + d + '</option>');
-								}
-							});
-							select.on('change', function() {
-								const val = $.fn.dataTable.util.escapeRegex($(this).val());
-								column.search(val ? '^' + val + '$' : '', true, false).draw();
-							});
-						} else {
-							// INPUT
-							const input = th.find('input');
-							input.on('keyup change clear', function() {
-								if (column.search() !== this.value) {
-									column.search(this.value).draw();
-								}
-							});
-						}
-					});
-
-					FuzzySelect2.apply('.select2');
-				}
-			});
-		});
-
-		$('#datatable_training thead tr:eq(1) th').each(function(i) {
-			let input = $(this).find('input');
-			if (input.length) {
-				$(input).on('keyup change', function() {
-					if ($('#datatable_training').DataTable().column(i).search() !== this.value) {
-						$('#datatable_training').DataTable()
-							.column(i)
-							.search(this.value)
-							.draw();
-					}
-				});
-			}
-		});
-
-		$(function() {
-			const donutData = {
-				labels: ['Not MTS :  <?= $chart['mts_not']['percentage'] ?>%', 'MTS :  <?= $chart['mts']['percentage'] ?>%'],
-				datasets: [{
-					data: [<?= $chart['mts_not']['value'] ?>, <?= $chart['mts']['value'] ?>],
-					backgroundColor: ['#f56954', '#007bff'],
-				}]
-			};
-
-			const donutOptions = {
-				maintainAspectRatio: false,
-				responsive: true,
-				cutout: '60%' // This makes it a donut (vs. full pie)
-			};
-
-			new Chart($('#donutChart'), {
-				type: 'doughnut',
-				data: donutData,
-				options: donutOptions
-			});
-		});
-	<?php endif; ?>
+	// $(function() {
+	// 	bsCustomFileInput.init();
+	// });
 </script>

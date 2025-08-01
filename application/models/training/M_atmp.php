@@ -1,60 +1,98 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class m_atmp extends CI_Model
+class M_atmp extends CI_Model
 {
     public function __construct()
     {
         parent::__construct();
     }
 
-    public function get($year)
+    /**
+     * Get ATMP documents by year
+     */
+    public function get_atmp_docs($year)
     {
-        $query = $this->db->where('year', $year)->order_by('uploaded_at', 'desc')->get('trn_atmp_docs')->result_array();
-        return $query;
+        return $this->db->select('*')
+            ->from('trn_atmp_docs')
+            ->where('year', (int)$year)
+            ->order_by('uploaded_at', 'DESC')
+            ->get()
+            ->result_array();
     }
 
-    public function get_training($year)
+    /**
+     * Get ATMP records with participant count
+     */
+    public function get_atmp($value = null, $by = 'md5(trn_atmp.id)', $many = true)
     {
-        $query = $this->db->query("
-            SELECT * FROM trn
-            LEFT JOIN (
-                SELECT trn_id, count(trn_id) total_participant FROM trn_user
-                GROUP BY trn_id
-            ) trn_user ON trn_user.trn_id = trn.id
-             WHERE year = '$year'
-        ")->result_array();
-        return $query;
-    }
-
-    public function get_training_chart($year)
-    {
-        $trainings = $this->get_training($year);
-        if ($trainings) {
-            $total = count($trainings);
-            $data['total'] = $total;
-            $data['mts']['value'] = count(array_filter($trainings, fn($value, $key) => $value['mts'] == 'Y', ARRAY_FILTER_USE_BOTH));
-            $data['mts']['percentage'] = number_format(($data['mts']['value'] / $total) * 100, 2);
-            $data['mts_not']['value'] = $total - $data['mts']['value'];
-            $data['mts_not']['percentage'] = number_format(($data['mts_not']['value'] / $total) * 100, 2);
-            return $data;
+        if ($value) {
+            $this->db->where($by, $value, false);
         }
+
+        $query = $this->db->select('trn_atmp.*, IFNULL(u.total_participant, 0) as total_participant, m.id as mts_id')
+            ->from('trn_atmp')
+            ->join('(SELECT atmp_id, COUNT(atmp_id) AS total_participant FROM trn_atmp_user GROUP BY atmp_id) u', 'u.atmp_id = trn_atmp.id', 'left')
+            ->join('trn_mts m', 'trn_atmp.id = m.atmp_id', 'left')
+            ->get();
+
+        return ($value && !$many) ? $query->row_array() : $query->result_array();
     }
 
-    public function submit()
+    /**
+     * Submit edited ATMP data
+     */
+    public function submit($payload, $year)
     {
-        $ids = $this->db->query("SELECT id FROM trn")->result_array();
-        $ids = array_keys(array_column($ids, null, 'id'));
-        $submitted_data = json_decode($this->input->post('json_data'), true);
-        foreach ($submitted_data['table_data'] as $key => $training) {
-            foreach ($ids as $id) {
-                if ($key == md5($id)) {
-                    $data[$key] = $training;
-                    $data[$key]['id'] = $id;
+        $updates = $payload['updates'] ?? [];
+        $deletes = $payload['deletes'] ?? [];
+        $creates = $payload['creates'] ?? [];
+        $success = false;
+
+        // UPDATES
+        if (!empty($updates)) {
+            $ids = array_column($this->db->select('id')->get('trn_atmp')->result_array(), 'id');
+            $updateData = [];
+            foreach ($updates as $row) {
+                if (isset($row['id']) && is_numeric($row['id']) && in_array($row['id'], $ids)) {
+                    $updateData[] = $row;
                 }
             }
+            if (!empty($updateData)) {
+                $this->db->update_batch('trn_atmp', $updateData, 'id');
+                $success = true;
+            }
         }
-        $query = $this->db->update_batch('trn', $data, 'id');
-        return $query;
+
+        // DELETES
+        if (!empty($deletes)) {
+            $this->db->where_in('id', $deletes)->delete('trn_atmp');
+            $success = true;
+        }
+
+        // 3. Handle CREATES (new rows)
+        if (!empty($creates)) {
+            // Remove any rows marked as deleted
+            $creates = array_filter($creates, function ($row) use ($deletes) {
+                return !(isset($row['id']) && in_array($row['id'], $deletes));
+            });
+
+            $createData = [];
+            foreach ($creates as $row) {
+                if (isset($row['id']) && strpos($row['id'], 'new_') === 0) {
+                    unset($row['id']);
+                    $row['year'] = $year;
+                    $createData[] = $row;
+                }
+            }
+
+            if (!empty($createData)) {
+                $this->db->insert_batch('trn_atmp', $createData);
+                $success = true;
+            }
+        }
+
+
+        return $success;
     }
 }

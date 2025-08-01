@@ -6,326 +6,289 @@ class ATMP extends MY_Controller
     public function __construct()
     {
         parent::__construct();
-        $this->load->database();
         $this->load->model('training/m_atmp');
     }
 
-    function index()
+    public function index()
     {
-        $year = $this->input->get('year');
-        $year = $year ? $year : date('Y');
-        $data['atmps'] = $this->m_atmp->get($year);
-        $data['trainings'] = $this->m_atmp->get_training($year);
-        $data['chart'] = $this->m_atmp->get_training_chart($year);
-        $data['year'] = $year;
-        $data['content'] = "training/ATMP";
+        $year = (int) ($this->input->get('year') ?? date('Y'));
+        $data = [
+            'year'      => $year,
+            'atmps'     => $this->m_atmp->get_atmp_docs($year),
+            'trainings' => $this->m_atmp->get_atmp($year, 'trn_atmp.year'),
+            'content'   => 'training/ATMP'
+        ];
         $this->load->view('templates/header_footer', $data);
     }
 
-    function do_upload()
+    public function do_upload()
     {
-        $config['upload_path'] = './uploads/temp/';
-        $config['allowed_types'] = 'xls|xlsx|csv';
-        $config['max_size'] = 2048; // max size in KB
-
-        // Step 1: Validate text input
         $this->form_validation->set_rules('year', 'Year', 'required|numeric|exact_length[4]|greater_than_equal_to[1900]|less_than_equal_to[2100]');
+        if (!$this->form_validation->run()) return redirect('training/atmp');
 
-
-        if ($this->form_validation->run() == FALSE) {
-            redirect('training/atmp');
-            return;
-        }
-
+        $config = [
+            'upload_path'   => './uploads/temp/',
+            'allowed_types' => 'xls|xlsx|csv',
+            'max_size'      => 2048
+        ];
         $this->load->library('upload', $config);
 
         if (!$this->upload->do_upload('userfile')) {
-            $error = $this->upload->display_errors();
-            $this->session->set_flashdata('swal', [
-                'type' => 'error',
-                'message' => strip_tags($error)
-            ]);
-            redirect('training/atmp?year=' . $this->input->post('year'));
-            return;
-        } else {
-            $upload_data = $this->upload->data();
-            $original_name = $upload_data['client_name']; // Original file name
-            $file_ext = $upload_data['file_ext']; // .xls or .xlsx
-
-            $old_atmp_docs = $this->db->where('year', $this->input->post('year'))->get('trn_atmp_docs')->row_array();
-            // Insert record into DB without final filename
-            $this->load->database();
-            $this->db->insert('trn_atmp_docs', [
-                'file_name' => $original_name,
-                'year' => $this->input->post("year"),
-            ]);
-            $insert_id = $this->db->insert_id();
-
-            // New file name using ID
-            $new_filename = $insert_id . $file_ext;
-            $new_path = './uploads/ATMP/' . $new_filename;
-
-            // Rename the file
-            rename($upload_data['full_path'], $new_path);
-
-            $insert_data = $this->array_from_excel($new_path);
-            if ($insert_data['status'] == 'error') {
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => $insert_data['message'],
-                ]);
-                unlink($new_path);
-                $this->db->where('id', $insert_id)->delete('trn_atmp_docs');
-                redirect('training/atmp');
-                return;
-            }
-
-            if ($old_atmp_docs) {
-                $this->db->where('id', $old_atmp_docs['id'])->delete('trn_atmp_docs');
-                $this->db->where('year', $this->input->post('year'))->delete('trn');
-                $old_atmp_docs_check = $this->check_file(md5($old_atmp_docs['id']));
-                if ($old_atmp_docs_check['status'] == "OK") unlink($old_atmp_docs["file_path"]);
-            }
-            $this->db->insert_batch('trn', $insert_data['atmps']);
-
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "File uploaded successfully"
-            ]);
-
-            redirect("training/ATMP?year=" . $this->input->post('year'));
-            return;
+            $this->set_swal('error', strip_tags($this->upload->display_errors()));
+            return redirect('training/atmp?year=' . $this->input->post('year'));
         }
+
+        $upload = $this->upload->data();
+        $year   = $this->input->post('year');
+        $old    = $this->db->where('year', $year)->get('trn_atmp_docs')->row_array();
+
+        // Insert record and rename file
+        $this->db->insert('trn_atmp_docs', ['file_name' => $upload['client_name'], 'year' => $year]);
+        $insert_id = $this->db->insert_id();
+        $new_file  = './uploads/ATMP/' . $insert_id . $upload['file_ext'];
+        rename($upload['full_path'], $new_file);
+
+        $excel_data = $this->array_from_excel($new_file);
+        if ($excel_data['status'] === 'error') {
+            $this->cleanup_failed_upload($insert_id, $new_file, $excel_data['message']);
+            return redirect('training/atmp');
+        }
+
+        if ($old) $this->remove_old_docs($old);
+        $this->db->insert_batch('trn_atmp', $excel_data['atmps']);
+
+        $this->set_swal('success', 'File uploaded successfully');
+        redirect("training/ATMP?year=$year");
     }
 
-    function reformat_date($d)
+    private function cleanup_failed_upload($id, $file, $message)
     {
-        // Lewati jika formula Excel
-        if (strpos($d, '=') === 0) {
-            echo "SKIPPED: $d\n";
-            return null;
-        }
-
-        if (is_numeric($d)) {
-            // Serial date Excel
-            $date = (new DateTime('1899-12-30'))->modify("+{$d} days");
-        } else {
-            $parts = explode('/', $d);
-
-            // Perbaiki tahun jika pendek (0204 -> 2024)
-            if (isset($parts[2]) && $parts[2] < 1000) {
-                $parts[2] = str_pad($parts[2], 4, '20', STR_PAD_LEFT);
-            }
-
-            // Tentukan format (d/m/Y atau m/d/Y)
-            if ($parts[0] > 12) {
-                $date = DateTime::createFromFormat('d/m/Y', implode('/', $parts));
-            } else {
-                $date = DateTime::createFromFormat('m/d/Y', implode('/', $parts));
-            }
-        }
-
-        return $date->format('Y-m-d') . PHP_EOL;
+        $this->set_swal('error', $message);
+        @unlink($file);
+        $this->db->delete('trn_atmp_docs', ['id' => $id]);
     }
 
-    function array_from_excel($file_path)
+    public function check_file($hash)
     {
-        $this->load->helper('conversion');
-        $this->load->helper('extract_spreadsheet');
-        $sheets = extract_spreadsheet($file_path);
-        $rows = $sheets[0];
-        $trns = array_filter($rows, fn($value, $key) => $key >= 8 && $value[2] != null, ARRAY_FILTER_USE_BOTH);
-        $trn_data = [];
-        $data['status'] = "OK";
+        // Fetch ATMP document record by MD5 hash
+        $atmp = $this->db->select('id, file_name, year')
+            ->from('trn_atmp_docs')
+            ->where('MD5(id)', $hash)
+            ->get()
+            ->row_array();
 
-        foreach ($trns as $row => $trn) {
-            $date_start = $trn[15] ? $this->reformat_date($trn[15]) : null;
-            $date_end = $trn[16] ? $this->reformat_date($trn[16]) : null;
-            if ($date_start == '1970-01-01') {
-                $column = numberToExcelColumn(5);
-                $data['status'] = 'error';
-                $data['message'] = "error in cell $column" . $row + 1;
-                return $data;
-            }
-            if ($date_end == '1970-01-01') {
-                $column = numberToExcelColumn(6);
-                $data['status'] = 'error';
-                $data['message'] = "error in cell $column" . $row + 1;
-                return $data;
-            }
-
-            $trn_data[] = [
-                'year' => $this->input->post("year"),
-                'departemen_pengampu' => $trn[1],
-                'nama_program' => $trn[2],
-                'batch' => $trn[3],
-                'jenis_kompetensi' => $trn[4],
-                'sasaran_kompetensi' => $trn[5],
-                'level_kompetensi' => $trn[6],
-                'target_peserta' => $trn[7],
-                'staff_nonstaff' => $trn[8],
-                'kategori_program' => $trn[9],
-                'fasilitator' => $trn[10],
-                'nama_penyelenggara_fasilitator' => $trn[11],
-                'tempat' => $trn[12],
-                'online_offline' => $trn[13],
-                'month' => indoMonthToNumber($trn[14]),
-                'start_date' => $date_start,
-                'end_date' => $date_end,
-                'days' => $trn[17],
-                'hours' => $trn[18],
-                'total_hours' => $trn[19],
-                'rmho' => $trn[20],
-                'rmip' => $trn[21],
-                'rebh' => $trn[22],
-                'rmtu' => $trn[23],
-                'rmts' => $trn[24],
-                'rmgm' => $trn[25],
-                'rhml' => $trn[26],
-                'total_jobsite' => $trn[27],
-                'total_participants' => $trn[28],
-                'grand_total_hours' => $trn[29],
-                'biaya_pelatihan_per_orang' => currencyStringToInteger($trn[30]),
-                'biaya_pelatihan' => currencyStringToInteger($trn[31]),
-                'training_kit_per_orang' => currencyStringToInteger($trn[32]),
-                'training_kit' => currencyStringToInteger($trn[33]),
-                'nama_hotel' => $trn[34],
-                'biaya_penginapan_per_orang' => currencyStringToInteger($trn[35]),
-                'biaya_penginapan' => currencyStringToInteger($trn[36]),
-                'meeting_package_per_orang' => currencyStringToInteger($trn[37]),
-                'meeting_package' => currencyStringToInteger($trn[38]),
-                'makan_per_orang' => currencyStringToInteger($trn[39]),
-                'makan' => currencyStringToInteger($trn[40]),
-                'snack_per_orang' => currencyStringToInteger($trn[41]),
-                'snack' => currencyStringToInteger($trn[42]),
-                'tiket_per_orang' => currencyStringToInteger($trn[43]),
-                'tiket' => currencyStringToInteger($trn[44]),
-                'grand_total' => currencyStringToInteger($trn[45]),
-                'keterangan' => $trn[46],
+        if (!$atmp) {
+            return [
+                'status'  => 'error',
+                'message' => 'Record not found'
             ];
         }
-        $data['atmps'] = $trn_data;
 
+        // Construct file path and verify existence
+        $extension = pathinfo($atmp['file_name'], PATHINFO_EXTENSION);
+        $file_path = FCPATH . "uploads/ATMP/{$atmp['id']}.$extension";
+
+        if (!is_file($file_path)) {
+            return [
+                'status'  => 'error',
+                'message' => 'File not found'
+            ];
+        }
+
+        return [
+            'status'    => 'OK',
+            'atmp'      => $atmp,
+            'file_path' => $file_path
+        ];
+    }
+
+    public function download($hash)
+    {
+        // Validate and fetch file data
+        $file_data = $this->check_file($hash);
+
+        if ($file_data['status'] === 'error') {
+            $this->set_swal('error', $file_data['message']);
+            return redirect('training/ATMP');
+        }
+
+        // Safely read and download file
+        $this->load->helper('download');
+        $file_content = @file_get_contents($file_data['file_path']);
+
+        if ($file_content === false) {
+            $this->set_swal('error', 'Unable to read file for download.');
+            return redirect('training/ATMP');
+        }
+
+        force_download($file_data['atmp']['file_name'], $file_content);
+    }
+
+    public function delete($hash)
+    {
+        // Validate and fetch file data
+        $file_data = $this->check_file($hash);
+
+        if ($file_data['status'] === 'error') {
+            $this->set_swal('error', $file_data['message']);
+            return redirect('training/ATMP');
+        }
+
+        // Attempt to delete file safely
+        if (is_file($file_data['file_path']) && !@unlink($file_data['file_path'])) {
+            $this->set_swal('error', 'Failed to delete file from server.');
+            return redirect('training/ATMP');
+        }
+
+        // Remove DB record
+        $this->db->delete('trn_atmp_docs', ['id' => $file_data['atmp']['id']]);
+
+        $this->set_swal('success', 'File deleted successfully.');
+        return redirect('training/ATMP');
+    }
+
+    private function remove_old_docs($old)
+    {
+        $this->db->delete('trn_atmp_docs', ['id' => $old['id']]);
+        $this->db->delete('trn_atmp', ['year' => $old['year']]);
+
+        $check = $this->check_file(md5($old['id']));
+        if ($check['status'] === "OK") @unlink($old["file_path"]);
+    }
+
+    public function reformat_date($input)
+    {
+        $input = trim($input);
+        if (is_numeric($input)) {
+            return (new DateTime('1899-12-30'))->modify("+{$input} days")->format('Y-m-d');
+        }
+
+        $date = DateTime::createFromFormat('Y-m-d', $input);
+        if ($date && $date->format('Y-m-d') === $input) return $input;
+
+        try {
+            return (new DateTime($input))->format('Y-m-d');
+        } catch (Exception) {
+            return null;
+        }
+    }
+
+    public function array_from_excel($file_path)
+    {
+        $this->load->helper(['conversion', 'extract_spreadsheet']);
+        $rows = extract_spreadsheet($file_path)[0] ?? [];
+        $filtered = array_filter($rows, fn($v, $k) => $k >= 8 && !empty($v[2]), ARRAY_FILTER_USE_BOTH);
+
+        $data = ['status' => 'OK', 'atmps' => []];
+        foreach ($filtered as $row => $trn) {
+            $start = $trn[15] ? $this->reformat_date($trn[15]) : null;
+            $end   = $trn[16] ? $this->reformat_date($trn[16]) : null;
+
+            if (in_array('1970-01-01', [$start, $end], true)) {
+                $col = numberToExcelColumn(($start === '1970-01-01') ? 5 : 6);
+                return ['status' => 'error', 'message' => "error in cell {$col}" . ($row + 1)];
+            }
+
+            $data['atmps'][] = $this->map_excel_row($trn, $start, $end);
+        }
         return $data;
     }
 
-    function check_file($hash)
+    private function map_excel_row($trn, $start, $end)
     {
-        $atmp = $this->db->get_where('trn_atmp_docs', ['md5(id)' => $hash])->row_array();
-        if (!$atmp) {
-            $data['status'] = "error";
-            $data['message'] = "record not found";
-            return $data;
-        }
-
-        $file_path = FCPATH . 'uploads/ATMP/' . $atmp['id'] . "." . pathinfo($atmp['file_name'], PATHINFO_EXTENSION);
-        if (!file_exists($file_path)) {
-            $data['status'] = "error";
-            $data['message'] = "file not found";
-            return $data;
-        }
-
-        $data['status'] = "OK";
-        $data['atmp'] = $atmp;
-        $data['file_path'] = $file_path;
-        return $data;
+        $this->load->helper('conversion');
+        return [
+            'year' => $this->input->post("year"),
+            'departemen_pengampu' => $trn[1],
+            'nama_program' => $trn[2],
+            'batch' => $trn[3],
+            'jenis_kompetensi' => $trn[4],
+            'sasaran_kompetensi' => $trn[5],
+            'level_kompetensi' => $trn[6],
+            'target_peserta' => $trn[7],
+            'staff_nonstaff' => $trn[8],
+            'kategori_program' => $trn[9],
+            'fasilitator' => $trn[10],
+            'nama_penyelenggara_fasilitator' => $trn[11],
+            'tempat' => $trn[12],
+            'online_offline' => $trn[13],
+            'month' => indoMonthToNumber($trn[14]),
+            'start_date' => $start,
+            'end_date' => $end,
+            'days' => $trn[17],
+            'hours' => $trn[18],
+            'total_hours' => $trn[19],
+            'rmho' => $trn[20],
+            'rmip' => $trn[21],
+            'rebh' => $trn[22],
+            'rmtu' => $trn[23],
+            'rmts' => $trn[24],
+            'rmgm' => $trn[25],
+            'rhml' => $trn[26],
+            'total_jobsite' => $trn[27],
+            'total_participants' => $trn[28],
+            'grand_total_hours' => $trn[29],
+            'biaya_pelatihan_per_orang' => currencyStringToInteger($trn[30]),
+            'biaya_pelatihan' => currencyStringToInteger($trn[31]),
+            'training_kit_per_orang' => currencyStringToInteger($trn[32]),
+            'training_kit' => currencyStringToInteger($trn[33]),
+            'nama_hotel' => $trn[34],
+            'biaya_penginapan_per_orang' => currencyStringToInteger($trn[35]),
+            'biaya_penginapan' => currencyStringToInteger($trn[36]),
+            'meeting_package_per_orang' => currencyStringToInteger($trn[37]),
+            'meeting_package' => currencyStringToInteger($trn[38]),
+            'makan_per_orang' => currencyStringToInteger($trn[39]),
+            'makan' => currencyStringToInteger($trn[40]),
+            'snack_per_orang' => currencyStringToInteger($trn[41]),
+            'snack' => currencyStringToInteger($trn[42]),
+            'tiket_per_orang' => currencyStringToInteger($trn[43]),
+            'tiket' => currencyStringToInteger($trn[44]),
+            'grand_total' => currencyStringToInteger($trn[45]),
+            'keterangan' => $trn[46],
+        ];
     }
 
-    function download($hash)
+    private function set_swal($type, $msg)
     {
-        $data = $this->check_file($hash);
-        if ($data['status'] == "error") {
-            $this->session->set_flashdata('swal', [
-                'type' => 'error',
-                'message' => $data['message'],
-            ]);
-            redirect("training/ATMP");
-            return;
-        }
-
-        // Read the file content
-        $file_content = file_get_contents($data['file_path']);
-
-        // Force download with the new filename
-        force_download($data['atmp']['file_name'], $file_content);
+        $this->session->set_flashdata('swal', ['type' => $type, 'message' => $msg]);
     }
 
-    function delete($hash)
+    public function edit($year = null)
     {
-        $data = $this->check_file($hash);
-        if ($data['status'] == "error") {
-            $this->session->set_flashdata('swal', [
-                'type' => 'error',
-                'message' => $data['message'],
-            ]);
-            redirect("training/ATMP");
-            return;
+        $year = (int) ($year ?? date('Y'));
+
+        // Validate year before proceeding
+        if ($year < 1900 || $year > 2100) {
+            $this->set_swal('error', 'Invalid year provided.');
+            return redirect('training/ATMP');
         }
 
-        unlink($data['file_path']);
+        $data = [
+            'year'      => $year,
+            'trainings' => $this->m_atmp->get_atmp($year, 'trn_atmp.year'),
+            'content'   => 'training/ATMP_edit'
+        ];
 
-        $this->db->delete('trn_atmp_docs', ['id' => $data['atmp']['id']]);
-
-        $this->session->set_flashdata('swal', [
-            'type' => 'success',
-            'message' => "File deleted successfully"
-        ]);
-
-        redirect("training/ATMP");
-    }
-
-    function edit($year)
-    {
-        $data['year'] = $year;
-        $data['trainings'] = $this->m_atmp->get_training($year);
-        $data['content'] = "training/ATMP_edit";
         $this->load->view('templates/header_footer', $data);
     }
 
-    function submit()
+    public function submit()
     {
-        if ($this->input->post('proceed') == 'N') {
-            redirect('training/ATMP?year=' . $this->input->post('year'));
-        }
-        $success = $this->m_atmp->submit();
+        $year = (int) $this->input->post('year');
 
-        $this->session->set_flashdata('swal', [
-            'type' => 'success',
-            'message' => "ATMP edited succesfully"
-        ]);
-        redirect('training/ATMP/edit/' . $this->input->post('year'));
-    }
-
-    function participant($action = 'list')
-    {
-        $this->load->model('training/m_trn');
-        $this->load->model('training/m_trn_user');
-        switch ($action) {
-            case 'list':
-                $hash_trn_id = $this->input->get('training_id');
-                $training = $this->m_trn->get_trn($hash_trn_id, "md5(id)", false);
-                $data['training'] = $training;
-                $data['trn_users'] = $this->m_trn_user->get_trn_user($training['id'], "trn_id");
-                // $data['users'] = $this->m_trn_user->get_user_not_trn($training['id']);
-                $data['users'] = $this->db->get("rml_sso_la.users")->result_array();
-                $data['content'] = "training/users";
-                $this->load->view('templates/header_footer', $data);
-                break;
-            case 'add':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => 'User Add Failed',
-                ]);
-                $hash_trn_id = $this->input->get('training_id');
-                $training = $this->m_trn->get_trn($hash_trn_id, "md5(id)", false);
-                $success = $this->m_trn_user->add($training['id']);
-                if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "User Added Success"
-                    ]);
-                }
-                redirect("training/ATMP/participant/list?training_id=" . $hash_trn_id);
+        if ($year < 1900 || $year > 2100) {
+            $this->set_swal('error', 'Invalid year provided.');
+            return redirect('training/ATMP');
         }
+
+        if ($this->input->post('proceed') === 'N') {
+            return redirect('training/ATMP?year=' . $year);
+        }
+
+        $payload = json_decode($this->input->post('json_data'), true);
+        $success = $this->m_atmp->submit($payload, $year);
+
+        $this->set_swal($success ? 'success' : 'error', $success ? 'ATMP saved successfully' : 'No changes or failed.');
+        return redirect('training/ATMP/edit/' . $year);
     }
 }

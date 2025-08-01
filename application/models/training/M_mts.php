@@ -1,53 +1,100 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class m_mts extends CI_Model
+class M_mts extends CI_Model
 {
     public function __construct()
     {
         parent::__construct();
     }
 
-    public function get()
+    public function get_mts($value = null, $by = 'md5(trn_mts.id)', $many = true)
     {
-        $query = $this->db->order_by("uploaded_at", "desc")->get('trn_mts_docs')->result_array();
-        return $query;
-    }
-
-    public function get_training($month)
-    {
-        $query = $this->db->query("SELECT * FROM trn WHERE CONCAT(year, '-', LPAD(month, 2, '0')) = '$month' AND mts = 'Y'")->result_array();
-        return $query;
-    }
-
-    public function get_training_chart($month)
-    {
-        $trainings = $this->get_training($month);
-        if ($trainings) {
-            $total = count($trainings);
-            $data['total'] = $total;
-            $data['fixed']['value'] = count(array_filter($trainings, fn($value, $key) => $value['fixed'] == 'Y', ARRAY_FILTER_USE_BOTH));
-            $data['fixed']['percentage'] = number_format(($data['fixed']['value'] / $total) * 100, 2);
-            $data['fixed_not']['value'] = $total - $data['fixed']['value'];
-            $data['fixed_not']['percentage'] = number_format(($data['fixed_not']['value'] / $total) * 100, 2);
-            return $data;
+        if ($value) {
+            $this->db->where($by, $value, false);
         }
+
+        $query = $this->db->select('trn_mts.*, IFNULL(u.total_participant, 0) as total_participant, a.nama_program atmp_nama_program')
+            ->from('trn_mts')
+            ->join('(SELECT mts_id, COUNT(mts_id) AS total_participant FROM trn_mts_user GROUP BY mts_id) u', 'u.mts_id = trn_mts.id', 'left')
+            ->join('trn_atmp a', 'a.id = trn_mts.atmp_id', 'left')
+            ->get();
+
+        return ($value && !$many) ? $query->row_array() : $query->result_array();
     }
 
-    public function submit()
+    public function get_training_chart($year)
     {
-        $ids = $this->db->query("SELECT id FROM trn")->result_array();
-        $ids = array_keys(array_column($ids, null, 'id'));
-        $submitted_data = json_decode($this->input->post('json_data'), true);
-        foreach ($submitted_data['table_data'] as $key => $training) {
-            foreach ($ids as $id) {
-                if ($key == md5($id)) {
-                    $data[$key] = $training;
-                    $data[$key]['id'] = $id;
+        $atmp = $this->db->get_where('trn_atmp', ['year' => $year])->result_array();
+        $mts  = $this->db->get_where('trn_mts', ['year' => $year])->result_array();
+
+        $mts_atmp = array_filter($mts, fn($m) => !empty($m['atmp_id']));
+        $total    = count($atmp) + count($mts) - count($mts_atmp);
+
+        $calc = fn($v) => $total ? number_format(($v / $total) * 100, 2) : 0;
+
+        return [
+            'total'     => $total,
+            'mts'       => ['value' => count($mts) - count($mts_atmp),      'percentage' => $calc(count($mts) - count($mts_atmp))],
+            'atmp'      => ['value' => count($atmp) - count($mts_atmp),     'percentage' => $calc(count($atmp) - count($mts_atmp))],
+            'mts_atmp'  => ['value' => count($mts_atmp),                    'percentage' => $calc(count($mts_atmp))]
+        ];
+    }
+
+    public function submit($payload, $year)
+    {
+        $updates = $payload['updates'] ?? [];
+        $deletes = $payload['deletes'] ?? [];
+        $creates = $payload['creates'] ?? [];
+
+        $success = false;
+
+        // 1. Handle UPDATES (existing rows)
+        if (!empty($updates)) {
+            $ids = array_column($this->db->select('id')->get('trn_mts')->result_array(), 'id');
+
+            $updateData = [];
+            foreach ($updates as $row) {
+                if (isset($row['id']) && is_numeric($row['id']) && in_array($row['id'], $ids)) {
+                    $updateData[] = $row;
                 }
             }
+
+            if (!empty($updateData)) {
+                $this->db->update_batch('trn_mts', $updateData, 'id');
+                $success = true;
+            }
         }
-        $query = $this->db->update_batch('trn', $data, 'id');
-        return $query;
+
+        // 2. Handle DELETES
+        if (!empty($deletes)) {
+            $this->db->where_in('id', $deletes)->delete('trn_mts');
+            $success = true;
+        }
+
+        // 3. Handle CREATES (new rows)
+        if (!empty($creates)) {
+            // Remove any rows marked as deleted
+            $creates = array_filter($creates, function ($row) use ($deletes) {
+                return !(isset($row['id']) && in_array($row['id'], $deletes));
+            });
+
+            $createData = [];
+            foreach ($creates as $row) {
+                if (isset($row['id']) && strpos($row['id'], 'new_') === 0) {
+                    unset($row['id']);
+                    $row['year'] = $year;
+                    $createData[] = $row;
+                }
+            }
+
+            if (!empty($createData)) {
+                $this->db->insert_batch('trn_mts', $createData);
+                $success = true;
+            }
+        }
+
+
+        return $success;
     }
 }

@@ -1,34 +1,74 @@
-<!-- Content Header (Page header) -->
+<?php
+function renderInput($type, $name, $value, $hash, $class = '')
+{
+    return "<input type=\"{$type}\" class=\"form-control form-control-sm {$class}\" data-trn_id_hash=\"{$hash}\" data-name=\"{$name}\" value=\"{$value}\">";
+}
+
+function renderCell($name, $value, $hash)
+{
+    return "<td contenteditable=\"true\" class=\"editable-cell\" data-trn_id_hash=\"{$hash}\" data-name=\"{$name}\">{$value}</td>";
+}
+
+$numberFields = [
+    'days',
+    'hours',
+    'total_hours',
+    'rmho',
+    'rmip',
+    'rebh',
+    'rmtu',
+    'rmts',
+    'rmgm',
+    'rhml',
+    'total_jobsite',
+    'total_participants',
+    'grand_total_hours',
+    'biaya_pelatihan_per_orang',
+    'biaya_pelatihan',
+    'training_kit_per_orang',
+    'training_kit',
+    'biaya_penginapan_per_orang',
+    'biaya_penginapan',
+    'meeting_package_per_orang',
+    'meeting_package',
+    'makan_per_orang',
+    'makan',
+    'snack_per_orang',
+    'snack',
+    'tiket_per_orang',
+    'tiket',
+    'grand_total'
+];
+?>
+
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
                 <h1 class="m-0">Edit ATMP <?= $year ?></h1>
-            </div><!-- /.col -->
-        </div><!-- /.row -->
-    </div><!-- /.container-fluid -->
+            </div>
+        </div>
+    </div>
 </div>
-<!-- /.content-header -->
 
-<!-- Main content -->
 <section class="content">
     <div class="container-fluid">
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title">Trainings</h3>
             </div>
+
             <form id="data-form" action="<?= base_url() ?>training/ATMP/submit" method="post">
-                <!-- /.card-header -->
                 <div class="card-body">
                     <input type="hidden" name="year" value="<?= $year ?>">
                     <input type="hidden" name="proceed" value="Y">
                     <input type="hidden" name="json_data" id="json_data">
 
-                    <table id="datatable" class="table table-bordered table-striped datatable-filter-column" data-filter-columns="1:checkbox,2:multiple,3:multiple">
+                    <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
                         <thead>
                             <tr>
+                                <th><input type="checkbox" id="select-all"></th>
                                 <th>No</th>
-                                <th>MTS</th>
                                 <th>MONTH</th>
                                 <th>DEPARTEMEN PENGAMPU</th>
                                 <th>NAMA PROGRAM</th>
@@ -75,27 +115,15 @@
                                 <th>TIKET</th>
                                 <th>GRAND TOTAL</th>
                                 <th>KETERANGAN</th>
+                                <th>ACTION</th>
                             </tr>
                         </thead>
-                        <?php
-                        function renderInput($type, $name, $value, $hash, $class = '')
-                        {
-                            return "<input type=\"{$type}\" class=\"form-control form-control-sm {$class}\" data-trn_id_hash=\"{$hash}\" data-name=\"{$name}\" value=\"{$value}\">";
-                        }
-                        function renderCell($name, $value, $hash)
-                        {
-                            return "<td contenteditable=\"true\" class=\"editable-cell\" data-trn_id_hash=\"{$hash}\" data-name=\"{$name}\">{$value}</td>";
-                        }
-                        ?>
-
                         <tbody>
                             <?php foreach ($trainings as $i => $training): ?>
                                 <?php $hash = md5($training['id']); ?>
-                                <tr>
+                                <tr data-id="<?= $training['id'] ?>" data-hash="<?= $hash ?>">
+                                    <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i + 1 ?></td>
-                                    <td class="text-center">
-                                        <input type="checkbox" class="row-checkbox form-check-input" data-trn_id_hash="<?= $hash ?>" data-name="mts" <?= $training['mts'] == 'Y' ? 'checked' : '' ?>>
-                                    </td>
                                     <?= renderCell('month', $training['month'], $hash) ?>
                                     <?= renderCell('departemen_pengampu', $training['departemen_pengampu'], $hash) ?>
                                     <?= renderCell('nama_program', $training['nama_program'], $hash) ?>
@@ -112,44 +140,16 @@
                                     <?= renderCell('online_offline', $training['online_offline'], $hash) ?>
                                     <td><?= renderInput('date', 'start_date', $training['start_date'], $hash) ?></td>
                                     <td><?= renderInput('date', 'end_date', $training['end_date'], $hash) ?></td>
-
-                                    <?php
-                                    $numberFields = [
-                                        'days',
-                                        'hours',
-                                        'total_hours',
-                                        'rmho',
-                                        'rmip',
-                                        'rebh',
-                                        'rmtu',
-                                        'rmts',
-                                        'rmgm',
-                                        'rhml',
-                                        'total_jobsite',
-                                        'total_participants',
-                                        'grand_total_hours',
-                                        'biaya_pelatihan_per_orang',
-                                        'biaya_pelatihan',
-                                        'training_kit_per_orang',
-                                        'training_kit',
-                                        'biaya_penginapan_per_orang',
-                                        'biaya_penginapan',
-                                        'meeting_package_per_orang',
-                                        'meeting_package',
-                                        'makan_per_orang',
-                                        'makan',
-                                        'snack_per_orang',
-                                        'snack',
-                                        'tiket_per_orang',
-                                        'tiket',
-                                        'grand_total'
-                                    ];
-                                    foreach ($numberFields as $field) {
-                                        echo "<td>" . renderInput('number', $field, $training[$field], $hash) . "</td>";
-                                    }
-                                    ?>
+                                    <?php foreach ($numberFields as $field): ?>
+                                        <td><?= renderInput('number', $field, $training[$field], $hash) ?></td>
+                                    <?php endforeach; ?>
                                     <?= renderCell('nama_hotel', $training['nama_hotel'], $hash) ?>
                                     <?= renderCell('keterangan', $training['keterangan'], $hash) ?>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="markRowDeleted(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -157,11 +157,25 @@
                 </div>
                 <div class="card-footer">
                     <div class="row">
-                        <div class="col-lg-4">
-                            <button type="button" class="btn btn-default w-100" onclick="cancelForm()">Cancel</button>
+                        <div class="col-lg-3">
+                            <button type="button" class="w-100 btn btn-default btn-cancel">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
                         </div>
-                        <div class="col-lg-8">
-                            <button type="submit" class="btn btn-info w-100">Submit</button>
+                        <div class="col-lg-3">
+                            <button type="button" class="w-100 btn btn-danger btn-delete-selected">
+                                <i class="fas fa-trash"></i> Delete Selected
+                            </button>
+                        </div>
+                        <div class="col-lg-3">
+                            <button type="button" class="w-100 btn btn-success btn-create">
+                                <i class="fas fa-plus"></i> New Row
+                            </button>
+                        </div>
+                        <div class="col-lg-3">
+                            <button type="submit" class="w-100 btn btn-info">
+                                <i class="fas fa-paper-plane"></i> Submit
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -169,29 +183,138 @@
         </div>
     </div>
 </section>
-<!-- /.content -->
 
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
-<script src="<?= base_url('assets/js/table-form-json.js') ?>"></script>
 
 <script>
+    let deletedRows = [];
+
     $(document).ready(function() {
         setupFilterableDatatable($('.datatable-filter-column'));
 
-        bindEditableTableForm(
-            '#data-form',
-            '#datatable',
-            '#json_data', {
-                month: 'input[name="month"]',
-                proceed: 'input[name="proceed"]'
+        // Select all
+        $('#select-all').on('click', function() {
+            $('.row-checkbox').prop('checked', this.checked);
+        });
+
+        // Submit handler
+        $('#data-form').on('submit', function() {
+            let allRows = collectTableData();
+            let payload = {
+                updates: allRows.filter(r => !String(r.id).startsWith('new_') && !deletedRows.includes(r.id)),
+                deletes: deletedRows,
+                creates: allRows.filter(r => String(r.id).startsWith('new_') && !deletedRows.includes(r.id))
+            };
+            $('#json_data').val(JSON.stringify(payload));
+        });
+
+        // Cancel button
+        $('.btn-cancel').on('click', function() {
+            if (confirm('Are you sure you want to cancel?')) {
+                location.href = '<?= base_url('training/ATMP' . ($year ? '?year=' . $year : '')) ?>';
             }
-        );
+        });
+
+        // Delete selected
+        $('.btn-delete-selected').on('click', function() {
+            $('.row-checkbox').each(function() {
+                let row = $(this).closest('tr');
+                let id = row.data('id');
+
+                if ($(this).is(':checked')) {
+                    // ✅ Mark checked rows for deletion
+                    if (!deletedRows.includes(id)) deletedRows.push(id);
+                    row.addClass('table-danger').css('opacity', '0.7');
+                } else {
+                    // ✅ Unmark unchecked rows if already marked
+                    deletedRows = deletedRows.filter(x => x !== id);
+                    row.removeClass('table-danger').css('opacity', '1');
+                }
+            });
+        });
     });
 
-    function cancelForm() {
-        if (confirm('Are you sure you want to cancel?')) {
-            location.href = '<?= base_url() . 'training/ATMP' . ($year ? '?year=' . $year : '') ?>';
+    // Toggle delete for individual row
+    function markRowDeleted(btn) {
+        let row = $(btn).closest('tr');
+        let id = row.data('id');
+        let checkbox = row.find('.row-checkbox');
+
+        if (deletedRows.includes(id)) {
+            // ✅ Restore row
+            deletedRows = deletedRows.filter(x => x !== id);
+            row.removeClass('table-danger').css('opacity', '1');
+            checkbox.prop('checked', false);
+        } else {
+            // ✅ Mark as deleted
+            deletedRows.push(id);
+            row.addClass('table-danger').css('opacity', '0.7');
+            checkbox.prop('checked', true);
         }
+    }
+
+    // Create a new row dynamically
+    function createTrainingRow() {
+        let newId = 'new_' + Date.now();
+        let row = `<tr data-id="${newId}" class="table-success">
+            <td><input type="checkbox" class="row-checkbox"></td>
+            <td>New</td>
+            <td contenteditable="true" data-name="month"></td>
+            <td contenteditable="true" data-name="departemen_pengampu"></td>
+            <td contenteditable="true" data-name="nama_program"></td>
+            <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
+            <td contenteditable="true" data-name="jenis_kompetensi"></td>
+            <td contenteditable="true" data-name="sasaran_kompetensi"></td>
+            <td><input type="number" class="form-control form-control-sm" data-name="level_kompetensi"></td>
+            <td contenteditable="true" data-name="target_peserta"></td>
+            <td contenteditable="true" data-name="staff_nonstaff"></td>
+            <td contenteditable="true" data-name="kategori_program"></td>
+            <td contenteditable="true" data-name="fasilitator"></td>
+            <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
+            <td contenteditable="true" data-name="tempat"></td>
+            <td contenteditable="true" data-name="online_offline"></td>
+            <td><input type="date" class="form-control form-control-sm" data-name="start_date"></td>
+            <td><input type="date" class="form-control form-control-sm" data-name="end_date"></td>
+            <?php foreach ($numberFields as $field): ?>
+                <td><input type="number" class="form-control form-control-sm" data-name="<?= $field ?>"></td>
+            <?php endforeach; ?>
+            <td contenteditable="true" data-name="nama_hotel"></td>
+            <td contenteditable="true" data-name="keterangan"></td>
+            <td><button type="button" class="btn btn-danger btn-sm" onclick="markRowDeleted(this)"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+        $('#datatable tbody').append(row);
+    }
+
+    // Collect table data (existing + new)
+    function collectTableData() {
+        let data = [];
+        let table = $('#datatable').DataTable();
+
+        // Existing DataTable rows
+        table.rows().every(function() {
+            data.push(collectRow($(this.node())));
+        });
+
+        // Newly appended rows
+        $('#datatable tbody tr').each(function() {
+            let id = $(this).data('id');
+            if (!data.find(r => r.id === id)) data.push(collectRow($(this)));
+        });
+
+        return data;
+    }
+
+    // Extract data from a row
+    function collectRow(row) {
+        let id = row.data('id');
+        let rowData = {
+            id: id
+        };
+        row.find('td[contenteditable], input').each(function() {
+            let name = $(this).data('name');
+            if (name) rowData[name] = $(this).is('input') ? $(this).val() : $(this).text();
+        });
+        return rowData;
     }
 </script>

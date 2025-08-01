@@ -12,44 +12,39 @@ class MTS extends MY_Controller
 
     function index()
     {
-        $month = $this->input->get('month');
-        $month = $month ? $month : date('Y-m');
-        $data['trainings'] = $this->m_mts->get_training($month);
-        $data['chart'] = $this->m_mts->get_training_chart($month);
-        $data['month'] = $month;
+        $year = $this->input->get('year');
+        $year = $year ? $year : date('Y');
+        $data['trainings'] = $this->m_mts->get_mts($year, 'trn_mts.year');
+        $data['chart'] = $this->m_mts->get_training_chart($year);
+        $data['year'] = $year;
         $data['content'] = "training/MTS";
         $this->load->view('templates/header_footer', $data);
     }
 
-    // function valid_month_format($str)
-    // {
-    //     if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $str)) {
-    //         return TRUE;
-    //     } else {
-    //         $this->form_validation->set_message('valid_month_format', 'The {field} field must be in YYYY-MM format.');
-    //         return FALSE;
-    //     }
-    // }
-
-    function edit($month)
+    function edit($year)
     {
-        $data['month'] = $month;
-        $data['trainings'] = $this->m_mts->get_training($month);
+        $data['year'] = $year;
+        $data['trainings'] = $this->m_mts->get_mts($year, 'trn_mts.year');
         $data['content'] = "training/MTS_edit";
         $this->load->view('templates/header_footer', $data);
     }
 
-    function submit()
+    public function submit()
     {
         if ($this->input->post('proceed') == 'N') {
-            redirect('training/MTS?month=' . $this->input->post('month'));
+            redirect('training/MTS?year=' . $this->input->post('year'));
         }
-        $success = $this->m_mts->submit();
+
+        $payload = json_decode($this->input->post('json_data'), true);
+        $year = $this->input->post('year');
+
+        $success = $this->m_mts->submit($payload, $year);
 
         $this->session->set_flashdata('swal', [
-            'type' => 'success',
-            'message' => "MTS edited succesfully"
+            'type' => $success ? 'success' : 'error',
+            'message' => $success ? "MTS edited successfully" : "Failed to update MTS"
         ]);
-        redirect('training/MTS/edit/' . $this->input->post('month'));
+
+        redirect('training/MTS/edit/' . $year);
     }
 }

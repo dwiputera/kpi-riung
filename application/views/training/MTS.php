@@ -78,6 +78,7 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
+                                    <th>ASSIGN ATMP</th>
                                     <th>ATMP</th>
                                     <th>MONTH</th>
                                     <th>DEPARTEMEN PENGAMPU</th>
@@ -131,8 +132,10 @@
                                 <?php $i = 1; ?>
                                 <?php $status_str = ['P' => 'Pending', 'Y' => 'Done', 'N' => 'Canceled', 'R' => 'Reschedule']; ?>
                                 <?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
-                                <?php foreach ($trainings as $training) : ?><tr>
+                                <?php foreach ($trainings as $training) : ?>
+                                    <tr>
                                         <td><?= $i++ ?></td>
+                                        <td><a href="<?= base_url() ?>training/MTS/ATMP/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm"><?= 'assign' ?></a></td>
                                         <td><?= $training['atmp_nama_program'] ?></td>
                                         <td><?= $training['month'] ?></td>
                                         <td><?= $training['departemen_pengampu'] ?></td>
@@ -183,7 +186,6 @@
                                         <td><?= $training['grand_total'] ?></td>
                                         <td><?= $training['keterangan'] ?></td>
                                     </tr>
-
                                 <?php endforeach; ?>
                             </tbody>
                         </table>

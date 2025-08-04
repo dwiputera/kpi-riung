@@ -8,6 +8,7 @@ class MTS extends MY_Controller
         parent::__construct();
         $this->load->database();
         $this->load->model('training/m_mts');
+        $this->load->model('training/m_atmp');
     }
 
     function index()
@@ -19,6 +20,11 @@ class MTS extends MY_Controller
         $data['year'] = $year;
         $data['content'] = "training/MTS";
         $this->load->view('templates/header_footer', $data);
+    }
+
+    private function set_swal($type, $msg)
+    {
+        $this->session->set_flashdata('swal', ['type' => $type, 'message' => $msg]);
     }
 
     function edit($year)
@@ -46,5 +52,36 @@ class MTS extends MY_Controller
         ]);
 
         redirect('training/MTS/edit/' . $year);
+    }
+
+    public function ATMP($mts_hash)
+    {
+        $year = $this->input->get('year');
+        $year = $year ? $year : date('Y');
+        $mts = $this->m_mts->get_mts($mts_hash, 'md5(trn_mts.id)', false);
+        $atmp = null;
+        if ($mts['atmp_id']) $atmp = $this->m_atmp->get_atmp($mts['atmp_id'], "id", false);
+        if (!$this->input->get('action')) {
+            $data['mts'] = $mts;
+            $data['atmp'] = $atmp;
+            $data['atmps'] = $this->m_atmp->get_atmp($mts['atmp_id'], "id !=");
+            $data['year'] = $year;
+            $data['content'] = "training/MTS_ATMP";
+        } else {
+            $atmp_hash = $this->input->get('atmp_hash');
+            $atmp = $this->db->get_where('trn_atmp', array('md5(id)' => $atmp_hash))->row_array();
+            if ($this->input->get('action') == 'unassign') {
+                $this->set_swal('error', 'ATMP Unassign Failed');
+                $success = $this->m_mts->submit(['updates' => [['id' => $mts['id'], 'atmp_id' => null]]], $year);
+                if ($success) $this->set_swal('success', 'ATMP Unassigned Successfully');
+            }
+            if ($this->input->get('action') == 'assign') {
+                $this->set_swal('error', 'ATMP Assign Failed');
+                $success = $this->m_mts->submit(['updates' => [['id' => $mts['id'], 'atmp_id' => $atmp['id']]]], $year);
+                if ($success) $this->set_swal('success', 'ATMP Assigned Successfully');
+            }
+            redirect('training/MTS/ATMP/' . $mts_hash);
+        }
+        $this->load->view('templates/header_footer', $data);
     }
 }

@@ -11,7 +11,7 @@ class M_mts extends CI_Model
     public function get_mts($value = null, $by = 'md5(trn_mts.id)', $many = true)
     {
         if ($value) {
-            $this->db->where($by, $value, false);
+            $this->db->where($by, "'$value'", false);
         }
 
         $query = $this->db->select('trn_mts.*, IFNULL(u.total_participant, 0) as total_participant, a.nama_program atmp_nama_program')
@@ -93,7 +93,6 @@ class M_mts extends CI_Model
                 $success = true;
             }
         }
-
 
         return $success;
     }

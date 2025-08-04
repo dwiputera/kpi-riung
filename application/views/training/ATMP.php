@@ -132,6 +132,7 @@
 						<thead>
 							<tr>
 								<th>No</th>
+								<th>MTS</th>
 								<th>MONTH</th>
 								<th>DEPARTEMEN PENGAMPU</th>
 								<th>NAMA PROGRAM</th>
@@ -186,6 +187,7 @@
 							<?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
 							<?php foreach ($trainings as $training) : ?><tr>
 									<td><?= $i++ ?></td>
+									<td><a href="<?= base_url() ?>training/ATMP/MTS/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm"><?= count($training['mts']) ?></a></td>
 									<td><?= $training['month'] ?></td>
 									<td><?= $training['departemen_pengampu'] ?></td>
 									<td><?= $training['nama_program'] ?></td>

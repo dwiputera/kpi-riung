@@ -27,16 +27,45 @@ class M_atmp extends CI_Model
     public function get_atmp($value = null, $by = 'md5(trn_atmp.id)', $many = true)
     {
         if ($value) {
-            $this->db->where($by, $value, false);
+            $this->db->where($by, "'$value'", false);
         }
 
-        $query = $this->db->select('trn_atmp.*, IFNULL(u.total_participant, 0) as total_participant, m.id as mts_id')
+        // Ambil data utama (ATMP + total participant)
+        $query = $this->db->select('
+            trn_atmp.*, 
+            IFNULL(u.total_participant, 0) AS total_participant
+        ')
             ->from('trn_atmp')
-            ->join('(SELECT atmp_id, COUNT(atmp_id) AS total_participant FROM trn_atmp_user GROUP BY atmp_id) u', 'u.atmp_id = trn_atmp.id', 'left')
-            ->join('trn_mts m', 'trn_atmp.id = m.atmp_id', 'left')
+            ->join(
+                '(SELECT atmp_id, COUNT(atmp_id) AS total_participant 
+              FROM trn_atmp_user 
+              GROUP BY atmp_id) u',
+                'u.atmp_id = trn_atmp.id',
+                'left'
+            )
             ->get();
 
-        return ($value && !$many) ? $query->row_array() : $query->result_array();
+        $result = $many ? $query->result_array() : [$query->row_array()];
+
+        // Ambil semua mts dalam 1 query saja
+        $atmp_ids = array_column($result, 'id');
+
+        $mts_data = [];
+        if (!empty($atmp_ids)) {
+            $mts_query = $this->m_mts->get_mts();
+
+            // Grupkan mts berdasarkan atmp_id
+            foreach ($mts_query as $mts) {
+                $mts_data[$mts['atmp_id']][] = $mts;
+            }
+        }
+
+        // Gabungkan mts ke hasil utama
+        foreach ($result as &$row) {
+            $row['mts'] = isset($mts_data[$row['id']]) ? $mts_data[$row['id']] : [];
+        }
+
+        return $many ? $result : $result[0];
     }
 
     /**

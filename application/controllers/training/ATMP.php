@@ -7,6 +7,7 @@ class ATMP extends MY_Controller
     {
         parent::__construct();
         $this->load->model('training/m_atmp');
+        $this->load->model('training/m_mts');
     }
 
     public function index()
@@ -290,5 +291,34 @@ class ATMP extends MY_Controller
 
         $this->set_swal($success ? 'success' : 'error', $success ? 'ATMP saved successfully' : 'No changes or failed.');
         return redirect('training/ATMP/edit/' . $year);
+    }
+
+    public function MTS($atmp_hash)
+    {
+        $year = $this->input->get('year');
+        $year = $year ? $year : date('Y');
+        $atmp = $this->m_atmp->get_atmp($atmp_hash, 'md5(trn_atmp.id)', false);
+        if (!$this->input->get('action')) {
+            $data['atmp'] = $atmp;
+            $data['mts_hash'] = $this->input->get('mts_hash');
+            $data['mts'] = $this->m_mts->get_mts($atmp_hash, "md5(atmp_id) !=");
+            $data['year'] = $year;
+            $data['content'] = "training/ATMP_MTS";
+        } else {
+            $mts_hash = $this->input->get('mts_hash');
+            $mts = $this->db->get_where('trn_mts', array('md5(id)' => $mts_hash))->row_array();
+            if ($this->input->get('action') == 'unassign') {
+                $this->set_swal('error', 'MTS Unassign Failed');
+                $success = $this->m_mts->submit(['updates' => [['id' => $mts['id'], 'atmp_id' => null]]], $year);
+                if ($success) $this->set_swal('success', 'MTS Unassigned Successfully');
+            }
+            if ($this->input->get('action') == 'assign') {
+                $this->set_swal('error', 'MTS Assign Failed');
+                $success = $this->m_mts->submit(['updates' => [['id' => $mts['id'], 'atmp_id' => $atmp['id']]]], $year);
+                if ($success) $this->set_swal('success', 'MTS Assigned Successfully');
+            }
+            redirect('training/ATMP/MTS/' . $atmp_hash);
+        }
+        $this->load->view('templates/header_footer', $data);
     }
 }

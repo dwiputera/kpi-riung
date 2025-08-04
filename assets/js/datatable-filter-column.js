@@ -1,9 +1,14 @@
 let currentFilters = {};
 
 function setupFilterableDatatable($table) {
-    if ($table.hasClass('dataTable')) return;
-
     const tableId = $table.attr('id') || 'datatable';
+
+    // ✅ Destroy jika sudah ada DataTable aktif
+    if ($.fn.DataTable.isDataTable($table)) {
+        $table.DataTable().destroy();     // Hancurkan instance lama
+        $table.find('thead tr:last').remove(); // Hapus row filter lama
+        $table.removeClass('dataTable');  // Reset class bawaan
+    }
     const pagePath = window.location.pathname.replace(/\W+/g, '_'); // nama halaman unik
     const tableIndex = $table.index('table'); // urutan tabel di halaman
     const storageKey = `excelFilters_${pagePath}_${tableId}_${tableIndex}`;

@@ -36,6 +36,16 @@
 </head>
 
 <body class="hold-transition sidebar-mini layout-navbar-fixed">
+    <style>
+        .card.card-maximized {
+            overflow-y: auto !important;
+        }
+
+        html.maximized-card,
+        body.maximized-card {
+            overflow: auto !important;
+        }
+    </style>
 
     <!-- jQuery -->
     <script src="<?= base_url() ?>assets/AdminLTE-3.2.0/plugins/jquery/jquery.min.js"></script>

@@ -7,6 +7,7 @@ class ATMP extends MY_Controller
     {
         parent::__construct();
         $this->load->model('training/m_atmp');
+        $this->load->model('training/m_atmp_user', 'm_a_u');
         $this->load->model('training/m_mts');
     }
 
@@ -317,7 +318,31 @@ class ATMP extends MY_Controller
                 $success = $this->m_mts->submit(['updates' => [['id' => $mts['id'], 'atmp_id' => $atmp['id']]]], $year);
                 if ($success) $this->set_swal('success', 'MTS Assigned Successfully');
             }
-            redirect('training/ATMP/MTS/' . $atmp_hash);
+            redirect('training/ATMP/MTS/' . $atmp_hash . '?year=' . $year);
+        }
+        $this->load->view('templates/header_footer', $data);
+    }
+
+    public function participants($atmp_hash)
+    {
+        $data['type'] = "atmp";
+        $year = $this->input->get('year');
+        $year = $year ? $year : date('Y');
+        $atmp = $this->m_atmp->get_atmp($atmp_hash, 'md5(trn_atmp.id)', false);
+        if (!$this->input->get('action')) {
+            $data['atmp'] = $atmp;
+            $data['participants'] = $this->m_a_u->get_atmp_user($atmp_hash, "md5(atmp_id)");
+            $data['year'] = $year;
+            $this->load->model('organization/m_user');
+            $data['users'] = $this->m_user->get_user();
+            $data['content'] = "training/users";
+        } else {
+            if ($this->input->get('action') == 'assign') {
+                $this->set_swal('error', 'Participants Assign Failed');
+                $success = $this->m_a_u->add($atmp['id']);
+                if ($success) $this->set_swal('success', 'Participants Assigned Successfully');
+            }
+            redirect('training/ATMP/participants/' . $atmp_hash . '?year=' . $year);
         }
         $this->load->view('templates/header_footer', $data);
     }

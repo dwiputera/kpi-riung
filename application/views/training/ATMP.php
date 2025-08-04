@@ -66,57 +66,47 @@
 						</div>
 						<?php echo form_error('userfile', '<div class="text-danger small">', '</div>'); ?>
 					</div>
+
+					<table id="datatable" class="table table-bordered table-striped">
+						<thead>
+							<tr>
+								<th>No</th>
+								<th>Uploaded At</th>
+								<th>Uploaded By</th>
+								<th>Year</th>
+								<th>File</th>
+								<th>Download</th>
+								<th>Delete</th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php $i = 1; ?>
+							<?php foreach ($atmps as $atmp) : ?>
+								<tr>
+									<td><?= $i++ ?></td>
+									<td><?= date("F j, Y, g:i a", strtotime($atmp['uploaded_at'])) ?></td>
+									<td><?= $atmp['uploaded_by'] ?></td>
+									<td><?= $atmp['year'] ?></td>
+									<td><?= $atmp['file_name'] ?></td>
+									<td>
+										<a href="<?= base_url(); ?>training/ATMP/download/<?= md5($atmp['id']) ?>" class="btn btn-sm btn-primary">
+											<i class="fas fa-download"></i>
+										</a>
+									</td>
+									<td>
+										<a href="<?= base_url('training/ATMP/delete/' . md5($atmp['id'])); ?>"
+											class="btn btn-sm btn-danger"
+											onclick="return confirm('Are you sure you want to delete this file?');">
+											<i class="fas fa-trash"></i>
+										</a>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
 				</div>
 				<!-- /.card-body -->
 			</form>
-		</div>
-		<!-- /.card -->
-
-		<div class="card">
-			<div class="card-header">
-				<h3 class="card-title">Uploaded ATMP</h3>
-			</div>
-			<!-- /.card-header -->
-			<div class="card-body">
-				<table id="datatable" class="table table-bordered table-striped">
-					<thead>
-						<tr>
-							<th>No</th>
-							<th>Uploaded At</th>
-							<th>Uploaded By</th>
-							<th>Year</th>
-							<th>File</th>
-							<th>Download</th>
-							<th>Delete</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php $i = 1; ?>
-						<?php foreach ($atmps as $atmp) : ?>
-							<tr>
-								<td><?= $i++ ?></td>
-								<td><?= date("F j, Y, g:i a", strtotime($atmp['uploaded_at'])) ?></td>
-								<td><?= $atmp['uploaded_by'] ?></td>
-								<td><?= $atmp['year'] ?></td>
-								<td><?= $atmp['file_name'] ?></td>
-								<td>
-									<a href="<?= base_url(); ?>training/ATMP/download/<?= md5($atmp['id']) ?>" class="btn btn-sm btn-primary">
-										<i class="fas fa-download"></i>
-									</a>
-								</td>
-								<td>
-									<a href="<?= base_url('training/ATMP/delete/' . md5($atmp['id'])); ?>"
-										class="btn btn-sm btn-danger"
-										onclick="return confirm('Are you sure you want to delete this file?');">
-										<i class="fas fa-trash"></i>
-									</a>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
-			<!-- /.card-body -->
 		</div>
 		<!-- /.card -->
 
@@ -187,7 +177,7 @@
 							<?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
 							<?php foreach ($trainings as $training) : ?><tr>
 									<td><?= $i++ ?></td>
-									<td><a href="<?= base_url() ?>training/ATMP/MTS/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm"><?= count($training['mts']) ?></a></td>
+									<td><a href="<?= base_url() ?>training/ATMP/MTS/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= count($training['mts']) ?></a></td>
 									<td><?= $training['month'] ?></td>
 									<td><?= $training['departemen_pengampu'] ?></td>
 									<td><?= $training['nama_program'] ?></td>
@@ -216,7 +206,7 @@
 									<td><?= $training['rhml'] ?></td>
 									<td><?= $training['total_jobsite'] ?></td>
 									<td>
-										<a href="<?= base_url() ?>training/ATMP/participant/list?training_id=<?= md5($training['id']) ?>" class="btn btn-primary btn-sm"><?= $training['total_participant'] ?? 0 ?></a>
+										<a href="<?= base_url() ?>training/ATMP/participants/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['total_participant'] ?? 0 ?></a>
 									</td>
 									<td><?= $training['grand_total_hours'] ?></td>
 									<td><?= $training['biaya_pelatihan_per_orang'] ?></td>
@@ -258,6 +248,11 @@
 	$('#year').datetimepicker({
 		format: 'YYYY', // Only year
 		viewMode: 'years',
+	});
+	
+	// Trigger submit saat tahun berubah dari picker
+	$('#year').on('change.datetimepicker', function(e) {
+		$(this).find('input').closest('form').submit();
 	});
 
 	setupFilterableDatatable($('.datatable-filter-column'));

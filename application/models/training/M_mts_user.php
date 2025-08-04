@@ -1,20 +1,20 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class M_atmp_user extends CI_Model
+class M_mts_user extends CI_Model
 {
     public function __construct()
     {
         parent::__construct();
     }
 
-    public function get_atmp_user($value = null, $by = 'md5(id)', $many = true)
+    public function get_mts_user($value = null, $by = 'md5(id)', $many = true)
     {
         $where = '';
         if ($value) $where = "WHERE $by = '$value'";
         $query = $this->db->query("
-            SELECT *, trn_atmp_user.id id FROM trn_atmp_user
-            LEFT JOIN rml_sso_la.users sso_usrs ON sso_usrs.NRP = trn_atmp_user.NRP
+            SELECT *, trn_mts_user.id id FROM trn_mts_user
+            LEFT JOIN rml_sso_la.users sso_usrs ON sso_usrs.NRP = trn_mts_user.NRP
             $where
         ");
         if (($value && !$many) || $many == false) {
@@ -25,39 +25,39 @@ class M_atmp_user extends CI_Model
         return $query;
     }
 
-    public function get_user_not_trn($atmp_id)
+    public function get_user_not_trn($mts_id)
     {
         $query = $this->db->query("
             SELECT * FROM rml_sso_la.users
             WHERE NRP NOT IN (
-                SELECT NRP FROM trn_atmp_user WHERE atmp_id = $atmp_id 
+                SELECT NRP FROM trn_mts_user WHERE mts_id = $mts_id 
             )
         ")->result_array();
         return $query;
     }
 
-    public function add($atmp_id)
+    public function add($mts_id)
     {
         $success = false;
         $data_inserts = [];
-        $trn_atmp_users = $this->get_atmp_user($atmp_id, "atmp_id");
+        $trn_mts_users = $this->get_mts_user($mts_id, "mts_id");
         $input_nrp = $this->input->post('NRP') ?? [];
-        $data_deletes = array_filter($trn_atmp_users, fn($tu_i, $i_tu) => !in_array($tu_i['NRP'], $input_nrp), ARRAY_FILTER_USE_BOTH);
+        $data_deletes = array_filter($trn_mts_users, fn($tu_i, $i_tu) => !in_array($tu_i['NRP'], $input_nrp), ARRAY_FILTER_USE_BOTH);
         if ($data_deletes) {
-            $success = $this->db->where_in('id', array_column($data_deletes, 'id'))->delete('trn_atmp_user');
+            $success = $this->db->where_in('id', array_column($data_deletes, 'id'))->delete('trn_mts_user');
         }
         if ($input_nrp) {
             foreach ($this->input->post('NRP') as $NRP) {
                 $data = [
-                    "atmp_id" => $atmp_id,
+                    "mts_id" => $mts_id,
                     "NRP" => $NRP
                 ];
-                if (!in_array($NRP, array_column($trn_atmp_users, "NRP"))) {
+                if (!in_array($NRP, array_column($trn_mts_users, "NRP"))) {
                     $data_inserts[] = $data;
                 }
             }
         }
-        if ($data_inserts) $success = $this->db->insert_batch('trn_atmp_user', $data_inserts);
+        if ($data_inserts) $success = $this->db->insert_batch('trn_mts_user', $data_inserts);
         return $success;
     }
 }

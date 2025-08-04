@@ -49,15 +49,6 @@
             <div class="card card-primary">
                 <div class="card-header">
                     <h3 class="card-title">Chart MTS</h3>
-
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <button type="button" class="btn btn-tool" data-card-widget="remove">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
                 </div>
                 <div class="card-body">
                     <canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
@@ -135,7 +126,7 @@
                                 <?php foreach ($trainings as $training) : ?>
                                     <tr>
                                         <td><?= $i++ ?></td>
-                                        <td><a href="<?= base_url() ?>training/MTS/ATMP/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm"><?= 'assign' ?></a></td>
+                                        <td><a href="<?= base_url() ?>training/MTS/ATMP/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= 'assign' ?></a></td>
                                         <td><?= $training['atmp_nama_program'] ?></td>
                                         <td><?= $training['month'] ?></td>
                                         <td><?= $training['departemen_pengampu'] ?></td>
@@ -165,7 +156,7 @@
                                         <td><?= $training['rhml'] ?></td>
                                         <td><?= $training['total_jobsite'] ?></td>
                                         <td>
-                                            <a href="<?= base_url() ?>training/ATMP/participant/list?training_id=<?= md5($training['id']) ?>" class="btn btn-primary btn-sm"><?= $training['total_participant'] ?? 0 ?></a>
+                                            <a href="<?= base_url() ?>training/MTS/participants/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['total_participant'] ?? 0 ?></a>
                                         </td>
                                         <td><?= $training['grand_total_hours'] ?></td>
                                         <td><?= $training['biaya_pelatihan_per_orang'] ?></td>
@@ -211,11 +202,16 @@
             viewMode: 'years',
         });
 
+        // Trigger submit saat tahun berubah dari picker
+        $('#year').on('change.datetimepicker', function(e) {
+            $(this).find('input').closest('form').submit();
+        });
+
         setupFilterableDatatable($('.datatable-filter-column'));
 
         $(function() {
             const donutData = {
-                labels: ['ATMP :  <?= $chart['atmp']['percentage'] ?>%', 'MTS_ATMP :  <?= $chart['mts_atmp']['percentage'] ?>%', 'MTS :  <?= $chart['mts']['percentage'] ?>%'],
+                labels: ['ATMP :  <?= $chart['atmp']['percentage'] ?>%', 'MTS & ATMP :  <?= $chart['mts_atmp']['percentage'] ?>%', 'MTS :  <?= $chart['mts']['percentage'] ?>%'],
                 datasets: [{
                     data: [<?= $chart['atmp']['value'] ?>, <?= $chart['mts_atmp']['value'] ?>, <?= $chart['mts']['value'] ?>],
                     backgroundColor: ['#f56954', '#8a50a1', '#007bff'],

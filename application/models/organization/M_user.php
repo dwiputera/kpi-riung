@@ -11,7 +11,7 @@ class M_user extends CI_Model
     public function get_user($value = null, $by = 'md5(NRP)', $many = true)
     {
         $where = '';
-        if ($by) $where = "WHERE $by = '$value'";
+        if ($value) $where = "WHERE $by = '$value'";
         $query = $this->db->query("
             SELECT * FROM rml_sso_la.users
             $where

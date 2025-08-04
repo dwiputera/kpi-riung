@@ -1,7 +1,7 @@
 <!-- Content Header (Page header) -->
 <div class="content-header">
     <div class="container-fluid">
-        <h1 class="m-0">Training Participants: <strong><?= $training['nama_program'] ?></strong></h1>
+        <h1 class="m-0"><?= strtoupper($type) ?> Training Participants: <strong><?= $$type['nama_program'] ?></strong></h1>
     </div><!-- /.container-fluid -->
 </div>
 <!-- /.content-header -->
@@ -9,7 +9,48 @@
 <!-- Main content -->
 <section class="content">
     <div class="container-fluid">
-        <div class="card">
+
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">ATMP List</h3>
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+                <?php if ($$type) : ?>
+                    <table id="datatable_training" class="table table-bordered table-striped">
+                        <tbody>
+                            <tr>
+                                <td>NAMA PROGRAM</td>
+                                <td><?= $$type['nama_program'] ?></td>
+                            </tr>
+                            <tr>
+                                <td>BATCH</td>
+                                <td><?= $$type['batch'] ?></td>
+                            </tr>
+                            <tr>
+                                <td>MONTH</td>
+                                <td><?= $$type['month'] ?></td>
+                            </tr>
+                            <tr>
+                                <td>START DATE</td>
+                                <td><?= $$type['start_date'] ?></td>
+                            </tr>
+                            <tr>
+                                <td>END DATE</td>
+                                <td><?= $$type['end_date'] ?></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+            <!-- /.card-body -->
+        </div>
+
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Participant List</h3>
+            </div>
+            <!-- /.card-header -->
             <div class="card-body">
                 <a data-toggle="modal" data-target="#addUser" class="btn btn-primary w-100" href="#addUserModal">
                     <strong>+ Assign user</strong>
@@ -26,11 +67,11 @@
                         <?php $i = 1; ?>
                         <?php $status_str = ['P' => 'Pending', 'Y' => 'Done', 'N' => 'Canceled', 'R' => 'Reschedule']; ?>
                         <?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
-                        <?php foreach ($trn_users as $trn_user) : ?>
+                        <?php foreach ($participants as $training_user) : ?>
                             <tr>
                                 <td><?= $i++ ?></td>
-                                <td><?= $trn_user['NRP'] ?></td>
-                                <td><?= $trn_user['FullName'] ?></td>
+                                <td><?= $training_user['NRP'] ?></td>
+                                <td><?= $training_user['FullName'] ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -46,7 +87,7 @@
 <!-- Add Nav Modal -->
 <div class="modal fade" id="addUser" tabindex="-1" role="dialog" aria-labelledby="addUserLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
-        <form action="<?= base_url() ?>training/ATMP/participant/add?training_id=<?= md5($training['id']) ?>" method="post">
+        <form action="<?= base_url() ?>training/<?= strtoupper($type) ?>/participants/<?= md5($$type['id']) ?>?year=<?= $year ?>&action=assign" method="post">
             <div class="modal-content">
                 <div class="modal-body">
                     <!-- User Select Dropdown -->
@@ -55,7 +96,7 @@
                         <select class="form-control select2" multiple="multiple" data-dropdown-css-class="select2-purple" id="userSelect" name="NRP[]" style="width: 100%;">
                             <option value="">-- Choose User --</option>
                             <?php foreach ($users as $index => $user): ?>
-                                <option value="<?= $user['NRP'] ?>" <?= in_array($user['NRP'], array_column($trn_users, 'NRP')) ? 'selected' : '' ?>><?= $user['NRP'] ?> | <?= $user['PSubarea'] ?> | <?= $user['EmployeeSubgroup'] ?> | <?= $user['OrgUnitName'] ?> | <?= $user['PositionName'] ?> | <?= $user['FullName'] ?></option>
+                                <option value="<?= $user['NRP'] ?>" <?= in_array($user['NRP'], array_column($participants, 'NRP')) ? 'selected' : '' ?>><?= $user['NRP'] ?> | <?= $user['PSubarea'] ?> | <?= $user['EmployeeSubgroup'] ?> | <?= $user['OrgUnitName'] ?> | <?= $user['PositionName'] ?> | <?= $user['FullName'] ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

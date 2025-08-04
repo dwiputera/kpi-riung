@@ -61,7 +61,7 @@
 								<label class="custom-file-label" for="userfile">Choose file</label>
 							</div>
 							<div class="input-group-append">
-								<button type="submit" class="input-group-text" onClick="confirm('Upload ulang akan menghapus semua data training lama di tahun <?= $year ?>')">Submit</button>
+								<button type="submit" class="input-group-text" onclick="return confirm('Upload ulang akan menghapus semua data training lama di tahun <?= $year ?>')">Submit</button>
 							</div>
 						</div>
 						<?php echo form_error('userfile', '<div class="text-danger small">', '</div>'); ?>

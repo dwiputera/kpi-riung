@@ -25,9 +25,9 @@
                         <label>Month:</label>
                         <div class="row">
                             <div class="col-lg-8">
-                                <div class="input-group date" id="month" data-target-input="nearest">
-                                    <input type="text" class="form-control datetimepicker-input" data-target="#month" value="<?= $month ?>" name="month" />
-                                    <div class="input-group-append" data-target="#month" data-toggle="datetimepicker">
+                                <div class="input-group date" id="year_month" data-target-input="nearest">
+                                    <input type="text" class="form-control datetimepicker-input" data-target="#year_month" value="<?= $year_month ?>" name="year_month" />
+                                    <div class="input-group-append" data-target="#year_month" data-toggle="datetimepicker">
                                         <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                                     </div>
                                 </div>
@@ -50,7 +50,7 @@
                     <!-- DONUT CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Status <?= $month_str ?></h3>
+                            <h3 class="card-title">Status <?= $year_month_str ?></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -107,7 +107,7 @@
                     <!-- BAR CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Budget <?= $month_str ?></h3>
+                            <h3 class="card-title">Budget <?= $year_month_str ?></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -156,7 +156,7 @@
                     <!-- BAR CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Participants <?= $month_str ?></h3>
+                            <h3 class="card-title">Participants <?= $year_month_str ?></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -448,9 +448,14 @@
 <!-- Page specific script -->
 <script>
     //Date picker
-    $('#month').datetimepicker({
+    $('#year_month').datetimepicker({
         format: 'YYYY-MM',
         viewMode: 'months'
+    });
+
+    // Trigger submit saat tahun berubah dari picker
+    $('#year_month').on('change.datetimepicker', function(e) {
+        $(this).find('input').closest('form').submit();
     });
 
     <?php if ($trainings['ytd']) : ?>
@@ -512,7 +517,7 @@
         var barChart_budget_Canvas = $('#barChart_budget').get(0).getContext('2d')
 
         var barChart_budget_Data = {
-            labels: ['<?= $month_str ?>'],
+            labels: ['<?= $year_month_str ?>'],
             datasets: [{
                     label: 'Plan',
                     backgroundColor: '#007bff',
@@ -575,7 +580,7 @@
         var barChart_participants_Canvas = $('#barChart_participants').get(0).getContext('2d')
 
         var barChart_participants_Data = {
-            labels: ['<?= $month_str ?>'],
+            labels: ['<?= $year_month_str ?>'],
             datasets: [{
                     label: 'Plan',
                     backgroundColor: '#007bff',
@@ -663,7 +668,7 @@
         var barChart_budget_ytd_Canvas = $('#barChart_budget_ytd').get(0).getContext('2d')
 
         var barChart_budget_ytd_Data = {
-            labels: ['<?= $month_str ?>'],
+            labels: ['<?= $year_month_str ?>'],
             datasets: [{
                     label: 'Plan',
                     backgroundColor: '#007bff',
@@ -726,7 +731,7 @@
         var barChart_participants_ytd_Canvas = $('#barChart_participants_ytd').get(0).getContext('2d')
 
         var barChart_participants_ytd_Data = {
-            labels: ['<?= $month_str ?>'],
+            labels: ['<?= $year_month_str ?>'],
             datasets: [{
                     label: 'Plan',
                     backgroundColor: '#007bff',

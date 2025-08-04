@@ -8,49 +8,55 @@ class Monitoring extends MY_Controller
         parent::__construct();
         $this->load->database();
         $this->load->model('training/m_monitoring');
+        $this->load->model('training/m_atmp');
+        $this->load->model('training/m_mts');
     }
 
     function index()
     {
-        $month = $this->input->get('month');
-        $month = $month ? $month : date('Y-m');
-        $year = substr($month, 0, 4);
-        $data['trainings']['mtd'] = $this->m_monitoring->get_training($month);
-        $data['trainings']['ytd'] = $this->m_monitoring->get_training($month, $year);
-        $data['chart_status']['mtd'] = $this->m_monitoring->get_chart_status($month);
-        $data['chart_budget']['mtd'] = $this->m_monitoring->get_chart_budget($month);
-        $data['chart_participants']['mtd'] = $this->m_monitoring->get_chart_participants($month);
-        $data['chart_status']['ytd'] = $this->m_monitoring->get_chart_status($month, $year);
-        $data['chart_budget']['ytd'] = $this->m_monitoring->get_chart_budget($month, $year);
-        $data['chart_participants']['ytd'] = $this->m_monitoring->get_chart_participants($month, $year);
-        $data['month'] = $month;
-        $data['month_str'] = date("F", strtotime($month));;
+        $year_month = $this->input->get('year_month');
+        $year_month = $year_month ? $year_month : date('Y-m');
+        $year = substr($year_month, 0, 4);
+        $month = substr($year_month, 5, 2);
+        $atmp = $this->m_atmp->get_atmp($year, 'year');
+        $mts = $this->m_mts->get_mts($year, 'trn_mts.year');
+        $data['trainings']['mtd'] = $this->m_monitoring->get_training($year, $month, $atmp, $mts, 'mtd');
+        $data['chart_status']['mtd'] = $this->m_monitoring->get_chart_status($year, $month, $atmp, $mts, 'mtd');
+        $data['chart_budget']['mtd'] = $this->m_monitoring->get_chart_budget($year, $month, $atmp, $mts, 'mtd');
+        $data['chart_participants']['mtd'] = $this->m_monitoring->get_chart_participants($year, $month, $atmp, $mts, 'mtd');
+        $data['trainings']['ytd'] = $this->m_monitoring->get_training($year, $month, $atmp, $mts, 'ytd');
+        $data['chart_status']['ytd'] = $this->m_monitoring->get_chart_status($year, $month, $atmp, $mts, 'ytd');
+        $data['chart_budget']['ytd'] = $this->m_monitoring->get_chart_budget($year, $month, $atmp, $mts, 'ytd');
+        $data['chart_participants']['ytd'] = $this->m_monitoring->get_chart_participants($year, $month, $atmp, $mts, 'ytd');
+        $data['year_month'] = $year_month;
+        $data['year_month_str'] = date("F", strtotime($year_month));;
         $data['year'] = $year;
+        $data['month'] = $month;
         $data['content'] = "training/monitoring";
         $this->load->view('templates/header_footer', $data);
     }
 
-    function edit($month)
-    {
-        $data['month'] = $month;
-        $data['trainings'] = $this->m_monitoring->get_training($month);
-        $data['content'] = "training/monitoring_edit";
-        $this->load->view('templates/header_footer', $data);
-    }
+    // function edit($month)
+    // {
+    //     $data['month'] = $month;
+    //     $data['trainings'] = $this->m_monitoring->get_training($month);
+    //     $data['content'] = "training/monitoring_edit";
+    //     $this->load->view('templates/header_footer', $data);
+    // }
 
-    function submit()
-    {
-        if ($this->input->post('proceed') == 'N') {
-            redirect('training/monitoring?month=' . $this->input->post('month'));
-        }
-        $success = $this->m_monitoring->submit();
+    // function submit()
+    // {
+    //     if ($this->input->post('proceed') == 'N') {
+    //         redirect('training/monitoring?month=' . $this->input->post('month'));
+    //     }
+    //     $success = $this->m_monitoring->submit();
 
-        $this->session->set_flashdata('swal', [
-            'type' => 'success',
-            'message' => "monitoring edited succesfully"
-        ]);
-        redirect('training/monitoring/edit/' . $this->input->post('month'));
-    }
+    //     $this->session->set_flashdata('swal', [
+    //         'type' => 'success',
+    //         'message' => "monitoring edited succesfully"
+    //     ]);
+    //     redirect('training/monitoring/edit/' . $this->input->post('month'));
+    // }
 
     // function test($function, $param)
     // {

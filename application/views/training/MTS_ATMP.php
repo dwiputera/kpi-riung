@@ -15,7 +15,7 @@
     <div class="container-fluid">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title">ATMP: <strong><?= $mts['nama_program'] ?></strong></h3>
+                <h3 class="card-title">MTS: <strong><?= $mts['nama_program'] ?></strong></h3>
             </div>
             <!-- /.card-header -->
             <div class="card-body">
@@ -97,7 +97,7 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Assign MTS untuk: <strong><?= $mts['nama_program'] ?></strong></h4>
+                <h4 class="modal-title">Assign ATMP untuk: <strong><?= $mts['nama_program'] ?></strong></h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>

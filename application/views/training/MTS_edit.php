@@ -70,6 +70,7 @@ $numberFields = [
                             <tr>
                                 <th><input type="checkbox" id="select-all"></th>
                                 <th>No</th>
+                                <th>STATUS</th>
                                 <th>MONTH</th>
                                 <th>DEPARTEMEN PENGAMPU</th>
                                 <th>NAMA PROGRAM</th>
@@ -125,6 +126,17 @@ $numberFields = [
                                 <tr data-id="<?= $training['id'] ?>" data-hash="<?= $hash ?>">
                                     <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i + 1 ?></td>
+                                    <td>
+                                        <select class="form-control form-control-sm status-select <?=
+                                                                                                    $training['status'] == 'Y' ? 'bg-success text-white' : ($training['status'] == 'P' ? 'bg-secondary text-white' : ($training['status'] == 'N' ? 'bg-danger text-white' :
+                                                                                                        'bg-warning text-dark')) ?>"
+                                            data-name="status" data-trn_id_hash="<?= $hash ?>">
+                                            <option value="P" <?= $training['status'] == 'P' ? 'selected' : '' ?>>Pending</option>
+                                            <option value="Y" <?= $training['status'] == 'Y' ? 'selected' : '' ?>>Done</option>
+                                            <option value="N" <?= $training['status'] == 'N' ? 'selected' : '' ?>>Cancelled</option>
+                                            <option value="R" <?= $training['status'] == 'R' ? 'selected' : '' ?>>Reschedule</option>
+                                        </select>
+                                    </td>
                                     <?= renderCell('month', $training['month'], $hash) ?>
                                     <?= renderCell('departemen_pengampu', $training['departemen_pengampu'], $hash) ?>
                                     <?= renderCell('nama_program', $training['nama_program'], $hash) ?>
@@ -185,6 +197,13 @@ $numberFields = [
     </div>
 </section>
 
+<style>
+    .status-select option {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+</style>
+
 <!-- Scripts -->
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
@@ -194,6 +213,11 @@ $numberFields = [
 
     $(function() {
         setupFilterableDatatable($('.datatable-filter-column'));
+
+        // Terapkan warna awal setelah halaman selesai load
+        $('.status-select').each(function() {
+            applyStatusColor($(this)); // <- Warna td & select langsung diterapkan
+        });
 
         $('#select-all').on('click', function() {
             $('.row-checkbox').prop('checked', this.checked);
@@ -208,6 +232,36 @@ $numberFields = [
             };
             $('#json_data').val(JSON.stringify(payload));
         });
+    });
+
+    // Fungsi reusable untuk set warna td & select
+    function applyStatusColor($select) {
+        let val = $select.val();
+        let td = $select.closest('td');
+
+        // Hapus semua warna dulu
+        td.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
+        $select.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
+
+        // Tambahkan warna sesuai status
+        if (val === 'Y') {
+            td.addClass('bg-success text-white');
+            $select.addClass('bg-success text-white');
+        } else if (val === 'P') {
+            td.addClass('bg-secondary text-white');
+            $select.addClass('bg-secondary text-white');
+        } else if (val === 'N') {
+            td.addClass('bg-danger text-white');
+            $select.addClass('bg-danger text-white');
+        } else if (val === 'R') {
+            td.addClass('bg-warning text-dark');
+            $select.addClass('bg-warning text-dark');
+        }
+    }
+
+    // Event change untuk update warna jika select berubah
+    $(document).on('change', '.status-select', function() {
+        applyStatusColor($(this));
     });
 
     function cancelForm() {
@@ -262,6 +316,14 @@ $numberFields = [
         let row = `<tr data-id="${newId}" class="table-success">
             <td><input type="checkbox" class="row-checkbox"></td>
             <td>New</td>
+            <td>
+                <select class="form-control form-control-sm status-select bg-secondary text-white" data-name="status">
+                    <option value="P" selected>Pending</option>
+                    <option value="Y">Done</option>
+                    <option value="N">Cancelled</option>
+                    <option value="R">Reschedule</option>
+                </select>
+            </td>
             <td contenteditable="true" data-name="month"></td>
             <td contenteditable="true" data-name="departemen_pengampu"></td>
             <td contenteditable="true" data-name="nama_program"></td>
@@ -314,10 +376,14 @@ $numberFields = [
             id: id
         };
 
-        row.find('td[contenteditable], input').each(function() {
+        row.find('td[contenteditable], input, select').each(function() {
             let name = $(this).data('name');
             if (name) {
-                rowData[name] = $(this).is('input') ? $(this).val() : $(this).text();
+                if ($(this).is('input') || $(this).is('select')) {
+                    rowData[name] = $(this).val();
+                } else {
+                    rowData[name] = $(this).text();
+                }
             }
         });
 

@@ -36,9 +36,9 @@ class M_monitoring extends CI_Model
             $data['total'] = $total;
             $data['done']['value'] = count(array_filter($mts, fn($value, $key) => $value['status'] == 'Y', ARRAY_FILTER_USE_BOTH));
             $data['done']['percentage'] = number_format(($data['done']['value'] / $total) * 100, 2);
-            $data['pending']['value'] = count(array_filter($mts, fn($value, $key) => $value['status'] == 'P', ARRAY_FILTER_USE_BOTH)) + count($atmp) - count($atmp_mts);
+            $data['pending']['value'] = count(array_filter($mts, fn($value, $key) => $value['status'] == 'P', ARRAY_FILTER_USE_BOTH));
             $data['pending']['percentage'] = number_format(($data['pending']['value'] / $total) * 100, 2);
-            $data['cancel']['value'] = count(array_filter($mts, fn($value, $key) => $value['status'] == 'N', ARRAY_FILTER_USE_BOTH));
+            $data['cancel']['value'] = count(array_filter($mts, fn($value, $key) => $value['status'] == 'N', ARRAY_FILTER_USE_BOTH)) + count($atmp) - count($atmp_mts);
             $data['cancel']['percentage'] = number_format(($data['cancel']['value'] / $total) * 100, 2);
             $data['reschedule']['value'] = count(array_filter($mts, fn($value, $key) => $value['status'] == 'R', ARRAY_FILTER_USE_BOTH));
             $data['reschedule']['percentage'] = number_format(($data['reschedule']['value'] / $total) * 100, 2);

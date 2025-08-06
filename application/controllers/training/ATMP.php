@@ -26,18 +26,18 @@ class ATMP extends MY_Controller
     public function do_upload()
     {
         $this->form_validation->set_rules('year', 'Year', 'required|numeric|exact_length[4]|greater_than_equal_to[1900]|less_than_equal_to[2100]');
-        if (!$this->form_validation->run()) return redirect('training/atmp');
+        if (!$this->form_validation->run()) return redirect('training/ATMP');
 
         $config = [
             'upload_path'   => './uploads/temp/',
             'allowed_types' => 'xls|xlsx|csv',
-            'max_size'      => 2048
+            'max_size'      => 20480
         ];
         $this->load->library('upload', $config);
 
         if (!$this->upload->do_upload('userfile')) {
             $this->set_swal('error', strip_tags($this->upload->display_errors()));
-            return redirect('training/atmp?year=' . $this->input->post('year'));
+            return redirect('training/ATMP?year=' . $this->input->post('year'));
         }
 
         $upload = $this->upload->data();
@@ -53,7 +53,7 @@ class ATMP extends MY_Controller
         $excel_data = $this->array_from_excel($new_file);
         if ($excel_data['status'] === 'error') {
             $this->cleanup_failed_upload($insert_id, $new_file, $excel_data['message']);
-            return redirect('training/atmp');
+            return redirect('training/ATMP');
         }
 
         if ($old) $this->remove_old_docs($old);

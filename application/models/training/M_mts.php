@@ -1,4 +1,7 @@
 <?php
+
+use PhpOffice\PhpSpreadsheet\Reader\Xml\Style\NumberFormat;
+
 defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_mts extends CI_Model
@@ -23,7 +26,7 @@ class M_mts extends CI_Model
         return ($value && !$many) ? $query->row_array() : $query->result_array();
     }
 
-    public function get_training_chart($year)
+    public function get_mts_atmp_chart($year)
     {
         $atmp = $this->db->get_where('trn_atmp', ['year' => $year])->result_array();
         $mts  = $this->db->get_where('trn_mts', ['year' => $year])->result_array();
@@ -38,6 +41,29 @@ class M_mts extends CI_Model
             'mts'       => ['value' => count($mts) - count($mts_atmp),      'percentage' => $calc(count($mts) - count($mts_atmp))],
             'atmp'      => ['value' => count($atmp) - count($mts_atmp),     'percentage' => $calc(count($atmp) - count($mts_atmp))],
             'mts_atmp'  => ['value' => count($mts_atmp),                    'percentage' => $calc(count($mts_atmp))]
+        ];
+    }
+
+    public function get_mts_status_chart($year)
+    {
+        $mts  = $this->db->get_where('trn_mts', ['year' => $year])->result_array();
+
+        $total    = count($mts);
+        $mts_y = array_filter($mts, fn($m) => $m['status'] == 'Y') ?? [];
+        $mts_n = array_filter($mts, fn($m) => $m['status'] == 'N') ?? [];
+        $mts_r = array_filter($mts, fn($m) => $m['status'] == 'R') ?? [];
+        $mts_p = array_filter($mts, fn($m) => $m['status'] == 'P' || !$m['status']) ?? [];
+        
+        $percentage = function ($count, $total) {
+            return $total > 0 ? number_format(($count / $total) * 100, 2) : '0.00';
+        };
+
+        return [
+            'total' => $total,
+            'mts_y' => ['value' => count($mts_y), 'percentage' => $percentage(count($mts_y), $total)],
+            'mts_n' => ['value' => count($mts_n), 'percentage' => $percentage(count($mts_n), $total)],
+            'mts_r' => ['value' => count($mts_r), 'percentage' => $percentage(count($mts_r), $total)],
+            'mts_p' => ['value' => count($mts_p), 'percentage' => $percentage(count($mts_p), $total)],
         ];
     }
 

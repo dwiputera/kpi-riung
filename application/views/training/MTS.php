@@ -45,17 +45,35 @@
         <!-- /.card -->
 
         <?php if ($trainings) : ?>
-            <!-- DONUT CHART -->
-            <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">Chart MTS</h3>
+            <div class="row">
+                <div class="col-lg-6">
+                    <!-- DONUT CHART -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Chart MTS & ATMP</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="donutChart_mts_atmp" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                    <!-- /.card -->
+
                 </div>
-                <div class="card-body">
-                    <canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                <div class="col-lg-6">
+                    <!-- DONUT CHART -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Chart Status MTS</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="donutChart_mts_status" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                    <!-- /.card -->
                 </div>
-                <!-- /.card-body -->
             </div>
-            <!-- /.card -->
 
             <?php if ($trainings) : ?>
                 <div class="card card-primary">
@@ -212,10 +230,10 @@
         setupFilterableDatatable($('.datatable-filter-column'));
 
         $(function() {
-            const donutData = {
-                labels: ['ATMP :  <?= $chart['atmp']['percentage'] ?>%', 'MTS & ATMP :  <?= $chart['mts_atmp']['percentage'] ?>%', 'MTS :  <?= $chart['mts']['percentage'] ?>%'],
+            const donutData_mts_atmp = {
+                labels: ['ATMP :  <?= $chart_mts_atmp['atmp']['percentage'] ?>%', 'MTS & ATMP :  <?= $chart_mts_atmp['mts_atmp']['percentage'] ?>%', 'MTS :  <?= $chart_mts_atmp['mts']['percentage'] ?>%'],
                 datasets: [{
-                    data: [<?= $chart['atmp']['value'] ?>, <?= $chart['mts_atmp']['value'] ?>, <?= $chart['mts']['value'] ?>],
+                    data: [<?= $chart_mts_atmp['atmp']['value'] ?>, <?= $chart_mts_atmp['mts_atmp']['value'] ?>, <?= $chart_mts_atmp['mts']['value'] ?>],
                     backgroundColor: ['#f56954', '#8a50a1', '#007bff'],
                 }]
             };
@@ -226,9 +244,46 @@
                 cutout: '60%' // This makes it a donut (vs. full pie)
             };
 
-            new Chart($('#donutChart'), {
+            new Chart($('#donutChart_mts_atmp'), {
                 type: 'doughnut',
-                data: donutData,
+                data: donutData_mts_atmp,
+                options: donutOptions
+            });
+        });
+
+        $(function() {
+            const donutData_mts_status = {
+                labels: [
+                    'Done :  <?= $chart_mts_status['mts_y']['percentage'] ?>%',
+                    'Reschedule :  <?= $chart_mts_status['mts_r']['percentage'] ?>%',
+                    'Cancelled :  <?= $chart_mts_status['mts_n']['percentage'] ?>%',
+                    'Pending :  <?= $chart_mts_status['mts_p']['percentage'] ?>%'
+                ],
+                datasets: [{
+                    data: [
+                        <?= $chart_mts_status['mts_y']['value'] ?>,
+                        <?= $chart_mts_status['mts_r']['value'] ?>,
+                        <?= $chart_mts_status['mts_n']['value'] ?>,
+                        <?= $chart_mts_status['mts_p']['value'] ?>
+                    ],
+                    backgroundColor: [
+                        '#007bff',
+                        '#ffc107',
+                        '#f56954',
+                        '#6c757d',
+                    ],
+                }]
+            };
+
+            const donutOptions = {
+                maintainAspectRatio: false,
+                responsive: true,
+                cutout: '60%' // This makes it a donut (vs. full pie)
+            };
+
+            new Chart($('#donutChart_mts_status'), {
+                type: 'doughnut',
+                data: donutData_mts_status,
                 options: donutOptions
             });
         });

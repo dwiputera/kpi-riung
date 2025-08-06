@@ -17,7 +17,8 @@ class MTS extends MY_Controller
         $year = $this->input->get('year');
         $year = $year ? $year : date('Y');
         $data['trainings'] = $this->m_mts->get_mts($year, 'trn_mts.year');
-        $data['chart'] = $this->m_mts->get_training_chart($year);
+        $data['chart_mts_atmp'] = $this->m_mts->get_mts_atmp_chart($year);
+        $data['chart_mts_status'] = $this->m_mts->get_mts_status_chart($year);
         $data['year'] = $year;
         $data['content'] = "training/MTS";
         $this->load->view('templates/header_footer', $data);

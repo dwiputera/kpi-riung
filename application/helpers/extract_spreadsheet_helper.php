@@ -1,44 +1,43 @@
-<?php if (! defined('BASEPATH')) exit('No direct script access allowed');
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-function extract_spreadsheet($file_path, $with_sheet_names = false)
+function extract_spreadsheet($file_path, $with_sheet_names = false, $start_sheet_index = 0)
 {
+    ini_set('memory_limit', '2048M'); // naikkan sesuai kebutuhan
     $reader = IOFactory::createReaderForFile($file_path);
-    $reader->setReadDataOnly(false); // Biar bisa cek formula
-    $spreadsheet = $reader->load($file_path);
+    $reader->setReadDataOnly(true); // hemat memori
 
+    $spreadsheet = $reader->load($file_path);
     $sheets = $spreadsheet->getSheetNames();
     $extracted_sheet = [];
 
-    foreach ($sheets as $i_sheet => $sheet_name) {
+    for ($i_sheet = $start_sheet_index; $i_sheet < count($sheets); $i_sheet++) {
         $sheet = $spreadsheet->getSheet($i_sheet);
         $rows = [];
 
         foreach ($sheet->getRowIterator() as $row) {
             $rowData = [];
             $cellIterator = $row->getCellIterator();
-            $cellIterator->setIterateOnlyExistingCells(false);
+            $cellIterator->setIterateOnlyExistingCells(true); // HEMAT MEMORI!
 
             foreach ($cellIterator as $cell) {
-                if ($cell->isFormula()) {
-                    $rowData[] = $cell->getOldCalculatedValue(); // Nilai cached
-                } else {
-                    $rowData[] = $cell->getValue();
-                }
+                $rowData[] = $cell->isFormula()
+                    ? $cell->getOldCalculatedValue()
+                    : $cell->getValue();
             }
+
             $rows[] = $rowData;
         }
 
-        if ($with_sheet_names === false) {
-            $extracted_sheet[$i_sheet] = $rows;
-        } else {
-            $extracted_sheet[$i_sheet] = [
-                'name' => $sheet_name,
-                'rows' => $rows
-            ];
-        }
+        $extracted_sheet[$i_sheet] = $with_sheet_names
+            ? ['name' => $sheets[$i_sheet], 'rows' => $rows]
+            : $rows;
     }
+
+    $spreadsheet->disconnectWorksheets();
+    unset($spreadsheet);
+    gc_collect_cycles(); // Optional: bersihkan memory lebih agresif
 
     return $extracted_sheet;
 }

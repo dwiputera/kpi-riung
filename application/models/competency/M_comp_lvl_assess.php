@@ -102,19 +102,19 @@ class M_comp_lvl_assess extends CI_Model
                 (
                     SELECT COALESCE(JSON_ARRAYAGG(
                         JSON_OBJECT(
-                            'tahun', cpa.tahun,
-                            'score', cpa.score
+                            'tahun', eis.tahun,
+                            'score', eis.score
                         )
                     ), JSON_ARRAY())
-                    FROM emp_ipa_score cpa
-                    WHERE cpa.NRP = e.NRP
+                    FROM emp_ipa_score eis
+                    WHERE eis.NRP = e.NRP
                 ) AS pstn_scores,
 
                 -- Average of positional scores
                 (
-                    SELECT ROUND(AVG(cpa.score), 2)
-                    FROM emp_ipa_score cpa
-                    WHERE cpa.NRP = e.NRP
+                    SELECT ROUND(AVG(eis.score), 2)
+                    FROM emp_ipa_score eis
+                    WHERE eis.NRP = e.NRP
                 ) AS avg_ipa_score
 
             FROM rml_sso_la.users e

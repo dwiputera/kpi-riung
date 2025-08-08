@@ -106,16 +106,16 @@ class M_comp_lvl_assess extends CI_Model
                             'score', cpa.score
                         )
                     ), JSON_ARRAY())
-                    FROM comp_pstn_assess cpa
+                    FROM emp_ipa_score cpa
                     WHERE cpa.NRP = e.NRP
                 ) AS pstn_scores,
 
                 -- Average of positional scores
                 (
                     SELECT ROUND(AVG(cpa.score), 2)
-                    FROM comp_pstn_assess cpa
+                    FROM emp_ipa_score cpa
                     WHERE cpa.NRP = e.NRP
-                ) AS avg_pstn_score
+                ) AS avg_ipa_score
 
             FROM rml_sso_la.users e
             LEFT JOIN comp_lvl_assess cla ON cla.NRP = e.NRP
@@ -137,7 +137,7 @@ class M_comp_lvl_assess extends CI_Model
             $row['score'] = !empty($row['score']) ? json_decode($row['score'], true) : [];
             $row['pstn_scores'] = !empty($row['pstn_scores']) ? json_decode($row['pstn_scores'], true) : [];
             $row['avg_score'] = $row['avg_score'] !== null ? floatval($row['avg_score']) : null;
-            $row['avg_pstn_score'] = $row['avg_pstn_score'] !== null ? floatval($row['avg_pstn_score']) : null;
+            $row['avg_ipa_score'] = $row['avg_ipa_score'] !== null ? floatval($row['avg_ipa_score']) : null;
             return $row;
         } else {
             $rows = $query->result_array();
@@ -145,7 +145,7 @@ class M_comp_lvl_assess extends CI_Model
                 $row['score'] = !empty($row['score']) ? json_decode($row['score'], true) : [];
                 $row['pstn_scores'] = !empty($row['pstn_scores']) ? json_decode($row['pstn_scores'], true) : [];
                 $row['avg_score'] = $row['avg_score'] !== null ? floatval($row['avg_score']) : null;
-                $row['avg_pstn_score'] = $row['avg_pstn_score'] !== null ? floatval($row['avg_pstn_score']) : null;
+                $row['avg_ipa_score'] = $row['avg_ipa_score'] !== null ? floatval($row['avg_ipa_score']) : null;
             }
             return $rows;
         }

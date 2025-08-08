@@ -57,7 +57,7 @@
                 <div class="card-body">
                     <form action="<?= base_url() ?>HAV/mapping/submit/<?= $NRP_hash ?>" method="POST" id="form">
                         <input type="hidden" name="type" value="performance">
-                        <input type="hidden" name="id_hash" value="<?= $comp_pstn_assess ? md5($comp_pstn_assess['id']) : '' ?>">
+                        <input type="hidden" name="id_hash" value="<?= $emp_ipa_score ? md5($emp_ipa_score['id']) : '' ?>">
                         <input type="hidden" name="tahun" value="<?= $this->input->post('tahun') ?>">
                         <table id="datatable" class="table table-bordered table-striped">
                             <thead>
@@ -69,7 +69,7 @@
                             <tbody>
                                 <tr>
                                     <td><?= $this->input->post('tahun') ?></td>
-                                    <td><input type="text" name="score" value="<?= $comp_pstn_assess['score'] ?? null ?>"></td>
+                                    <td><input type="text" name="score" value="<?= $emp_ipa_score['score'] ?? null ?>"></td>
                                 </tr>
                             </tbody>
                         </table>

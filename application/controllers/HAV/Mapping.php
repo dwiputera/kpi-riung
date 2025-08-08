@@ -28,7 +28,7 @@ class Mapping extends MY_Controller
                 $data['form_type'] = "edit_performance";
                 $data['NRP_hash'] = $NRP_hash;
                 $data['tahun'] = $this->input->post('tahun');
-                $data['comp_pstn_assess'] = $this->db->get_where('comp_pstn_assess', ['md5(NRP)' => $NRP_hash, 'tahun' => $this->input->post('tahun')])->row_array();
+                $data['emp_ipa_score'] = $this->db->get_where('emp_ipa_score', ['md5(NRP)' => $NRP_hash, 'tahun' => $this->input->post('tahun')])->row_array();
             }
         } else {
             $data['form_type'] = "edit_potential";
@@ -76,7 +76,7 @@ class Mapping extends MY_Controller
             if ($this->input->post('proceed') == "N") {
                 redirect('HAV/mapping/edit/' . $NRP_hash);
             } elseif ($this->input->post('proceed') == "D") {
-                $this->db->where('md5(id)', $this->input->post('id_hash'))->delete('comp_pstn_assess');
+                $this->db->where('md5(id)', $this->input->post('id_hash'))->delete('emp_ipa_score');
                 redirect('HAV/mapping/edit/' . $NRP_hash);
             } else {
                 $employee = $this->db->get_where('rml_sso_la.users', ['md5(NRP)' => $NRP_hash])->row_array();
@@ -86,9 +86,9 @@ class Mapping extends MY_Controller
                     'NRP' => $employee['NRP'],
                 ];
                 if ($this->input->post('id_hash')) {
-                    $success = $this->db->where('md5(id)', $this->input->post('id_hash'))->update('comp_pstn_assess', $data);
+                    $success = $this->db->where('md5(id)', $this->input->post('id_hash'))->update('emp_ipa_score', $data);
                 } else {
-                    $success = $this->db->insert('comp_pstn_assess', $data);
+                    $success = $this->db->insert('emp_ipa_score', $data);
                 }
                 $this->session->set_flashdata('swal', [
                     'type' => $success ? 'success' : 'error',
@@ -226,7 +226,7 @@ class Mapping extends MY_Controller
         echo '<pre>', var_dump("INSERT:");
         // echo '<pre>', var_dump($data_inserts);
         if ($data_assess_lvl_score) echo $this->db->insert_batch('comp_lvl_assess_score', $data_assess_lvl_score);
-        if ($data_assess_pstn) echo $this->db->insert_batch('comp_pstn_assess', $data_assess_pstn);
+        if ($data_assess_pstn) echo $this->db->insert_batch('emp_ipa_score', $data_assess_pstn);
         echo '<pre>', var_dump("UPDATE:");
         // echo '<pre>', var_dump($data_updates);
         // if ($data_updates) echo $this->db->update_batch('comp_lvl_score', $data_updates, 'id');

@@ -78,7 +78,7 @@
                                 <td>Calculating...</td>
                                 <td><?= $e['NRP'] ?></td>
                                 <td><?= $e['FullName'] ?></td>
-                                <td><?= $e['avg_pstn_score'] ?></td>
+                                <td><?= $e['avg_ipa_score'] ?></td>
                                 <td><?= $e['assess_score'] ?></td>
                             </tr>
                         <?php endforeach; ?>

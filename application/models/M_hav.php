@@ -2,7 +2,7 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class M_mts extends CI_Model
+class M_hav extends CI_Model
 {
     public function __construct()
     {
@@ -23,8 +23,12 @@ class M_mts extends CI_Model
         if (empty($employees)) return [];
 
         // Hitung batas minimum & maksimum
-        $potentials = array_column($employees, 'potential');
-        $performances = array_column($employees, 'performance');
+        $filtered = array_filter($employees, function ($e) {
+            return isset($e['assess_score'], $e['avg_ipa_score']) && is_numeric($e['assess_score']) && is_numeric($e['avg_ipa_score']);
+        });
+
+        $potentials = array_column($filtered, 'assess_score');
+        $performances = array_column($filtered, 'avg_ipa_score');
 
         $xMin = floor(min($potentials) - 5);
         $xMax = ceil(max($potentials) + 5);
@@ -36,8 +40,13 @@ class M_mts extends CI_Model
 
         // Tentukan status untuk tiap karyawan
         foreach ($employees as &$emp) {
-            $x = floatval($emp['potential']);
-            $y = floatval($emp['performance']);
+            if (!isset($emp['assess_score'], $emp['avg_ipa_score']) || !is_numeric($emp['assess_score']) || !is_numeric($emp['avg_ipa_score'])) {
+                $emp['status'] = null; // atau "(Unknown)"
+                continue;
+            }
+
+            $x = floatval($emp['assess_score']);
+            $y = floatval($emp['avg_ipa_score']);
             $emp['status'] = '(Unknown)';
 
             for ($i = 0; $i < 4; $i++) {

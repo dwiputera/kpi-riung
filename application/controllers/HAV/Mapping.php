@@ -116,12 +116,14 @@ class Mapping extends MY_Controller
 
     public function import($sheet = 0)
     {
+        ini_set('memory_limit', '3G');
+
         $this->load->model('competency/m_comp_level', 'm_c_l'); // Adjust model name
         $comp_lvl = $this->m_c_l->get_comp_level();
 
         $this->load->helper('conversion');
         $this->load->helper('extract_spreadsheet');
-        $sheets = extract_spreadsheet('./uploads/imports_admin/hav_map_import.xlsx', $sheet);
+        $sheets = extract_spreadsheet('./uploads/imports_admin/hav_map_import.xlsx', true);
         $sheets = array_filter($sheets, fn($sheet_i, $i_sheet) => $i_sheet >= 5, ARRAY_FILTER_USE_BOTH);
         $data_assess_lvl_score = [];
         $data_assess_pstn = [];
@@ -191,11 +193,11 @@ class Mapping extends MY_Controller
                 if ($tahun) {
                     $data_assessment = array(
                         "NRP" => $NRP,
-                        "method" => $row_i[$jenis_assessment_index],
+                        "method_id" => $row_i[$jenis_assessment_index],
                         "tahun" => $tahun,
                         "vendor" => $row_i[$vendor_assessment_index],
                         "recommendation" => $row_i[$rekomendasi_index],
-                        "score" => $row_i[$jobfit_index],
+                        "score" => round($row_i[$jobfit_index], 2),
                     );
 
                     $this->db->insert('comp_lvl_assess', $data_assessment);
@@ -217,7 +219,7 @@ class Mapping extends MY_Controller
                         $data_assess_pstn[] = array(
                             "NRP" => $NRP,
                             "tahun" => substr($npi_i, 9, 4),
-                            "score" => $row_i[$i_npi],
+                            "score" => round($row_i[$i_npi], 2),
                         );
                     }
                 }

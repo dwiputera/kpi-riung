@@ -14,7 +14,8 @@ function setupFilterableDatatable($table) {
     const storageKey = `excelFilters_${pagePath}_${tableId}_${tableIndex}`;
     const isServerSide = $table.data('server') === true || $table.data('server') === 'true';
     const $thead = $table.find('thead');
-    const $headerRow = $thead.find('tr').first();
+    // const $headerRow = $thead.find('tr').first();
+    const $headerRow = $thead.find('tr').last();
     const $filterRow = $('<tr>');
 
     // Tambahkan baris filter button

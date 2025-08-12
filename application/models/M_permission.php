@@ -24,6 +24,7 @@ class M_permission extends CI_Model
 
         // 2. Get the menu ID for the given URL
         $menu = $this->db->get_where('menus', ['url' => $menu_url])->row_array();
+        if (!$menu) $menu = $this->db->get_where('menus', ['url' => $this->uri->segment(1)])->row_array();
         if (!$menu) return false;
 
         $this->db->from('role_menu_access');

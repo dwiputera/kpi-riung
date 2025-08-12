@@ -12,11 +12,14 @@ function extract_spreadsheet($file_path, $with_sheet_names = false, $start_sheet
     $sheets = $spreadsheet->getSheetNames();
     $extracted_sheet = [];
 
+    $maxRows = 5000;
+    $rowIndex = 0;
     for ($i_sheet = $start_sheet_index; $i_sheet < count($sheets); $i_sheet++) {
         $sheet = $spreadsheet->getSheet($i_sheet);
         $rows = [];
 
         foreach ($sheet->getRowIterator() as $row) {
+            if ($rowIndex >= $maxRows) break;
             $rowData = [];
             $cellIterator = $row->getCellIterator();
             $cellIterator->setIterateOnlyExistingCells(true); // HEMAT MEMORI!
@@ -28,6 +31,7 @@ function extract_spreadsheet($file_path, $with_sheet_names = false, $start_sheet
             }
 
             $rows[] = $rowData;
+            $rowIndex++;
         }
 
         $extracted_sheet[$i_sheet] = $with_sheet_names

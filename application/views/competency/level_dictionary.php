@@ -16,17 +16,18 @@
         <div class="card card-primary card-tabs">
             <div class="card-header p-0 pt-1">
                 <ul class="nav nav-tabs rotate-tabs text-center" id="custom-tabs-tab" role="tablist">
-                    <li class="nav-item">
+                    <li class="nav-item" style="
+                        width: 60px;           /* atur lebar kolom tab */
+                        height: 200px;         /* atur tinggi tab */
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
                         <span><strong class="rotate-text" style="
-                            height: 200px;
-                            width: 60px;
-                            /* Ubah dari auto ke nilai tetap */
-                            padding: 5px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            text-align: center;
-                            border-radius: 0;
+                            display: inline-block;       /* penting biar transform bisa jalan */
+                            transform: rotate(-90deg);   /* -90 = counterclockwise */
+                            transform-origin: center;    /* pivotnya di tengah */
+                            white-space: nowrap;         /* jangan pecah baris */
                             color: black;
                         ">PERILAKU</strong></span>
                     </li>
@@ -42,17 +43,18 @@
                             </a>
                         </li>
                     <?php endforeach; ?>
-                    <li class="nav-item">
+                    <li class="nav-item" style="
+                        width: 60px;           /* atur lebar kolom tab */
+                        height: 200px;         /* atur tinggi tab */
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
                         <span><strong class="rotate-text" style="
-                            height: 200px;
-                            width: 60px;
-                            /* Ubah dari auto ke nilai tetap */
-                            padding: 5px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            text-align: center;
-                            border-radius: 0;
+                            display: inline-block;       /* penting biar transform bisa jalan */
+                            transform: rotate(-90deg);   /* -90 = counterclockwise */
+                            transform-origin: center;    /* pivotnya di tengah */
+                            white-space: nowrap;         /* jangan pecah baris */
                             color: black;
                         ">PERAN</strong></span>
                     </li>

@@ -10,41 +10,118 @@ class M_position extends CI_Model
 
     public function get_area_lvl_pstn($value = null, $by = 'md5(oalp.id)', $many = true)
     {
-        $where = '';
-        if ($value) $where = "WHERE $by = '$value'";
-        $query = $this->db->query("
-            SELECT *, 
-                oalp.id id, oalp.name name, oalp.parent oalp_parent,
-                oal.id oal_id, oal.name oal_name,
-                oa.id oa_id, oa.name oa_name,
-                oalp_mp.name mp_name
-            FROM org_area_lvl_pstn oalp
-            LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
-            LEFT JOIN org_area oa ON oa.id = oalp.area_id
-            LEFT JOIN (SELECT id, name FROM org_area_lvl_pstn) oalp_mp ON oalp_mp.id = oalp.matrix_point
-            $where
-        ");
-        if (($value && !$many) || $many == false) {
-            $query = $query->row_array();
-        } else {
-            $query = $query->result_array();
+        $this->db
+            ->select('
+                oalp.*, 
+                oalp.id AS id, 
+                oalp.name AS name, 
+                oalp.parent AS oalp_parent,
+                oal.id AS oal_id, 
+                oal.name AS oal_name,
+                oa.id AS oa_id, 
+                oa.name AS oa_name,
+                oalp_mp.name AS mp_name
+            ')
+            ->from('org_area_lvl_pstn oalp')
+            ->join('org_area_lvl oal', 'oal.id = oalp.area_lvl_id', 'left')
+            ->join('org_area oa', 'oa.id = oalp.area_id', 'left')
+            ->join('org_area_lvl_pstn oalp_mp', 'oalp_mp.id = oalp.matrix_point', 'left');
+
+        // Kalau $value array → WHERE IN
+        if (is_array($value) && !empty($value)) {
+            $this->db->where_in($by, $value);
         }
-        return $query;
+        // Kalau $value single → WHERE normal
+        elseif ($value !== null) {
+            $this->db->where($by, $value);
+        }
+
+        $query = $this->db->get();
+
+        return ($many) ? $query->result_array() : $query->row_array();
     }
 
-    public function get_area_lvl_pstn_user($hash_id = null)
+    public function get_area_lvl_pstn_user($value = null, $by = 'md5(oalp.id)', $many = true)
     {
-        $query = $this->db->query("
-            SELECT org_area_lvl_pstn_user.*, users.FullName FROM org_area_lvl_pstn_user
-            LEFT JOIN rml_sso_la.users ON users.NRP = org_area_lvl_pstn_user.NRP
-        ")->result_array();
-        if ($hash_id) {
-            if ($query) {
-                $query = array_values($query);
-                if (isset($query[0])) $query = $query[0];
-            }
+        $sql = "
+        WITH RECURSIVE matrix_point_resolve AS (
+            SELECT 
+                oalp.id AS start_id,
+                oalp.id AS current_id,
+                oalp.parent,
+                oalp.matrix_point,
+                oalp.name,
+                oalp.type,
+                CASE
+                    WHEN oalp.type = 'matrix_point' THEN oalp.name
+                    ELSE NULL
+                END AS matrix_point_name,
+                0 AS depth
+            FROM org_area_lvl_pstn oalp
+
+            UNION ALL
+
+            SELECT 
+                m.start_id,
+                o.id,
+                o.parent,
+                o.matrix_point,
+                o.name,
+                o.type,
+                CASE
+                    WHEN o.type = 'matrix_point' THEN o.name
+                    ELSE m.matrix_point_name
+                END AS matrix_point_name,
+                m.depth + 1
+            FROM matrix_point_resolve m
+            JOIN org_area_lvl_pstn o 
+                ON o.id = m.parent OR o.id = m.matrix_point
+            WHERE m.matrix_point_name IS NULL
+        ),
+
+        final_matrix_point AS (
+            SELECT 
+                start_id AS node_id,
+                matrix_point_name
+            FROM (
+                SELECT 
+                    start_id, 
+                    matrix_point_name,
+                    ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
+                FROM matrix_point_resolve
+                WHERE matrix_point_name IS NOT NULL
+            ) ranked
+            WHERE rn = 1
+        )
+        SELECT 
+            u.FullName,
+            oalpu.*, 
+            oalp.*, oalp.id AS id, oalp.parent AS oalp_parent, oalp.name AS oalp_name,
+            oal.id AS oal_id, oal.name AS oal_name,
+            oa.id AS oa_id, oa.name AS oa_name,
+            fmp.matrix_point_name AS mp_name
+        FROM rml_sso_la.users u
+        LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
+        LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
+        LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
+        LEFT JOIN org_area oa ON oa.id = oalp.area_id
+        LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
+    ";
+
+        // Filtering
+        $binds = [];
+        if (is_array($value) && !empty($value)) {
+            $placeholders = implode(',', array_fill(0, count($value), '?'));
+            $sql .= " WHERE {$by} IN ($placeholders)";
+            $binds = $value;
+        } elseif ($value !== null) {
+            $sql .= " WHERE {$by} = ?";
+            $binds[] = $value;
         }
-        return $query;
+
+        $query = $this->db->query($sql, $binds);
+
+        return ($many) ? $query->result_array() : $query->row_array();
     }
 
     public function get_users()

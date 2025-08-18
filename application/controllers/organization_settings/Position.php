@@ -22,7 +22,7 @@ class Position extends MY_Controller
             $pstn_active = $this->m_pstn->get_superiors($this->input->get('pstn_active'));
             $data['pstn_active_ids'] = array_column($pstn_active, 'id');
         }
-        $data['matrix_points'] = $this->m_pstn->get_area_lvl_pstn('matrix_point', 'type');
+        $data['matrix_points'] = $this->m_pstn->get_area_lvl_pstn('matrix_point', 'oalp.type');
         $data['area_lvl'] = $this->m_lvl->get_area_lvl();
         $data['content'] = "organization/position";
         $this->load->view('templates/header_footer', $data);

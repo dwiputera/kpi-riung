@@ -127,16 +127,8 @@
 
 <script>
     $(function() {
-        $('.tab-pane.active .datatable-filter-column').each(function() {
+        $('.datatable-filter-column').each(function() {
             setupFilterableDatatable($(this));
-        });
-
-        $('a[data-toggle="pill"]').on('shown.bs.tab', function(e) {
-            const targetPaneId = $(e.target).attr('href');
-            const $tables = $(targetPaneId).find('.datatable-filter-column');
-            $tables.each(function() {
-                setupFilterableDatatable($(this));
-            });
         });
 
         $('#modal-editCompetency, #modal-addCompetency').on('show.bs.modal', function(event) {

@@ -112,18 +112,18 @@
                         <?php $roles = $this->m_menu->get_menu($this->session->userdata('NRP')); ?>
                         <?php foreach ($roles as $role) : ?>
                             <?php if ($role['description'] && $role['name'] != 'general') : ?>
-                                <li class="nav-header"><?= $role['description'] ?></li>
+                                <li class="nav-header text-center"><strong><?= $role['description'] ?></strong></li>
                             <?php endif; ?>
                             <?php foreach ($role['menus'] as $menu) : ?>
                                 <?php if (!count($menu['children'])) : ?>
                                     <li class="nav-item">
-                                        <a href="<?= base_url() . $menu['url'] ?>" class="nav-link show-overlay-full <?= $this->uri->segment(1) == $menu['url'] || $this->uri->segment(1) . '/' . $this->uri->segment(2) == $menu['url'] ? 'active' : '' ?>">
+                                        <a href="<?= base_url() . $menu['url'] ?>" class="nav-link show-overlay-full pl-0 <?= $this->uri->segment(1) == $menu['url'] || $this->uri->segment(1) . '/' . $this->uri->segment(2) == $menu['url'] ? 'active' : '' ?>">
                                             <i class="nav-icon fas fa-<?= $menu['icon'] ?>"></i>
                                             <p><?= $menu['name'] ?></p>
                                         </a>
                                     </li>
                                 <?php else : ?><li class="nav-item <?= $this->uri->segment(1) == $menu['url'] ? 'menu-open' : '' ?>">
-                                        <a href="<?= base_url() . $menu['url'] ?>" class="nav-link <?= $this->uri->segment(1) == $menu['url'] ? 'active' : '' ?>">
+                                        <a href="<?= base_url() . $menu['url'] ?>" class="nav-link pl-0 <?= $this->uri->segment(1) == $menu['url'] ? 'active' : '' ?>">
                                             <i class="nav-icon fas fa-<?= $menu['icon'] ?>"></i>
                                             <p>
                                                 <?= $menu['name'] ?>

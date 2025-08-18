@@ -1,13 +1,3 @@
-/*
- * DataTables Excel-like Filters (Multi-table Safe)
- * Drop-in script — supports multiple tables per page, per-table filter state,
- * and localStorage persistence by page+table.
- *
- * Requirements: jQuery, DataTables (+ Buttons extension if you keep the buttons)
- *
- * Public API: setupFilterableDatatable($("table#yourId"))
- */
-
 (function ($) {
     // Global registries (scoped to window for persistence across inits)
     window.tableFilters = window.tableFilters || {}; // { [tableId]: { [colIdx]: filterObj } }
@@ -252,7 +242,7 @@
           ${values.map(v => {
             const checked = !existingFilter.selected.length || existingFilter.selected.includes(v) ? 'checked' : '';
             const safe = (v || '(Blank)');
-            return `<label><input type="checkbox" class="chk-item" value="${String(v).replace(/"/g, '&quot;')}" ${checked}> ${safe}</label>`;
+            return `<label><input type="checkbox" class="chk-item" value="${String(v).replace(/"/g, '&quot;')}" ${checked}> ${safe}</label><br>`;
         }).join('')}
         </div><hr>
         <small class="text-muted">Custom Filter:</small>
@@ -314,7 +304,8 @@
         $popup.find('.filter-search').on('keyup', function () {
             const q = $(this).val().toLowerCase();
             $popup.find('.chk-item').each(function () {
-                $(this).parent().toggle($(this).val().toLowerCase().includes(q));
+                // $(this).parent().toggle($(this).val().toLowerCase().includes(q));
+                $(this).closest('label').next('br').addBack().toggle($(this).val().toLowerCase().includes(q));
             });
         });
 

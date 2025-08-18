@@ -35,7 +35,7 @@
     <link rel="stylesheet" href="<?= base_url() ?>assets/AdminLTE-3.2.0/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
 </head>
 
-<body class="hold-transition sidebar-mini layout-navbar-fixed">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
     <style>
         .card.card-maximized {
             overflow-y: auto !important;

@@ -45,6 +45,10 @@
         body.maximized-card {
             overflow: auto !important;
         }
+
+        table th {
+            white-space: nowrap;
+        }
     </style>
 
     <!-- jQuery -->

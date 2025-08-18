@@ -122,7 +122,8 @@
                                             <p><?= $menu['name'] ?></p>
                                         </a>
                                     </li>
-                                <?php else : ?><li class="nav-item <?= $this->uri->segment(1) == $menu['url'] ? 'menu-open' : '' ?>">
+                                <?php else : ?>
+                                    <li class="nav-item <?= $this->uri->segment(1) == $menu['url'] ? 'menu-open' : '' ?>">
                                         <a href="<?= base_url() . $menu['url'] ?>" class="nav-link pl-0 <?= $this->uri->segment(1) == $menu['url'] ? 'active' : '' ?>">
                                             <i class="nav-icon fas fa-<?= $menu['icon'] ?>"></i>
                                             <p>

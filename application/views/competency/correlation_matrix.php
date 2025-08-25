@@ -8,13 +8,13 @@
             </div>
             <div class="card-body">
                 <!-- <div class="table-responsive"> -->
-                <table class="table table-striped datatable-filter-column mb-0">
+                <table class="table table-striped table-bordered datatable-filter-column mb-0">
                     <thead>
                         <tr>
                             <th>No.</th>
                             <th>Departements</th>
                             <?php foreach ($correlation_matrix as $cm) : ?>
-                                <th><?= $cm['name'] ?></th>
+                                <th class="text-wrap"><?= $cm['name'] ?></th>
                             <?php endforeach; ?>
                         </tr>
                     </thead>

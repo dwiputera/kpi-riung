@@ -56,6 +56,51 @@ class M_comp_position extends CI_Model
         return false;
     }
 
+    public function get_correlation_matrix()
+    {
+        // Ambil data
+        $matrix_points = $this->db->get_where('org_area_lvl_pstn', ['type' => 'matrix_point'])->result_array();
+        $comp_pstns     = $this->db->get('comp_position')->result_array();
+
+        // Map: area_lvl_pstn_id -> [nama posisi...]
+        $comp_pstns_mp = [];
+        foreach ($matrix_points as $mp) {
+            $list = array_filter($comp_pstns, fn($cp) => $cp['area_lvl_pstn_id'] == $mp['id']);
+            $comp_pstns_mp[$mp['id']] = array_values(array_column($list, 'name')); // pastikan reindex
+        }
+        unset($mp, $list);
+
+        // Bangun correlation matrix (persen overlap terhadap baris)
+        $correlation_matrix = $matrix_points; // copy nilai dasar
+        foreach ($correlation_matrix as &$cm) {
+            $rowId = $cm['id'];
+            $rowList = $comp_pstns_mp[$rowId] ?? [];
+            $rowCount = count($rowList);
+
+            // siapkan array correlations
+            $cm['correlations'] = [];
+
+            foreach ($matrix_points as $mp) { // tidak perlu by-ref
+                $colId = $mp['id'];
+                $colList = $comp_pstns_mp[$colId] ?? [];
+
+                // hitung irisan
+                $common = count(array_intersect($rowList, $colList));
+
+                // hitung persen relatif thd baris (hindari /0)
+                $pct = 0;
+                if ($rowCount > 0 && $common > 0) {
+                    $pct = $common / $rowCount * 100;
+                }
+
+                // simpan 2 desimal, titik sebagai decimal separator
+                $cm['correlations'][$colId] = number_format($pct, 2, '.', '');
+            }
+        }
+
+        return $correlation_matrix;
+    }
+
     // public function get_pstn_matrix_point()
     // {
     //     // $query = $this->db->get_where('org_area_lvl', ['pstn_matrix_point' => 1])->row_array();

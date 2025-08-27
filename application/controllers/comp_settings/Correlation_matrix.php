@@ -13,7 +13,8 @@ class Correlation_matrix extends MY_Controller
 
     public function index()
     {
-        $data['correlation_matrix'] = $this->m_c_pstn->get_correlation_matrix();
+        $data['order'] = [50, 48, 49, 21, 23, 45, 54, 56, 57, 9, 51, 46, 47, 8];
+        $data['correlation_matrix'] = array_column($this->m_c_pstn->get_correlation_matrix(), null, 'id');
         $data['content'] = "competency/correlation_matrix";
         $this->load->view('templates/header_footer', $data);
     }

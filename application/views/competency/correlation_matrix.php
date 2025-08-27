@@ -13,19 +13,19 @@
                         <tr>
                             <th>No.</th>
                             <th>Departements</th>
-                            <?php foreach ($correlation_matrix as $cm) : ?>
-                                <th class="text-wrap"><?= $cm['name'] ?></th>
+                            <?php foreach ($order as $ord) : ?>
+                                <th class="text-wrap"><?= $correlation_matrix[$ord]['name'] ?></th>
                             <?php endforeach; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php $i = 1; ?>
-                        <?php foreach ($correlation_matrix as $cm) : ?>
+                        <?php foreach ($order as $ord) : ?>
                             <tr>
                                 <td><?= $i++ ?></td>
-                                <td><?= $cm['name'] ?></td>
-                                <?php foreach ($correlation_matrix as $cm2) : ?>
-                                    <?php $percentage = $cm['correlations'][$cm2['id']]; ?>
+                                <td><?= $correlation_matrix[$ord]['name'] ?></td>
+                                <?php foreach ($order as $ord2) : ?>
+                                    <?php $percentage = $correlation_matrix[$ord]['correlations'][$ord2]; ?>
                                     <td class="bg-<?= $percentage > 60 ? 'primary' : ($percentage > 40 ? 'success' : ($percentage > 20 ? 'warning' : 'danger')) ?>"><?= $percentage ?>%</td>
                                 <?php endforeach; ?>
                             </tr>

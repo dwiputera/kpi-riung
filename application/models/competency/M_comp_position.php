@@ -87,6 +87,18 @@ class M_comp_position extends CI_Model
                 // hitung irisan
                 $common = count(array_intersect($rowList, $colList));
 
+                // if ($cm['name'] == 'HUMAN CAPITAL' && $mp['name'] == 'LEARNING ACADEMY') {
+                //     echo '<pre>', print_r($rowList, true);
+                //     echo '<pre>', print_r($colList, true);
+                //     $cmn = array_intersect($rowList, $colList);
+                //     echo '<pre>', print_r($cmn, true);
+                //     $diff1 = array_diff($rowList, $cmn);
+                //     echo '<pre>', print_r($diff1, true);
+                //     $diff2 = array_diff($colList, $cmn);
+                //     echo '<pre>', print_r($diff2, true);
+                //     die;
+                // }
+
                 // hitung persen relatif thd baris (hindari /0)
                 $pct = 0;
                 if ($rowCount > 0 && $common > 0) {

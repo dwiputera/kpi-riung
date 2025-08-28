@@ -110,7 +110,7 @@
                                             <?php if (!empty($pstn['users'])): ?>
                                                 <?php foreach ($pstn['users'] as $user): ?>
                                                     <li>
-                                                        <a href="<?= base_url() ?>organization_settings/position/position_user/delete/<?= md5($user['id']) ?>" onclick="return confirm('are you sure?')">
+                                                        <a href="<?= base_url() ?>organization_settings/position/position_user/delete/<?= md5($user['oalpu_id']) ?>" onclick="return confirm('are you sure?')">
                                                             <span class="btn btn-danger btn-xs">Unassign</span>
                                                         </a>
                                                         <?= htmlspecialchars($user['NRP']) ?> | <?= htmlspecialchars($user['FullName']) ?>

@@ -95,8 +95,8 @@ class M_position extends CI_Model
         )
         SELECT 
             u.FullName,
-            oalpu.*, 
-            oalp.*, oalp.id AS id, oalp.parent AS oalp_parent, oalp.name AS oalp_name,
+            oalpu.*, oalpu.id AS oalpu_id,
+            oalp.*, oalp.id AS oalp_id, oalp.parent AS oalp_parent, oalp.name AS oalp_name,
             oal.id AS oal_id, oal.name AS oal_name,
             oa.id AS oa_id, oa.name AS oa_name,
             fmp.matrix_point_name AS mp_name

@@ -71,7 +71,7 @@
                                             <?php foreach ($comp_levels as $i_cl => $cl_i) : ?>
                                                 <th>
                                                     <?php if ($admin) : ?>
-                                                        <a href=" <?= base_url() ?>comp_settings/level_matrix/comp_lvl/delete/<?= md5($cl_i['id']) ?>?level_active=<?= md5($oal_i['oal_id']) ?>" class="btn btn-danger btn-xs" onclick="return confirm('are you sure?')">delete</a>
+                                                        <a href=" <?= base_url() ?>comp_settings/level_matrix/comp_lvl/delete/<?= md5($cl_i['id']) ?>?level_active=<?= md5($oal_i['oal_id']) ?>" class="btn btn-danger btn-xs" onclick="if (confirm('Are you sure?')) { showOverlayFull(); return true; } return false;">delete</a>
                                                         <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#modal-editCompetency" data-hash_comp_lvl_id="<?= md5($cl_i['id']) ?>" data-hash_area_lvl_id="<?= md5($oal_i['oal_id']) ?>" data-comp_lvl_name="<?= $cl_i['name'] ?>">
                                                             Edit
                                                         </button>

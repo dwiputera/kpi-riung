@@ -61,7 +61,7 @@
                                             <?php foreach ($comp_positions as $cp): ?>
                                                 <th>
                                                     <?php if ($admin): ?>
-                                                        <a href="<?= base_url("comp_settings/position_matrix/comp_pstn/delete/" . md5($cp['id']) . "?matrix_position_active=$mpIdMd5") ?>" class="btn btn-danger btn-xs" onclick="return confirm('Are you sure?')">delete</a>
+                                                        <a href="<?= base_url("comp_settings/position_matrix/comp_pstn/delete/" . md5($cp['id']) . "?matrix_position_active=$mpIdMd5") ?>" class="btn btn-danger btn-xs" onclick="if (confirm('Are you sure?')) { showOverlayFull(); return true; } return false;">delete</a>
                                                         <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#modal-editCompetency"
                                                             data-hash_comp_pstn_id="<?= md5($cp['id']) ?>"
                                                             data-comp_pstn_name="<?= $cp['name'] ?>"
@@ -222,6 +222,48 @@
 
             // Cari input `target_json` di dalam form yang sedang disubmit
             $(this).find('[name="target_json"]').val(JSON.stringify(data));
+        });
+    });
+</script>
+
+<script>
+    $(function() {
+        // Paste Excel (TSV) ke grid, mulai dari sel yang diklik
+        $(document).on('paste', 'td[contenteditable="true"]', function(e) {
+            e.preventDefault();
+
+            const dt = $(this).closest('table').DataTable();
+            const start = dt.cell(this).index(); // {row, column}
+            if (!start) return;
+
+            const clip = (e.originalEvent || e).clipboardData;
+            const text = clip ? clip.getData('text') : '';
+            if (!text) return;
+
+            // Parse baris & kolom dari Excel (TAB / newline)
+            const rows = text
+                .replace(/\r/g, '')
+                .split('\n')
+                .filter(r => r.length > 0)
+                .map(r => r.split('\t'));
+
+            const maxRow = dt.rows().count();
+            const maxCol = dt.columns().count();
+
+            rows.forEach((cells, rOff) => {
+                const r = start.row + rOff;
+                if (r >= maxRow) return; // kalau mau auto-tambah baris, lihat catatan di bawah
+
+                cells.forEach((val, cOff) => {
+                    const c = start.column + cOff;
+                    if (c >= maxCol) return;
+
+                    // Tulis teks polos (hindari HTML) ke DOM & sinkron ke DataTables
+                    const node = dt.cell(r, c).node();
+                    node.textContent = val; // update tampilan & aman dari HTML
+                    dt.cell(r, c).data(val); // sync ke cache DataTables (sorting/filter)
+                });
+            });
         });
     });
 </script>

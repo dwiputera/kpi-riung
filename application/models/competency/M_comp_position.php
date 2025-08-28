@@ -49,10 +49,12 @@ class M_comp_position extends CI_Model
     public function delete($hash_id)
     {
         $this->db->where('md5(comp_pstn_id)', $hash_id);
+        $success_pstn_dict = $this->db->delete('comp_pstn_dict');
+        $this->db->where('md5(comp_pstn_id)', $hash_id);
         $success_pstn_target = $this->db->delete('comp_pstn_target');
         $this->db->where('md5(id)', $hash_id);
         $success_pstn = $this->db->delete('comp_position');
-        if ($success_pstn_target && $success_pstn) return true;
+        if ($success_pstn_target && $success_pstn && $success_pstn_dict) return true;
         return false;
     }
 

@@ -396,4 +396,42 @@
     // Expose to window
     window.setupFilterableDatatable = setupFilterableDatatable;
 
+    // Paste Excel (TSV) ke grid, mulai dari sel yang diklik
+    $(document).on('paste', 'td[contenteditable="true"]', function (e) {
+        e.preventDefault();
+
+        const dt = $(this).closest('table').DataTable();
+        const start = dt.cell(this).index(); // {row, column}
+        if (!start) return;
+
+        const clip = (e.originalEvent || e).clipboardData;
+        const text = clip ? clip.getData('text') : '';
+        if (!text) return;
+
+        // Parse baris & kolom dari Excel (TAB / newline)
+        const rows = text
+            .replace(/\r/g, '')
+            .split('\n')
+            .filter(r => r.length > 0)
+            .map(r => r.split('\t'));
+
+        const maxRow = dt.rows().count();
+        const maxCol = dt.columns().count();
+
+        rows.forEach((cells, rOff) => {
+            const r = start.row + rOff;
+            if (r >= maxRow) return; // kalau mau auto-tambah baris, lihat catatan di bawah
+
+            cells.forEach((val, cOff) => {
+                const c = start.column + cOff;
+                if (c >= maxCol) return;
+
+                // Tulis teks polos (hindari HTML) ke DOM & sinkron ke DataTables
+                const node = dt.cell(r, c).node();
+                node.textContent = val; // update tampilan & aman dari HTML
+                dt.cell(r, c).data(val); // sync ke cache DataTables (sorting/filter)
+            });
+        });
+    });
+
 })(jQuery);

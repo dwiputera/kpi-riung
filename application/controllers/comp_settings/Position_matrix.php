@@ -39,7 +39,7 @@ class Position_matrix extends MY_Controller
             $mtxp = array_values($superior_matrix_point)[0];
             $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5($position['id']));
             $matrix_points[] = $mtxp;
-            $this->m_pstn->get_subordinates(md5($position['id']));
+            // $this->m_pstn->get_subordinates(md5($position['id']));
         } else {
             // $matrix_points_subordinates = array_filter($subordinates, fn($sub_i, $i_sub) => $sub_i['area_lvl_id'] == $pstn_matrix_point['id'], ARRAY_FILTER_USE_BOTH);
             $matrix_points_subordinates = array_filter($subordinates, fn($sub_i, $i_sub) => $sub_i['type'] == "matrix_point", ARRAY_FILTER_USE_BOTH);

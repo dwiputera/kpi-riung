@@ -13,7 +13,7 @@ class Position_matrix extends MY_Controller
         $this->load->model('organization/m_user', 'm_user');
     }
 
-    public function index()
+    public function index($position_id = 1)
     {
         // $NRP = '10007005'; //afify
         // $NRP = '10106006'; //pa eko
@@ -28,9 +28,9 @@ class Position_matrix extends MY_Controller
         // $NRP = '10112726'; //PM REBH
         // $NRP = '10106010'; //REBH dept head ENGINEERING
         // $NRP = '10121386'; //REBH sect head ENGINEERING-survey&moco
-        $position = $this->m_pstn->get_area_lvl_pstn(md5(1), 'md5(oalp.id)', false);
+        $position = $this->m_pstn->get_area_lvl_pstn(md5($position_id), 'md5(oalp.id)', false);
         // $pstn_matrix_point = $this->m_c_pstn->get_pstn_matrix_point();
-        $subordinates = $this->m_pstn->get_subordinates(md5(1));
+        $subordinates = $this->m_pstn->get_subordinates(md5($position_id));
         $superiors = array_reverse($this->m_pstn->get_superiors(md5($position['id'])));
         // $superior_matrix_point = array_filter($superiors, fn($sup_i, $i_sup) => $sup_i['area_lvl_id'] == $pstn_matrix_point['id'] && $sup_i['id'] != $position['id'], ARRAY_FILTER_USE_BOTH);
         $superior_matrix_point = array_filter($superiors, fn($sup_i, $i_sup) => $sup_i['type'] == "matrix_point" && $sup_i['id'] != $position['id'], ARRAY_FILTER_USE_BOTH);
@@ -231,16 +231,33 @@ class Position_matrix extends MY_Controller
 
     public function import_comp_dictionary()
     {
-        $this->db->query('TRUNCATE TABLE comp_pstn_dict');
+        // $this->db->query('TRUNCATE TABLE comp_pstn_dict');
         $this->load->helper('conversion');
         $this->load->helper('extract_spreadsheet');
         $sheets = extract_spreadsheet('./uploads/imports_admin/position_dictionary_competency.xlsx');
-        $sheet = $sheets[0];
+        $sheet = $sheets[1];
         $comp_pstn_fetch = $this->db->get('comp_position')->result_array();
+        $matrix_point_short = [
+            'ACT' => 49,
+            'CPSD' => 50,
+            'ENG' => 45,
+            'FIN' => 48,
+            'GS' => 47,
+            'HC' => 21,
+            'HSE & RM' => 54,
+            'ICT' => 53,
+            'IA' => 57,
+            'LA' => 23,
+            'OPR' => 9,
+            'PLANT' => 8,
+            'SCM' => 46,
+            'RIM' => 56
+        ];
         $comp_pstn_dict_insert = [];
-        for ($i = 0; $i < 740; $i += 5) {
+        for ($i = 0; $i < count($sheet); $i += 5) {
             $comp_pstn_name = $sheet[$i][2];
-            $comp_pstns = array_filter($comp_pstn_fetch, fn($cpf_i, $i_cpf) => strcasecmp($cpf_i['name'], $comp_pstn_name) === 0, ARRAY_FILTER_USE_BOTH);
+            $oalp_id = $matrix_point_short[$sheet[$i][0]];
+            $comp_pstns = array_filter($comp_pstn_fetch, fn($cpf_i, $i_cpf) => strcasecmp($cpf_i['name'], $comp_pstn_name) == 0 && $cpf_i['area_lvl_pstn_id'] == $oalp_id, ARRAY_FILTER_USE_BOTH);
             if ($comp_pstns) {
                 foreach ($comp_pstns as $i_cp => $cp_i) {
                     $data = [
@@ -255,14 +272,23 @@ class Position_matrix extends MY_Controller
                     $comp_pstn_dict_insert[] = $data;
                 }
             } else {
-                $continue = ['Customer Satisfaction', 'Salesmanship', 'Business Requirement Analysis', 'Culture Management'];
+                $continue = ['Used Equipment Management', 'Innovation Management', 'Quality Excellent Activity'];
                 if (in_array($comp_pstn_name, $continue)) {
                     continue;
                 }
+                echo '<pre>', print_r($i, true);
+                echo '<pre>', print_r($oalp_id, true);
+                echo '<pre>', print_r($sheet[$i], true);
+                echo '<pre>', print_r($sheet[$i][2], true);
+                die;
+                // $continue = ['Customer Satisfaction', 'Salesmanship', 'Business Requirement Analysis', 'Culture Management'];
+                // if (in_array($comp_pstn_name, $continue)) {
+                //     continue;
+                // }
             }
         }
 
-        if ($comp_pstn_dict_insert) echo $this->db->insert_batch('comp_pstn_dict', $comp_pstn_dict_insert);
+        // if ($comp_pstn_dict_insert) echo $this->db->insert_batch('comp_pstn_dict', $comp_pstn_dict_insert);
         $query = $this->db->query("
             SELECT * FROM comp_position cp
             LEFT JOIN comp_pstn_dict cpd ON cpd.comp_pstn_id = cp.id
@@ -270,5 +296,22 @@ class Position_matrix extends MY_Controller
         ")->result_array();
         echo '<pre>', var_dump($query);
         die;
+    }
+
+    public function dictionary($hash_pstn_id)
+    {
+        $data['position'] = $this->m_pstn->get_area_lvl_pstn($hash_pstn_id, 'md5(oalp.id)', false);
+        $data['dictionaries'] = $this->m_c_pstn->get_comp_position($hash_pstn_id, 'md5(area_lvl_pstn_id)');
+        $data['admin'] = true;
+        $data['content'] = "competency/position_dictionary";
+        $this->load->view('templates/header_footer', $data);
+    }
+
+    public function dictionary_edit($hash_pstn_id)
+    {
+        $data['position'] = $this->m_pstn->get_area_lvl_pstn($hash_pstn_id, 'md5(oalp.id)', false);
+        $data['dictionaries'] = $this->m_c_pstn->get_comp_position($hash_pstn_id, 'md5(area_lvl_pstn_id)');
+        $data['content'] = "competency/position_dictionary_edit";
+        $this->load->view('templates/header_footer', $data);
     }
 }

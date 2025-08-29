@@ -44,7 +44,7 @@
                         $comp_positions = $competencies[$mpId];
                         ?>
                         <div class="tab-pane fade <?= $isActive ? 'show active' : '' ?>" id="tab-<?= $mpIdMd5 ?>" role="tabpanel" aria-labelledby="tab-<?= $mpIdMd5 ?>-tab">
-                            <a href="<?= base_url($admin ? 'comp_settings' : 'competency' . "/position_matrix/dictionary/$mpIdMd5") ?>" class="btn btn-primary w-100">Dictionary of Competency: <strong><?= $mp['name'] ?></strong></a><br><br>
+                            <a href="<?= base_url(($admin ? 'comp_settings' : 'competency') . "/position_matrix/dictionary/$mpIdMd5") ?>" class="btn btn-primary w-100">Dictionary of Competency: <strong><?= $mp['name'] ?></strong></a><br><br>
 
                             <?php if ($admin): ?>
                                 <button type="button" class="btn btn-primary w-100" data-toggle="modal" data-target="#modal-addCompetency" data-hash_area_lvl_pstn_id="<?= $mpIdMd5 ?>">Add Competency</button><br><br>

@@ -306,12 +306,4 @@ class Position_matrix extends MY_Controller
         $data['content'] = "competency/position_dictionary";
         $this->load->view('templates/header_footer', $data);
     }
-
-    public function dictionary_edit($hash_pstn_id)
-    {
-        $data['position'] = $this->m_pstn->get_area_lvl_pstn($hash_pstn_id, 'md5(oalp.id)', false);
-        $data['dictionaries'] = $this->m_c_pstn->get_comp_position($hash_pstn_id, 'md5(area_lvl_pstn_id)');
-        $data['content'] = "competency/position_dictionary_edit";
-        $this->load->view('templates/header_footer', $data);
-    }
 }

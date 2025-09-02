@@ -22,7 +22,7 @@ function extract_spreadsheet($file_path, $with_sheet_names = false, $start_sheet
             if ($rowIndex >= $maxRows) break;
             $rowData = [];
             $cellIterator = $row->getCellIterator();
-            $cellIterator->setIterateOnlyExistingCells(true); // HEMAT MEMORI!
+            // $cellIterator->setIterateOnlyExistingCells(true); // HEMAT MEMORI!
 
             foreach ($cellIterator as $cell) {
                 $rowData[] = $cell->isFormula()

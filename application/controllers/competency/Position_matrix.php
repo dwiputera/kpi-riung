@@ -33,7 +33,7 @@ class Position_matrix extends MY_Controller
             }));
 
             if (!empty($superior_matrix_point)) {
-                $mtxp = $superior_matrix_point[0];
+                $mtxp = end($superior_matrix_point);
 
                 if ($mtxp['area_id'] == $user['oa_id']) {
                     $mtxp['subordinates'] = $this->m_pstn->get_subordinates($position_id_md5, 'with_without_matrix');

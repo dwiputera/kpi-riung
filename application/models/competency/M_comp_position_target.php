@@ -42,7 +42,7 @@ class M_comp_position_target extends CI_Model
             });
 
             foreach ($cp_subm_i as $i_pstn_subm => $pstn_subm_i) {
-                if (!is_numeric($pstn_subm_i)) continue;
+                if (!is_numeric($pstn_subm_i) && $pstn_subm_i != "") continue;
                 $target_found = null;
 
                 foreach ($target_cp as $cpt_i) {
@@ -55,7 +55,7 @@ class M_comp_position_target extends CI_Model
                 if ($target_found) {
                     $data_updates[] = [
                         'id'     => $target_found['id'],
-                        'target' => $pstn_subm_i,
+                        'target' => $pstn_subm_i ?? 0,
                     ];
                 } else {
                     // Cari ID asli dari hash
@@ -73,7 +73,7 @@ class M_comp_position_target extends CI_Model
                         $data_inserts[] = [
                             'comp_pstn_id'     => $comp_pstn['id'],
                             'area_lvl_pstn_id' => $position['id'],
-                            'target'           => $pstn_subm_i,
+                            'target'           => $pstn_subm_i ?? 0,
                         ];
                     }
                 }

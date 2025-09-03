@@ -10,6 +10,12 @@
 </div>
 <!-- /.content-header -->
 
+<?php if ($admin) : ?>
+    <div class="m-3 mt-0">
+        <a href="<?= base_url() ?>comp_settings/position_matrix/dictionary_edit/" class="btn btn-primary w-100">Edit Dictionary of Competency</a>
+    </div>
+<?php endif; ?>
+
 <!-- Main content -->
 <section class="content">
     <div class="container-fluid">

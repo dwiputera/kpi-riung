@@ -276,43 +276,67 @@ class M_position extends CI_Model
             'without_matrix' => 4,
         ][$mode] ?? 1;
 
+        // filter hasil akhir
+        $extraWhere = '';
+        if ($mode === 'without_matrix') {
+            $extraWhere = "WHERE oalp.matrix_point IS NULL AND has_matrix_point = 0";
+        } elseif ($mode === 'with_without_matrix') {
+            // tampilkan semua KECUALI node 'matrix_point' selain root
+            $extraWhere = "WHERE NOT (COALESCE(oalp.type,'') = 'matrix_point' AND oalp.id <> oalp.root_id)";
+        }
+
         $query = "
             WITH RECURSIVE positions AS (
-                SELECT *, 
-                       CASE WHEN matrix_point IS NULL THEN 0 ELSE 1 END AS has_matrix_point,
-                       0 as level
-                FROM org_area_lvl_pstn
-                WHERE md5(id) = '$hash_pstn_id'
-    
-                UNION ALL
-    
-                SELECT o.*, 
-                       CASE 
-                           WHEN o.matrix_point IS NOT NULL OR p.has_matrix_point = 1 THEN 1
-                           ELSE 0
-                       END AS has_matrix_point,
-                       p.level + 1
+                -- Anchor: root
+                SELECT
+                    o.*,
+                    CASE WHEN o.matrix_point IS NULL THEN 0 ELSE 1 END AS has_matrix_point,
+                    0 AS level,
+                    0 AS path_has_other_matrix,   -- tidak dipakai lagi untuk 'type', tetap dibiarkan 0
+                    o.id AS root_id               -- <== bawa id root
                 FROM org_area_lvl_pstn o
+                WHERE md5(o.id) = '$hash_pstn_id'
+
+                UNION ALL
+
+                -- Recursion
+                SELECT
+                    c.*,
+                    CASE WHEN c.matrix_point IS NOT NULL OR p.has_matrix_point = 1 THEN 1 ELSE 0 END AS has_matrix_point,
+                    p.level + 1,
+                    p.path_has_other_matrix,
+                    p.root_id
+                FROM org_area_lvl_pstn c
                 INNER JOIN positions p ON (
-                    ($modeValue = 1 AND o.parent = p.id)
-                 OR ($modeValue = 2 AND (o.parent = p.id OR o.matrix_point = p.id))
-                 OR ($modeValue = 3 AND (o.parent = p.id OR o.matrix_point = p.id) AND (o.matrix_point IS NULL OR md5(o.matrix_point) = '$hash_pstn_id'))
-                 OR ($modeValue = 4 AND o.parent = p.id AND p.has_matrix_point = 0)
+                    -- Mode 1: parent only
+                    ($modeValue = 1 AND c.parent = p.id)
+                OR -- Mode 2: parent or matrix
+                    ($modeValue = 2 AND (c.parent = p.id OR c.matrix_point = p.id))
+                OR -- Mode 3: parent or matrix (matrix hanya NULL atau langsung ke root)
+                    ($modeValue = 3 AND (c.parent = p.id OR c.matrix_point = p.id)
+                        AND (c.matrix_point IS NULL OR md5(c.matrix_point) = '$hash_pstn_id')
+                        -- BLOK node 'matrix_point' selain root (stop traversal di bawahnya)
+                        AND NOT (COALESCE(c.type,'') = 'matrix_point' AND c.id <> p.root_id)
+                    )
+                OR -- Mode 4: parent only & tidak lewat jalur yg sudah kena matrix
+                    ($modeValue = 4 AND c.parent = p.id AND p.has_matrix_point = 0)
                 )
             )
-            SELECT 
-                oalp.*, 
-                oalp.id AS id, 
-                oalp.name AS name, 
+            SELECT
+                oalp.*,
+                oalp.id   AS id,
+                oalp.name AS name,
                 oalp.matrix_point,
-                oal.id AS oal_id, 
-                oal.name AS oal_name,
+                oal.id    AS oal_id,
+                oal.name  AS oal_name,
                 oal.equals,
-                oa.name AS oa_name
+                oa.name   AS oa_name,
+                oalp.root_id
             FROM positions oalp
             LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
             LEFT JOIN org_area oa ON oa.id = oalp.area_id
-            " . ($mode === 'without_matrix' ? "WHERE oalp.matrix_point IS NULL AND has_matrix_point = 0" : "");
+            $extraWhere
+        ";
 
         return $this->db->query($query)->result_array();
     }

@@ -15,6 +15,22 @@ class Position_matrix extends MY_Controller
 
     public function index($position_id = 1)
     {
+        $matrix_point_short = [
+            'ACT' => 49,
+            'CPSD' => 50,
+            'ENG' => 45,
+            'FIN' => 48,
+            'GS' => 47,
+            'HC' => 21,
+            'HSE & RM' => 54,
+            'ICT' => 53,
+            'IA' => 57,
+            'LA' => 23,
+            'OPR' => 9,
+            'PLANT' => 8,
+            'SCM' => 46,
+            'RIM' => 56
+        ];
         // $NRP = '10007005'; //afify
         // $NRP = '10106006'; //pa eko
         // $NRP = '10122289'; //ceu shanty
@@ -305,5 +321,29 @@ class Position_matrix extends MY_Controller
         $data['admin'] = true;
         $data['content'] = "competency/position_dictionary";
         $this->load->view('templates/header_footer', $data);
+    }
+
+    public function dictionary_edit()
+    {
+        $data['position'] = $this->m_pstn->get_area_lvl_pstn();
+        $data['dictionaries'] = $this->m_c_pstn->get_comp_position();
+        $data['content'] = "competency/position_dictionary_edit";
+        $this->load->view('templates/header_footer', $data);
+    }
+
+    public function dictionary_submit()
+    {
+        $this->session->set_flashdata('swal', [
+            'type' => 'error',
+            'message' => "Dictionary Update Failed"
+        ]);
+        $success = $this->m_c_pstn->dictionary_submit();
+        if ($success) {
+            $this->session->set_flashdata('swal', [
+                'type' => 'success',
+                'message' => "Dictionary Updated Successfully"
+            ]);
+        }
+        redirect('comp_settings/position_matrix/dictionary_edit');
     }
 }

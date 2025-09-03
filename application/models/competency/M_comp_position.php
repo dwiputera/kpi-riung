@@ -14,8 +14,9 @@ class M_comp_position extends CI_Model
         if ($value) $where = "WHERE $by = '$value'";
         $this->db->query("SET SESSION sql_mode = REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', '')");
         $query = $this->db->query("
-            SELECT *, cp.id id FROM comp_position cp
+            SELECT cp.*, cpd.*, cp.id id, cpd.id cpd_id, oalp.name oalp_name FROM comp_position cp
             LEFT JOIN comp_pstn_dict cpd ON cpd.comp_pstn_id = cp.id
+            LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = cp.area_lvl_pstn_id
             $where
             GROUP BY cp.id
         ");
@@ -121,4 +122,23 @@ class M_comp_position extends CI_Model
     //     $query = $this->db->get_where('org_area_lvl_pstn', ['matrix_point' => 1])->result_array();
     //     return $query;
     // }
+
+    function dictionary_submit()
+    {
+        $dictionaries = json_decode($this->input->post('target_json'));
+        $dictionaries = array_map(function ($v) {
+            return (array) $v;           // ubah tiap inner stdClass jadi array
+        }, (array) $dictionaries);                // ubah top-level stdClass jadi array
+
+        foreach ($dictionaries as $i_dict => $dict_i) {
+            $exist = $this->db->get_where('comp_pstn_dict', array('comp_pstn_id' => $i_dict))->result_array();
+            if ($exist) {
+                $success = $this->db->where('comp_pstn_id', $i_dict)->update('comp_pstn_dict', $dict_i);
+            } else {
+                $dict_i['comp_pstn_id'] = $i_dict;
+                $success = $this->db->insert('comp_pstn_dict', $dict_i);
+            }
+        }
+        return true;
+    }
 }

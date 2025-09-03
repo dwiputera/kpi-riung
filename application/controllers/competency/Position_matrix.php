@@ -18,6 +18,20 @@ class Position_matrix extends MY_Controller
         $NRP = $this->session->userdata('NRP');
         $user = $this->m_user->get_area_lvl_pstn_user($NRP, 'NRP', false);
         $matrix_points = [];
+        
+        // $NRP = '10007005'; //afify
+        // $NRP = '10106006'; //pa eko
+        // $NRP = '10122289'; //ceu shanty
+        // $NRP = '10109069'; //pa levy
+        // $NRP = '10111396'; //pa fajri
+        // $NRP = '10124038'; //uda defri
+        // $NRP = '10125097'; //engineering
+        // $NRP = '10106007'; //prod_ops HO
+        // $NRP = '10109088'; //prod_ops area_1
+        // $NRP = '10112853'; //prod_ops area_2
+        // $NRP = '10112726'; //PM REBH
+        // $NRP = '10106010'; //REBH dept head ENGINEERING
+        // $NRP = '10121386'; //REBH sect head ENGINEERING-survey&moco
 
         if ($user) {
             $user_oalp_id_md5 = md5($user['area_lvl_pstn_id']);

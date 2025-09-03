@@ -31,19 +31,6 @@ class Position_matrix extends MY_Controller
             'SCM' => 46,
             'RIM' => 56
         ];
-        // $NRP = '10007005'; //afify
-        // $NRP = '10106006'; //pa eko
-        // $NRP = '10122289'; //ceu shanty
-        // $NRP = '10109069'; //pa levy
-        // $NRP = '10111396'; //pa fajri
-        // $NRP = '10124038'; //uda defri
-        // $NRP = '10125097'; //engineering
-        // $NRP = '10106007'; //prod_ops HO
-        // $NRP = '10109088'; //prod_ops area_1
-        // $NRP = '10112853'; //prod_ops area_2
-        // $NRP = '10112726'; //PM REBH
-        // $NRP = '10106010'; //REBH dept head ENGINEERING
-        // $NRP = '10121386'; //REBH sect head ENGINEERING-survey&moco
         $position = $this->m_pstn->get_area_lvl_pstn(md5($position_id), 'md5(oalp.id)', false);
         // $pstn_matrix_point = $this->m_c_pstn->get_pstn_matrix_point();
         $subordinates = $this->m_pstn->get_subordinates(md5($position_id));

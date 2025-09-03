@@ -116,13 +116,6 @@ class M_comp_position extends CI_Model
         return $correlation_matrix;
     }
 
-    // public function get_pstn_matrix_point()
-    // {
-    //     // $query = $this->db->get_where('org_area_lvl', ['pstn_matrix_point' => 1])->row_array();
-    //     $query = $this->db->get_where('org_area_lvl_pstn', ['matrix_point' => 1])->result_array();
-    //     return $query;
-    // }
-
     function dictionary_submit()
     {
         $dictionaries = json_decode($this->input->post('target_json'));

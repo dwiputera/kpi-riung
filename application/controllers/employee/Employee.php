@@ -56,7 +56,7 @@ class Employee extends MY_Controller
             if ($position['type'] == "matrix_point") {
                 $matrix_point = $position;
             } elseif (!empty($superior_matrix_point)) {
-                $mtxp = $superior_matrix_point[0];
+                $mtxp = end($superior_matrix_point);
 
                 if ($mtxp['area_id'] == $position['oa_id']) {
                     $matrix_point = $mtxp;

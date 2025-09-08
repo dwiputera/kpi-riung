@@ -23,7 +23,7 @@ class Import_behavior_questionnaire_2024 extends CI_Controller
                 'level' => $cf_i[4],
                 'jabatan' => $cf_i[5],
                 'layer' => $cf_i[6],
-                'tahun' => $cf_i[7],
+                'year' => $cf_i[7],
                 'manager' => $cf_i[8],
                 'NRP_manager' => $cf_i[9],
                 'division' => $cf_i[10],

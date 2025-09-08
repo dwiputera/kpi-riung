@@ -74,7 +74,7 @@ class M_talent extends CI_Model
 
     function get_score_culture_fit($culture_fit)
     {
-        return null;
+        return $culture_fit;
     }
 
     function get_score_age($age)

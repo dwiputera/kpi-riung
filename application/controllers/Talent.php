@@ -52,8 +52,8 @@ class Talent extends MY_Controller
                     null score_status_kesehatan,
                     null rekomendasi_assessment,
                     null status_kesehatan,
-                    null culture_fit
-                    FROM rml_sso_la.users u
+                    cf.nilai_behaviour culture_fit
+                FROM rml_sso_la.users u
                 LEFT JOIN (
                     SELECT * FROM (
                         SELECT 
@@ -84,6 +84,18 @@ class Talent extends MY_Controller
                     WHERE tahun BETWEEN YEAR(CURDATE()) - 3 AND YEAR(CURDATE()) - 1
                     GROUP BY NRP
                 ) p ON p.NRP = u.NRP
+                LEFT JOIN (
+                    SELECT NRP, nilai_behaviour, tahun
+                    FROM (
+                        SELECT 
+                            cf.NRP, cf.nilai_behaviour, cf.tahun,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY cf.NRP ORDER BY cf.tahun DESC, cf.id DESC
+                            ) AS rn
+                        FROM culture_fit cf
+                    ) x
+                    WHERE x.rn = 1
+                ) cf ON cf.NRP = u.NRP
                 LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
                 LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
                 LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id

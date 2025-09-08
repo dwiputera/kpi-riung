@@ -3,6 +3,11 @@
     window.tableFilters = window.tableFilters || {}; // { [tableId]: { [colIdx]: filterObj } }
     window.tableFilterFns = window.tableFilterFns || {}; // { [tableId]: fn }
 
+    // === NEW: Undo/Redo stacks per table ===
+    window.tableUndoStacks = window.tableUndoStacks || {}; // { [tableId]: [ {changes:[{r,c,oldVal,newVal}], type:'paste'} ] }
+    window.tableRedoStacks = window.tableRedoStacks || {}; // same shape
+    window.lastActiveTableId = window.lastActiveTableId || null;
+
     function getStorageKey($table) {
         const tableId = $table.attr('id') || 'datatable';
         const pagePath = window.location.pathname.replace(/\W+/g, '_');
@@ -10,13 +15,69 @@
         return `excelFilters_${pagePath}_${tableId}_${tableIndex}`;
     }
 
+    function getTableId($table) {
+        const id = $table.attr('id') || `datatable_${Math.random().toString(36).slice(2, 8)}`;
+        if (!$table.attr('id')) $table.attr('id', id);
+        return id;
+    }
+
+    function ensureStacks(tableId) {
+        if (!window.tableUndoStacks[tableId]) window.tableUndoStacks[tableId] = [];
+        if (!window.tableRedoStacks[tableId]) window.tableRedoStacks[tableId] = [];
+    }
+
+    function pushUndo(tableId, action) {
+        ensureStacks(tableId);
+        window.tableUndoStacks[tableId].push(action);
+        // setiap aksi baru mengosongkan redo
+        window.tableRedoStacks[tableId] = [];
+    }
+
+    function applyChanges(dt, changes, useOld) {
+        // useOld=true untuk undo, false untuk redo
+        changes.forEach(ch => {
+            const val = useOld ? ch.oldVal : ch.newVal;
+            const node = dt.cell(ch.r, ch.c).node();
+            if (node) node.textContent = val;
+            dt.cell(ch.r, ch.c).data(val);
+        });
+        // jangan redraw penuh supaya cepat; draw(false) menjaga paging
+        dt.draw(false);
+    }
+
+    function doUndo($table) {
+        if (!$table || !$table.length) return;
+        const tableId = getTableId($table);
+        ensureStacks(tableId);
+        const stack = window.tableUndoStacks[tableId];
+        if (!stack.length) return;
+
+        const dt = $table.DataTable();
+        const action = stack.pop(); // ambil aksi terakhir
+        applyChanges(dt, action.changes, /*useOld*/ true);
+        window.tableRedoStacks[tableId].push(action);
+    }
+
+    function doRedo($table) {
+        if (!$table || !$table.length) return;
+        const tableId = getTableId($table);
+        ensureStacks(tableId);
+        const rstack = window.tableRedoStacks[tableId];
+        if (!rstack.length) return;
+
+        const dt = $table.DataTable();
+        const action = rstack.pop();
+        applyChanges(dt, action.changes, /*useOld*/ false);
+        window.tableUndoStacks[tableId].push(action);
+    }
+
     function setupFilterableDatatable($table) {
         if (!$table || !$table.length) return;
-        const tableId = $table.attr('id') || `datatable_${Math.random().toString(36).slice(2, 8)}`;
-        if (!$table.attr('id')) $table.attr('id', tableId);
+        const tableId = getTableId($table);
 
         // Ensure per-table store exists
         if (!window.tableFilters[tableId]) window.tableFilters[tableId] = {};
+        ensureStacks(tableId);
 
         // Destroy prior DataTable instance safely
         if ($.fn.DataTable.isDataTable($table)) {
@@ -97,6 +158,11 @@
 
         const dt = $table.DataTable(dtOptions);
         positionButtons(dt, $table);
+
+        // === NEW: track last active table for keyboard shortcuts ===
+        $table.on('focusin', 'td, th, input, select, textarea, [contenteditable="true"]', function () {
+            window.lastActiveTableId = tableId;
+        });
     }
 
     function initExcelFilters(api, storageKey, tableId, $table) {
@@ -304,7 +370,6 @@
         $popup.find('.filter-search').on('keyup', function () {
             const q = $(this).val().toLowerCase();
             $popup.find('.chk-item').each(function () {
-                // $(this).parent().toggle($(this).val().toLowerCase().includes(q));
                 $(this).closest('label').next('br').addBack().toggle($(this).val().toLowerCase().includes(q));
             });
         });
@@ -396,42 +461,83 @@
     // Expose to window
     window.setupFilterableDatatable = setupFilterableDatatable;
 
-    // Paste Excel (TSV) ke grid, mulai dari sel yang diklik
-    $(document).on('paste', 'td[contenteditable="true"]', function (e) {
-        e.preventDefault();
+    // === NEW: Paste Excel (TSV) ke grid + catat perubahan untuk UNDO/REDO ===
+    $(document).off('paste.excelToGrid')
+        .on('paste.excelToGrid', 'td[contenteditable="true"]', function (e) {
+            e.preventDefault();
 
-        const dt = $(this).closest('table').DataTable();
-        const start = dt.cell(this).index(); // {row, column}
-        if (!start) return;
+            const $table = $(this).closest('table');
+            const dt = $table.DataTable();
+            const start = dt.cell(this).index(); // {row, column}
+            if (!start) return;
 
-        const clip = (e.originalEvent || e).clipboardData;
-        const text = clip ? clip.getData('text') : '';
-        if (!text) return;
+            const clip = (e.originalEvent || e).clipboardData;
+            const text = clip ? clip.getData('text') : '';
+            if (!text) return;
 
-        // Parse baris & kolom dari Excel (TAB / newline)
-        const rows = text
-            .replace(/\r/g, '')
-            .split('\n')
-            .filter(r => r.length > 0)
-            .map(r => r.split('\t'));
+            // Parse baris & kolom dari Excel (TAB / newline)
+            const rows = text
+                .replace(/\r/g, '')
+                .split('\n')
+                .filter(r => r.length > 0)
+                .map(r => r.split('\t'));
 
-        const maxRow = dt.rows().count();
-        const maxCol = dt.columns().count();
+            const maxRow = dt.rows().count();
+            const maxCol = dt.columns().count();
 
-        rows.forEach((cells, rOff) => {
-            const r = start.row + rOff;
-            if (r >= maxRow) return; // kalau mau auto-tambah baris, lihat catatan di bawah
+            const changes = []; // kumpulkan perubahan {r,c,oldVal,newVal}
+            rows.forEach((cells, rOff) => {
+                const r = start.row + rOff;
+                if (r >= maxRow) return;
 
-            cells.forEach((val, cOff) => {
-                const c = start.column + cOff;
-                if (c >= maxCol) return;
+                cells.forEach((val, cOff) => {
+                    const c = start.column + cOff;
+                    if (c >= maxCol) return;
 
-                // Tulis teks polos (hindari HTML) ke DOM & sinkron ke DataTables
-                const node = dt.cell(r, c).node();
-                node.textContent = val; // update tampilan & aman dari HTML
-                dt.cell(r, c).data(val); // sync ke cache DataTables (sorting/filter)
+                    const oldVal = dt.cell(r, c).data();
+                    const newVal = val;
+
+                    // Skip kalau tidak berubah
+                    if ((oldVal ?? '') === (newVal ?? '')) return;
+
+                    const node = dt.cell(r, c).node();
+                    if (node) node.textContent = newVal; // aman dari HTML
+                    dt.cell(r, c).data(newVal);
+
+                    changes.push({ r, c, oldVal: String(oldVal ?? ''), newVal: String(newVal ?? '') });
+                });
             });
+
+            // Simpan ke undo stack kalau ada perubahan
+            if (changes.length) {
+                const tableId = getTableId($table);
+                pushUndo(tableId, { type: 'paste', changes });
+            }
         });
-    });
+
+    // === NEW: Keyboard shortcuts Undo/Redo ===
+    $(document).off('keydown.dtUndoRedo')
+        .on('keydown.dtUndoRedo', function (e) {
+            // Deteksi Ctrl/Meta untuk Windows/Mac
+            const isCtrl = e.ctrlKey || e.metaKey;
+            if (!isCtrl) return;
+
+            const key = e.key.toLowerCase();
+
+            // Cari table aktif dari fokus atau lastActiveTableId
+            let $table = $(e.target).closest('table');
+            if (!$table.length && window.lastActiveTableId) {
+                $table = $('#' + window.lastActiveTableId);
+            }
+            if (!$table.length || !$.fn.DataTable.isDataTable($table)) return;
+
+            if (key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                doUndo($table);
+            } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
+                e.preventDefault();
+                doRedo($table);
+            }
+        });
 
 })(jQuery);

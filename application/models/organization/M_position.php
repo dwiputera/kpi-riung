@@ -10,8 +10,57 @@ class M_position extends CI_Model
 
     public function get_area_lvl_pstn($value = null, $by = 'md5(oalp.id)', $many = true)
     {
-        $this->db
-            ->select('
+        $sql = "
+            WITH RECURSIVE matrix_point_resolve AS (
+                SELECT 
+                    oalp.id AS start_id,
+                    oalp.id AS current_id,
+                    oalp.parent,
+                    oalp.matrix_point,
+                    oalp.name,
+                    oalp.type,
+                    CASE
+                        WHEN oalp.type = 'matrix_point' THEN oalp.name
+                        ELSE NULL
+                    END AS matrix_point_name,
+                    0 AS depth
+                FROM org_area_lvl_pstn oalp
+
+                UNION ALL
+
+                SELECT 
+                    m.start_id,
+                    o.id,
+                    o.parent,
+                    o.matrix_point,
+                    o.name,
+                    o.type,
+                    CASE
+                        WHEN o.type = 'matrix_point' THEN o.name
+                        ELSE m.matrix_point_name
+                    END AS matrix_point_name,
+                    m.depth + 1
+                FROM matrix_point_resolve m
+                JOIN org_area_lvl_pstn o 
+                    ON o.id = m.parent OR o.id = m.matrix_point
+                WHERE m.matrix_point_name IS NULL
+            ),
+
+            final_matrix_point AS (
+                SELECT 
+                    start_id AS node_id,
+                    matrix_point_name
+                FROM (
+                    SELECT 
+                        start_id, 
+                        matrix_point_name,
+                        ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
+                    FROM matrix_point_resolve
+                    WHERE matrix_point_name IS NOT NULL
+                ) ranked
+                WHERE rn = 1
+            )
+            SELECT 
                 oalp.*, 
                 oalp.id AS id, 
                 oalp.name AS name, 
@@ -20,93 +69,98 @@ class M_position extends CI_Model
                 oal.name AS oal_name,
                 oa.id AS oa_id, 
                 oa.name AS oa_name,
-                oalp_mp.name AS mp_name
-            ')
-            ->from('org_area_lvl_pstn oalp')
-            ->join('org_area_lvl oal', 'oal.id = oalp.area_lvl_id', 'left')
-            ->join('org_area oa', 'oa.id = oalp.area_id', 'left')
-            ->join('org_area_lvl_pstn oalp_mp', 'oalp_mp.id = oalp.matrix_point', 'left');
+                fmp.matrix_point_name AS mp_name
+            FROM org_area_lvl_pstn oalp
+            LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
+            LEFT JOIN org_area oa ON oa.id = oalp.area_id
+            LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
+            AND oalp.parent IS NOT NULL
+        ";
 
-        // Kalau $value array → WHERE IN
+        // Tambahan filter
         if (is_array($value) && !empty($value)) {
-            $this->db->where_in($by, $value);
-        }
-        // Kalau $value single → WHERE normal
-        elseif ($value !== null) {
-            $this->db->where($by, $value);
+            // Buat list string aman
+            $escapedVals = array_map(function ($v) {
+                return "'" . $this->db->escape_str($v) . "'";
+            }, $value);
+
+            $sql .= " AND $by IN (" . implode(",", $escapedVals) . ")";
+        } elseif ($value !== null) {
+            $sql .= " AND $by = " . $this->db->escape($value);
         }
 
-        $query = $this->db->get();
+        $query = $this->db->query($sql);
 
-        return ($many) ? $query->result_array() : $query->row_array();
+        return $many ? $query->result_array() : $query->row_array();
     }
+
 
     public function get_area_lvl_pstn_user($value = null, $by = 'md5(oalp.id)', $many = true)
     {
         $sql = "
-        WITH RECURSIVE matrix_point_resolve AS (
-            SELECT 
-                oalp.id AS start_id,
-                oalp.id AS current_id,
-                oalp.parent,
-                oalp.matrix_point,
-                oalp.name,
-                oalp.type,
-                CASE
-                    WHEN oalp.type = 'matrix_point' THEN oalp.name
-                    ELSE NULL
-                END AS matrix_point_name,
-                0 AS depth
-            FROM org_area_lvl_pstn oalp
-
-            UNION ALL
-
-            SELECT 
-                m.start_id,
-                o.id,
-                o.parent,
-                o.matrix_point,
-                o.name,
-                o.type,
-                CASE
-                    WHEN o.type = 'matrix_point' THEN o.name
-                    ELSE m.matrix_point_name
-                END AS matrix_point_name,
-                m.depth + 1
-            FROM matrix_point_resolve m
-            JOIN org_area_lvl_pstn o 
-                ON o.id = m.parent OR o.id = m.matrix_point
-            WHERE m.matrix_point_name IS NULL
-        ),
-
-        final_matrix_point AS (
-            SELECT 
-                start_id AS node_id,
-                matrix_point_name
-            FROM (
+            WITH RECURSIVE matrix_point_resolve AS (
                 SELECT 
-                    start_id, 
-                    matrix_point_name,
-                    ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
-                FROM matrix_point_resolve
-                WHERE matrix_point_name IS NOT NULL
-            ) ranked
-            WHERE rn = 1
-        )
-        SELECT 
-            u.FullName,
-            oalpu.*, oalpu.id AS oalpu_id,
-            oalp.*, oalp.id AS oalp_id, oalp.parent AS oalp_parent, oalp.name AS oalp_name,
-            oal.id AS oal_id, oal.name AS oal_name,
-            oa.id AS oa_id, oa.name AS oa_name,
-            fmp.matrix_point_name AS mp_name
-        FROM rml_sso_la.users u
-        LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
-        LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
-        LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
-        LEFT JOIN org_area oa ON oa.id = oalp.area_id
-        LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
-    ";
+                    oalp.id AS start_id,
+                    oalp.id AS current_id,
+                    oalp.parent,
+                    oalp.matrix_point,
+                    oalp.name,
+                    oalp.type,
+                    CASE
+                        WHEN oalp.type = 'matrix_point' THEN oalp.name
+                        ELSE NULL
+                    END AS matrix_point_name,
+                    0 AS depth
+                FROM org_area_lvl_pstn oalp
+
+                UNION ALL
+
+                SELECT 
+                    m.start_id,
+                    o.id,
+                    o.parent,
+                    o.matrix_point,
+                    o.name,
+                    o.type,
+                    CASE
+                        WHEN o.type = 'matrix_point' THEN o.name
+                        ELSE m.matrix_point_name
+                    END AS matrix_point_name,
+                    m.depth + 1
+                FROM matrix_point_resolve m
+                JOIN org_area_lvl_pstn o 
+                    ON o.id = m.parent OR o.id = m.matrix_point
+                WHERE m.matrix_point_name IS NULL
+            ),
+
+            final_matrix_point AS (
+                SELECT 
+                    start_id AS node_id,
+                    matrix_point_name
+                FROM (
+                    SELECT 
+                        start_id, 
+                        matrix_point_name,
+                        ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
+                    FROM matrix_point_resolve
+                    WHERE matrix_point_name IS NOT NULL
+                ) ranked
+                WHERE rn = 1
+            )
+            SELECT 
+                u.FullName,
+                oalpu.*, oalpu.id AS oalpu_id,
+                oalp.*, oalp.id AS oalp_id, oalp.parent AS oalp_parent, oalp.name AS oalp_name,
+                oal.id AS oal_id, oal.name AS oal_name,
+                oa.id AS oa_id, oa.name AS oa_name,
+                fmp.matrix_point_name AS mp_name
+            FROM rml_sso_la.users u
+            LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
+            LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
+            LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
+            LEFT JOIN org_area oa ON oa.id = oalp.area_id
+            LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
+        ";
 
         // Filtering
         $binds = [];

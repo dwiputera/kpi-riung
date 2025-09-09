@@ -5,7 +5,7 @@
         <!-- Table Card -->
         <div class="card card-primary card-tabs">
             <div class="card-header">
-                <h3 class="card-title mt-2">TABEL PERTIMBANGAN PENILAIAN KANDIDAT</h3>
+                <h3 class="card-title mt-2">TABEL PERTIMBANGAN PENILAIAN KANDIDAT: <strong><?= $position['mp_name'] ?> - <?= $position['oal_name'] ?> - <?= $position['name'] ?></strong></h3>
             </div>
             <div class="card-body">
                 <table id="employeeTable" class="table table-bordered table-striped datatable-filter-column"
@@ -14,15 +14,9 @@
                         <tr>
                             <th colspan="8" class="text-center">Bobot</th>
                             <th colspan="1" class="text-center">100%</th>
-                            <th colspan="3" class="text-center">25%</th>
-                            <th colspan="3" class="text-center">15%</th>
-                            <th colspan="3" class="text-center">15%</th>
-                            <th colspan="3" class="text-center">10%</th>
-                            <th colspan="3" class="text-center">5%</th>
-                            <th colspan="3" class="text-center">5%</th>
-                            <th colspan="3" class="text-center">5%</th>
-                            <th colspan="3" class="text-center">10%</th>
-                            <th colspan="3" class="text-center">10%</th>
+                            <?php foreach ($percentage as $i_pcnt => $pcnt_i) : ?>
+                                <th colspan="3" class="text-center"><?= $pcnt_i ?>%</th>
+                            <?php endforeach; ?>
                         </tr>
                         <tr>
                             <th colspan="9"></th>
@@ -35,6 +29,7 @@
                             <th colspan="3">Status Kesehatan</th>
                             <th colspan="3">Kategori HAV Mapping</th>
                             <th colspan="3">Score Hasil Asesmen</th>
+                            <th colspan="3">Korelasi Kompetensi</th>
                         </tr>
                         <!-- BARIS INI HARUS FULL 36 <th> -->
                         <tr>
@@ -74,6 +69,9 @@
                             <th>Info</th>
                             <th>Nilai</th>
                             <th>NxB</th>
+                            <th>Info</th>
+                            <th>Nilai</th>
+                            <th>NxB</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -81,7 +79,7 @@
                         foreach ($employees as $e): ?>
                             <tr>
                                 <td>
-                                    <a href="<?= base_url('talent/profile/' . md5($level['id']) . '/' . md5($e['NRP'])) ?>" target="_blank"
+                                    <a href="<?= base_url('talent/profile/' . md5($position['id']) . '/' . md5($e['NRP'])) ?>" target="_blank"
                                         class="label label-primary"><i class="fa fa-eye"></i>
                                     </a>
                                 </td>
@@ -120,6 +118,9 @@
                                 <td><?= $e['assess_score'] ?></td>
                                 <td><?= $e['score_assess_score'] ?></td>
                                 <td><?= $e['score_nxb_assess_score'] ?></td>
+                                <td><?= $e['correlation_matrix'] ?></td>
+                                <td><?= $e['score_correlation_matrix'] ?></td>
+                                <td><?= $e['score_nxb_correlation_matrix'] ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

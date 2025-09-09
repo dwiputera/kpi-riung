@@ -49,10 +49,11 @@ class M_position extends CI_Model
             final_matrix_point AS (
                 SELECT 
                     start_id AS node_id,
+                    current_id AS mp_id,
                     matrix_point_name
                 FROM (
                     SELECT 
-                        start_id, 
+                        start_id, current_id,
                         matrix_point_name,
                         ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
                     FROM matrix_point_resolve
@@ -69,12 +70,12 @@ class M_position extends CI_Model
                 oal.name AS oal_name,
                 oa.id AS oa_id, 
                 oa.name AS oa_name,
-                fmp.matrix_point_name AS mp_name
+                fmp.matrix_point_name AS mp_name,
+                fmp.mp_id
             FROM org_area_lvl_pstn oalp
             LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
             LEFT JOIN org_area oa ON oa.id = oalp.area_id
             LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
-            AND oalp.parent IS NOT NULL
         ";
 
         // Tambahan filter
@@ -84,9 +85,9 @@ class M_position extends CI_Model
                 return "'" . $this->db->escape_str($v) . "'";
             }, $value);
 
-            $sql .= " AND $by IN (" . implode(",", $escapedVals) . ")";
+            $sql .= " WHERE $by IN (" . implode(",", $escapedVals) . ")";
         } elseif ($value !== null) {
-            $sql .= " AND $by = " . $this->db->escape($value);
+            $sql .= " WHERE $by = " . $this->db->escape($value);
         }
 
         $query = $this->db->query($sql);

@@ -94,7 +94,7 @@
                                 <td><?= $e['kompetensi_teknis'] ?></td>
                                 <td><?= $e['score_kompetensi_teknis'] ?></td>
                                 <td><?= $e['score_nxb_kompetensi_teknis'] ?></td>
-                                <td><?= $e['job_fit_score'] ?></td>
+                                <td><?= $e['job_fit_score'] ? $e['job_fit_score'] . '%' : '' ?></td>
                                 <td><?= $e['score_job_fit_score'] ?></td>
                                 <td><?= $e['score_nxb_job_fit_score'] ?></td>
                                 <td><?= $e['avg_ipa_score'] ?></td>

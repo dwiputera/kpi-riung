@@ -20,7 +20,7 @@
                 <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
                     <thead>
                         <tr>
-                            <th>Candidates</th>
+                            <th>Action</th>
                             <th>No</th>
                             <th>Position</th>
                             <th>Level</th>
@@ -33,7 +33,7 @@
                             <?php if (!$pstn['mp_id']) continue; ?>
                             <tr>
                                 <td>
-                                    <a href="<?= base_url() ?>talent/candidate_list/<?= md5($pstn['id']) ?>"><i class="fa fa-list"></i>view</a>
+                                    <a href="<?= base_url() ?>talent/candidate_list/<?= md5($pstn['id']) ?>" class="btn btn-xs btn-primary w-100"><i class="fa fa-list"></i>&nbsp;Candidate List</a>
                                 </td>
                                 <td><?= $i++ ?></td>
                                 <td><?= $pstn['name'] ?></td>

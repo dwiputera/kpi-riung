@@ -21,7 +21,7 @@ class Talent extends MY_Controller
     {
         $position = $this->m_p->get_area_lvl_pstn($pstn_hash, 'md5(oalp.id)', false);
         $data['position'] = $position;
-        $data['employees'] = $this->m_tal->get_candidate(md5($position['oal_id']), $position['mp_id']);
+        $data['employees'] = $this->m_tal->get_candidate($position);
         $data['percentage'] = $this->m_tal->get_percentage($position['oal_id']);
         $data['content'] = "talent/candidate_list";
         $this->load->view('templates/header_footer', $data);

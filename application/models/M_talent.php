@@ -9,13 +9,12 @@ class M_talent extends CI_Model
         $this->db->query("SET SESSION sql_mode = REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', '')");
     }
 
-    public function get_candidate($level_hash, $mp_id = null)
+    public function get_candidate($position)
     {
-        $level = $this->db->get_where('org_area_lvl', array('md5(id)' => $level_hash))->row_array();
-        if ($level) {
+        if ($position) {
             $this->load->model('competency/m_comp_position', 'm_c_pstn');
             $correlation_matrix = array_column($this->m_c_pstn->get_correlation_matrix(), null, 'id');
-            $candidate_level = $level['id'] + 1;
+            $candidate_level = $position['oal_id'] + 1;
             $candidate_level = $this->db->where('id', $candidate_level)->or_where('equals', $candidate_level)->get('org_area_lvl')->result_array();
             $candidate_level_ids = array_column($candidate_level, 'id'); // ambil semua value kolom 'id'
             $candidate_level_ids_string = implode(',', $candidate_level_ids);    // gabung jadi string
@@ -76,7 +75,7 @@ class M_talent extends CI_Model
                 )
                 SELECT 
                     u.NRP, u.FullName,
-                    a.assess_score, a.recommendation, FORMAT(a.job_fit_score, 2) job_fit_score,
+                    a.assess_score, a.recommendation,
                     FORMAT(p.avg_ipa_score, 2) avg_ipa_score, FORMAT(p.ipa_score, 2) ipa_score,
                     TIMESTAMPDIFF(YEAR, u.BirthDate, CURDATE()) age,
                     oal.name level_name, oal.id oal_id,
@@ -98,16 +97,14 @@ class M_talent extends CI_Model
                             cla.NRP,
                             MAX(cla.score) AS assess_score,
                             MAX(cla.recommendation) AS recommendation,
-                            SUM(IFNULL(clas.score, 0)) / 10 AS job_fit_score,
                             cla.tahun,
                             ROW_NUMBER() OVER (
                                 PARTITION BY cla.NRP 
                                 ORDER BY cla.tahun DESC, cla.method_id
                             ) AS rn,
                             method_id
-                        FROM comp_lvl_assess_score clas
-                        LEFT JOIN comp_lvl_assess cla ON cla.id = clas.comp_lvl_assess_id
-                        WHERE cla.method_id IN (1, 2)
+                        FROM comp_lvl_assess cla 
+                        WHERE cla.method_id IN (1)
                         #AND cla.tahun <= 2024
                         GROUP BY cla.NRP, cla.tahun, cla.method_id
                     ) AS ranked
@@ -144,11 +141,15 @@ class M_talent extends CI_Model
             ")->result_array();
 
             foreach ($employees as &$e) {
-                $e['correlation_matrix'] = $correlation_matrix[$e['mp_id']]['correlations'][$mp_id];
+                $e['correlation_matrix'] = $correlation_matrix[$e['mp_id']]['correlations'][$position['mp_id']];
             }
 
+            $this->load->model('competency/M_comp_level_target', 'm_c_l_t');
+            $comp_lvl_target = $this->m_c_l_t->get_comp_level_target($position['id'], 'area_lvl_pstn_id');
+            $comp_lvl_target = array_filter($comp_lvl_target, fn($clt_i, $i_clt) => $clt_i['target'], ARRAY_FILTER_USE_BOTH);
+
             $employees = $this->m_hav->calculate_hav_status($employees);
-            $employees = $this->m_tal->calculate_candidate_scores($employees, $level['id']);
+            $employees = $this->m_tal->calculate_candidate_scores($employees, $position, $comp_lvl_target);
             $candidate_nrps = array_column($employees, 'NRP'); // ambil semua value kolom 'id'
             $positions = $this->m_position->get_area_lvl_pstn_user($candidate_nrps, 'u.NRP');
             $map = array_column($positions, null, 'NRP');
@@ -161,10 +162,20 @@ class M_talent extends CI_Model
         return [];
     }
 
-    function calculate_candidate_scores($employees, $level_id)
+    function calculate_candidate_scores($employees, $position, $comp_lvl_target)
     {
-        $percentage = $this->get_percentage($level_id);
+        $percentage = $this->get_percentage($position['oal_id']);
         foreach ($employees as &$emp) {
+
+            $emp['job_fit_score'] = null;
+            $comp_lvl_assess = $this->db->get_where('comp_lvl_assess', array('NRP' => $emp['NRP'], 'method_id' => 1))->row_array();
+            if ($comp_lvl_assess) {
+                $comp_lvl_assess_score = $this->db->get_where('comp_lvl_assess_score', array('comp_lvl_assess_id' => $comp_lvl_assess['id']))->result_array();
+                $comp_lvl_target_ids = array_column($comp_lvl_target, 'comp_lvl_id');
+                $comp_lvl_assess_score = array_filter($comp_lvl_assess_score, fn($clas_i, $i_clas) => in_array($clas_i['comp_lvl_id'], $comp_lvl_target_ids), ARRAY_FILTER_USE_BOTH);
+                $emp['job_fit_score'] = array_sum(array_column($comp_lvl_assess_score, 'score')) * 100 / array_sum(array_column($comp_lvl_target, 'target'));
+            }
+
             $emp['score_kompetensi_teknis'] = $this->get_score_kompetensi_teknis($emp['kompetensi_teknis']);
             $emp['score_job_fit_score'] = $this->get_score_job_fit_score($emp['job_fit_score']);
             $emp['score_avg_ipa_score'] = $this->get_score_avg_ipa_score($emp['avg_ipa_score']);
@@ -225,11 +236,11 @@ class M_talent extends CI_Model
 
     function get_score_job_fit_score($job_fit_score)
     {
-        if ($job_fit_score > 4.55) return 5;
-        if ($job_fit_score > 4) return 4;
-        if ($job_fit_score > 3.56) return 3;
-        if ($job_fit_score > 3) return 2;
-        if ($job_fit_score > 2.5) return 1;
+        if ($job_fit_score > 90) return 5;
+        if ($job_fit_score > 80) return 4;
+        if ($job_fit_score > 70) return 3;
+        if ($job_fit_score > 60) return 2;
+        if ($job_fit_score > 50) return 1;
         return null;
     }
 

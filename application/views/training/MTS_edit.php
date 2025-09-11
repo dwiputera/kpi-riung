@@ -127,9 +127,7 @@ $numberFields = [
                                     <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i + 1 ?></td>
                                     <td>
-                                        <select class="form-control form-control-sm status-select <?=
-                                                                                                    $training['status'] == 'Y' ? 'bg-success text-white' : ($training['status'] == 'P' ? 'bg-secondary text-white' : ($training['status'] == 'N' ? 'bg-danger text-white' :
-                                                                                                        'bg-warning text-dark')) ?>"
+                                        <select class="form-control form-control-sm status-select"
                                             data-name="status" data-trn_id_hash="<?= $hash ?>">
                                             <option value="P" <?= $training['status'] == 'P' ? 'selected' : '' ?>>Pending</option>
                                             <option value="Y" <?= $training['status'] == 'Y' ? 'selected' : '' ?>>Done</option>
@@ -240,27 +238,31 @@ $numberFields = [
         let td = $select.closest('td');
 
         // Hapus semua warna dulu
-        td.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
+        // td.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
         $select.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
 
         // Tambahkan warna sesuai status
         if (val === 'Y') {
-            td.addClass('bg-success text-white');
+            // td.addClass('bg-success text-white');
             $select.addClass('bg-success text-white');
         } else if (val === 'P') {
-            td.addClass('bg-secondary text-white');
+            // td.addClass('bg-secondary text-white');
             $select.addClass('bg-secondary text-white');
         } else if (val === 'N') {
-            td.addClass('bg-danger text-white');
+            // td.addClass('bg-danger text-white');
             $select.addClass('bg-danger text-white');
         } else if (val === 'R') {
-            td.addClass('bg-warning text-dark');
+            // td.addClass('bg-warning text-dark');
             $select.addClass('bg-warning text-dark');
         }
     }
 
     // Event change untuk update warna jika select berubah
     $(document).on('change', '.status-select', function() {
+        applyStatusColor($(this));
+    });
+
+    $(document).on('draw', '#datatable', function() {
         applyStatusColor($(this));
     });
 

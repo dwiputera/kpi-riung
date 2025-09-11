@@ -86,6 +86,7 @@ class M_comp_position extends CI_Model
             foreach ($matrix_points as $mp) { // tidak perlu by-ref
                 $colId = $mp['id'];
                 $colList = $comp_pstns_mp[$colId] ?? [];
+                $colCount = count($colList);
 
                 // hitung irisan
                 $common = count(array_intersect($rowList, $colList));
@@ -104,8 +105,8 @@ class M_comp_position extends CI_Model
 
                 // hitung persen relatif thd baris (hindari /0)
                 $pct = 0;
-                if ($rowCount > 0 && $common > 0) {
-                    $pct = $common / $rowCount * 100;
+                if ($colCount > 0 && $common > 0) {
+                    $pct = $common / $colCount * 100;
                 }
 
                 // simpan 2 desimal, titik sebagai decimal separator

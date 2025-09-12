@@ -258,7 +258,7 @@
                                 <select class="form-control select2" id="area_lvl" name="area_lvl">
                                     <option value="">-- Choose Level --</option>
                                     <?php foreach ($area_lvl as $i_alvl => $alvl_i): ?>
-                                        <option value="<?= md5($alvl_i['id']) ?>"><?= $alvl_i['oa_name'] ?> | <?= $alvl_i['name'] ?></option>
+                                        <option value="<?= md5($alvl_i['id']) ?>"><?= $alvl_i['name'] ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>

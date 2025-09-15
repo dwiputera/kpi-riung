@@ -540,4 +540,32 @@
             }
         });
 
+    $(document).on('keydown', 'td[contenteditable="true"]', function (e) {
+        if (e.key === "Tab") {
+            e.preventDefault(); // cegah behavior default
+
+            const $cells = $(this).closest('table')
+                .find('td[contenteditable="true"]');
+            const idx = $cells.index(this);
+
+            // Tentukan target cell
+            let $next;
+            if (!e.shiftKey) {
+                $next = $cells.eq(idx + 1);   // Tab → maju
+            } else {
+                $next = $cells.eq(idx - 1);   // Shift+Tab → mundur
+            }
+
+            if ($next && $next.length) {
+                $next.focus();
+
+                // Auto-select semua text di cell target
+                const sel = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents($next[0]);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    });
 })(jQuery);

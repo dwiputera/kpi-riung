@@ -10,11 +10,11 @@ class Import_tna_2026 extends CI_Controller
 
     function import($sheet)
     {
-        $this->load->helper(['conversion', 'extract_spreadsheet']);
-        $sheets = extract_spreadsheet("./uploads/imports_admin/LNA 2026 import.xlsx") ?? [];
-        $data['sheets'] = $sheets;
-        $this->session->set_userdata($data);
-        die;
+        // $this->load->helper(['conversion', 'extract_spreadsheet']);
+        // $sheets = extract_spreadsheet("./uploads/imports_admin/LNA 2026 import.xlsx") ?? [];
+        // $data['sheets'] = $sheets;
+        // $this->session->set_userdata($data);
+        // die;
 
         $sheets = $this->session->userdata('sheets');
         // echo '<pre>', print_r($sheets[$sheet], true);
@@ -119,12 +119,12 @@ class Import_tna_2026 extends CI_Controller
                             AND NRP = '$nrp_i'
                         ")->row_array();
 
-                        // if ($exist) {
-                        //     $this->db->where('id', $exist['id']);
-                        //     $success = $this->db->update('comp_pstn_score', $data);
-                        // } else {
-                        //     $success = $this->db->insert('comp_pstn_score', $data);
-                        // }
+                        if ($exist) {
+                            $this->db->where('id', $exist['id']);
+                            $success = $this->db->update('comp_pstn_score', $data);
+                        } else {
+                            $success = $this->db->insert('comp_pstn_score', $data);
+                        }
                     }
                 }
             }

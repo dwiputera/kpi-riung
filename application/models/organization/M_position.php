@@ -137,10 +137,11 @@ class M_position extends CI_Model
             final_matrix_point AS (
                 SELECT 
                     start_id AS node_id,
+                    current_id AS mp_id,
                     matrix_point_name
                 FROM (
                     SELECT 
-                        start_id, 
+                        start_id, current_id,
                         matrix_point_name,
                         ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
                     FROM matrix_point_resolve
@@ -154,7 +155,8 @@ class M_position extends CI_Model
                 oalp.*, oalp.id AS oalp_id, oalp.parent AS oalp_parent, oalp.name AS oalp_name,
                 oal.id AS oal_id, oal.name AS oal_name,
                 oa.id AS oa_id, oa.name AS oa_name,
-                fmp.matrix_point_name AS mp_name
+                fmp.matrix_point_name AS mp_name,
+                fmp.mp_id
             FROM rml_sso_la.users u
             LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
             LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id

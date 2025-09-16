@@ -110,6 +110,10 @@
             buttons: ["copy", "csv", "excel", "pdf", "print", "colvis"],
             lengthChange: true,
             pageLength: 10,
+            lengthMenu: [
+                [5, 10, 25, 100, -1], // values
+                [5, 10, 25, 100, "All"] // corresponding labels
+            ],
             scrollX: true,
             orderCellsTop: true,
             fixedHeader: true,

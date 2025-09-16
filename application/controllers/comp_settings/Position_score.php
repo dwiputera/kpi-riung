@@ -19,12 +19,14 @@ class Position_score extends MY_Controller
         $this->load->view('templates/header_footer', $data);
     }
 
-    public function view($mp_hash)
+    public function current($mp_hash)
     {
+        $year = $this->input->get('year') ?? date("Y") + 1;
+        $data['year'] = $year;
         $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $mp_hash))->row_array();
         $comp_pstn = $this->db->get_where('comp_position', array('md5(area_lvl_pstn_id)' => $mp_hash))->result_array();
         $data['comp_pstn'] = $comp_pstn;
-        $cp_scores = $this->m_c_p_s->get_cp_score($mp_hash, 'md5(area_lvl_pstn_id)');
+        $cp_scores = $this->m_c_p_s->get_cp_score($mp_hash, "md5(area_lvl_pstn_id)");
         $cp_targets = $this->m_c_p_t->get_comp_position_target($mp_hash, 'md5(cp.area_lvl_pstn_id)');
         $employees = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
         $data['employees'] = $this->create_matrix($employees, $comp_pstn, $cp_scores, $cp_targets);
@@ -32,16 +34,33 @@ class Position_score extends MY_Controller
         $this->load->view('templates/header_footer', $data);
     }
 
-    public function edit($mp_hash)
+    public function year($mp_hash)
     {
+        $year = $this->input->get('year') ?? date("Y") + 1;
+        $data['year'] = $year;
         $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $mp_hash))->row_array();
         $comp_pstn = $this->db->get_where('comp_position', array('md5(area_lvl_pstn_id)' => $mp_hash))->result_array();
         $data['comp_pstn'] = $comp_pstn;
-        $cp_scores = $this->m_c_p_s->get_cp_score($mp_hash, 'md5(area_lvl_pstn_id)');
+        $cp_scores = $this->m_c_p_s->get_cp_score_year($mp_hash, "year = $year AND md5(area_lvl_pstn_id)");
         $cp_targets = $this->m_c_p_t->get_comp_position_target($mp_hash, 'md5(cp.area_lvl_pstn_id)');
         $employees = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
         $data['employees'] = $this->create_matrix($employees, $comp_pstn, $cp_scores, $cp_targets);
-        $data['content'] = "competency/position_score_edit";
+        $data['content'] = "competency/position_score_year";
+        $this->load->view('templates/header_footer', $data);
+    }
+
+    public function year_edit($mp_hash)
+    {
+        $year = $this->input->get('year') ?? date("Y");
+        $data['year'] = $year;
+        $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $mp_hash))->row_array();
+        $comp_pstn = $this->db->get_where('comp_position', array('md5(area_lvl_pstn_id)' => $mp_hash))->result_array();
+        $data['comp_pstn'] = $comp_pstn;
+        $cp_scores = $this->m_c_p_s->get_cp_score_year($mp_hash, "year = $year AND md5(area_lvl_pstn_id)");
+        $cp_targets = $this->m_c_p_t->get_comp_position_target($mp_hash, 'md5(cp.area_lvl_pstn_id)');
+        $employees = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
+        $data['employees'] = $this->create_matrix($employees, $comp_pstn, $cp_scores, $cp_targets);
+        $data['content'] = "competency/position_score_year_edit";
         $this->load->view('templates/header_footer', $data);
     }
 
@@ -50,8 +69,8 @@ class Position_score extends MY_Controller
         foreach ($employees as &$e_i) {
             foreach ($comp_pstn as $i_cp => $cp_i) {
                 $cp_id = $cp_i['id'];
-                $e_i['cp_score'][$cp_id] = 0;
-                $e_i['cp_target'][$cp_id] = 0;
+                $e_i['cp_score'][$cp_id] = null;
+                $e_i['cp_target'][$cp_id] = null;
                 $score = array_filter($cp_scores, fn($cps_i, $i_cps) => $cps_i['NRP'] == $e_i['NRP'] && $cps_i['comp_pstn_id'] == $cp_id, ARRAY_FILTER_USE_BOTH);
                 if ($score) {
                     $e_i['cp_score'][$cp_id] = array_shift($score)['score'];
@@ -67,6 +86,7 @@ class Position_score extends MY_Controller
 
     public function submit($mp_hash)
     {
+        $year = $this->input->post('year');
         $this->session->set_flashdata('swal', [
             'type' => 'error',
             'message' => "Score Submit Failed"
@@ -78,6 +98,6 @@ class Position_score extends MY_Controller
                 'message' => "Score Submitted Successfully"
             ]);
         }
-        redirect("comp_settings/position_score/view/$mp_hash");
+        redirect("comp_settings/position_score/year/$mp_hash?year=$year");
     }
 }

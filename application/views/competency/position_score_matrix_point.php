@@ -20,7 +20,7 @@
                         <?php $i = 1; ?>
                         <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
                             <tr>
-                                <td><a href="<?= base_url() ?>comp_settings/position_score/view/<?= md5($mp_i['id']) ?>" class="label label-primary btn btn-primary btn-xs w-100"><span><i class="fa fa-list"></i> Employee</span></a></td>
+                                <td><a href="<?= base_url() ?>comp_settings/position_score/current/<?= md5($mp_i['id']) ?>" class="label label-primary btn btn-primary btn-xs w-100"><span><i class="fa fa-list"></i> Employee</span></a></td>
                                 <td><?= $i++ ?></td>
                                 <td><?= $mp_i['name'] ?></td>
                             </tr>

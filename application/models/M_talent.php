@@ -165,12 +165,13 @@ class M_talent extends CI_Model
 
     function calculate_candidate_scores($employees, $position, $comp_lvl_target)
     {
+        $this->load->model('competency/m_comp_position_score', 'm_c_p_s');
         $percentage = $this->get_percentage($position['oal_id']);
         foreach ($employees as &$emp) {
 
             $emp['kompetensi_teknis'] = null;
             $emp['kompetensi_teknis_percentage'] = null;
-            $comp_pstn_score = $this->db->get_where('comp_pstn_score', array('NRP' => $emp['NRP']))->result_array();
+            $comp_pstn_score = $this->m_c_p_s->get_cp_score($emp['NRP'], 'cps.NRP');
             if ($comp_pstn_score) {
                 $comp_pstn = $this->db->get_where('comp_position', array('area_lvl_pstn_id' => $emp['mp_id']))->result_array();
                 $comp_pstn_ids = array_column($comp_pstn, 'id');

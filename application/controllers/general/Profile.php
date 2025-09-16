@@ -88,7 +88,7 @@ class Profile extends MY_Controller
             if ($matrix_point) {
                 $competencies = $this->m_c_pstn->get_comp_position($matrix_point['id'], 'area_lvl_pstn_id');
                 $data['comp_pstn'] = $competencies;
-                $comp_target = $this->m_c_p_targ->get_comp_position_target($position['id'], 'area_lvl_pstn_id');
+                $comp_target = $this->m_c_p_targ->get_comp_position_target($position['id'], 'cpt.area_lvl_pstn_id');
                 $data['comp_pstn_targ'] = $comp_target;
                 $competency_matrix = $this->create_matrix_position($position, $competencies, $comp_target);
                 $data['competency_matrix_position'] = $competency_matrix;

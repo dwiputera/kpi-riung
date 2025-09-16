@@ -91,7 +91,7 @@
                                 <td><?= $e['NRP'] ?></td>
                                 <td><?= $e['FullName'] ?></td>
                                 <td><?= $e['total_score'] ?></td>
-                                <td><?= $e['kompetensi_teknis'] ?></td>
+                                <td><?= $e['kompetensi_teknis_percentage'] ?></td>
                                 <td><?= $e['score_kompetensi_teknis'] ?></td>
                                 <td><?= $e['score_nxb_kompetensi_teknis'] ?></td>
                                 <td><?= $e['job_fit_score'] ? $e['job_fit_score'] . '%' : '' ?></td>

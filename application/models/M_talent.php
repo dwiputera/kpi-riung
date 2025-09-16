@@ -79,6 +79,7 @@ class M_talent extends CI_Model
                     FORMAT(p.avg_ipa_score, 2) avg_ipa_score, FORMAT(p.ipa_score, 2) ipa_score,
                     TIMESTAMPDIFF(YEAR, u.BirthDate, CURDATE()) age,
                     oal.name level_name, oal.id oal_id,
+                    oalp.id oalp_id,
                     clam.name clam_name,
                     cf.nilai_behaviour culture_fit,
                     fmp.matrix_point_name AS mp_name,
@@ -167,6 +168,31 @@ class M_talent extends CI_Model
         $percentage = $this->get_percentage($position['oal_id']);
         foreach ($employees as &$emp) {
 
+            $emp['kompetensi_teknis'] = null;
+            $emp['kompetensi_teknis_percentage'] = null;
+            $comp_pstn_score = $this->db->get_where('comp_pstn_score', array('NRP' => $emp['NRP']))->result_array();
+            if ($comp_pstn_score) {
+                $comp_pstn = $this->db->get_where('comp_position', array('area_lvl_pstn_id' => $emp['mp_id']))->result_array();
+                $comp_pstn_ids = array_column($comp_pstn, 'id');
+                $comp_pstn_id_string = implode("','", $comp_pstn_ids);
+                $comp_pstn_target = $this->db->query("
+                    SELECT * FROM comp_pstn_target
+                    WHERE comp_pstn_id IN ('$comp_pstn_id_string')
+                    AND area_lvl_pstn_id = $emp[oalp_id]
+                    AND target != 0
+                ")->result_array();
+                $comp_pstn_target_sum = array_sum(array_column($comp_pstn_target, 'target'));
+                $comp_pstn_target_comp_pstn_ids = array_column($comp_pstn_target, 'comp_pstn_id');
+                $comp_pstn_score_filter = array_filter($comp_pstn_score, fn($cps_i, $i_cps) => in_array($cps_i['comp_pstn_id'], $comp_pstn_target_comp_pstn_ids), ARRAY_FILTER_USE_BOTH);
+                $comp_pstn_score_sum = array_sum(array_column($comp_pstn_score_filter, 'score'));
+                if ($comp_pstn_target_sum) {
+                    $emp['kompetensi_teknis'] = number_format($comp_pstn_score_sum * 100 / $comp_pstn_target_sum, 2);
+                    $emp['kompetensi_teknis_percentage'] = $emp['kompetensi_teknis'] . '%';
+                } else {
+                    $emp['kompetensi_teknis_percentage'] = "no target";
+                }
+            }
+
             $emp['job_fit_score'] = null;
             $comp_lvl_assess = $this->db->get_where('comp_lvl_assess', array('NRP' => $emp['NRP'], 'method_id' => 1))->row_array();
             if ($comp_lvl_assess) {
@@ -229,8 +255,13 @@ class M_talent extends CI_Model
         return $data;
     }
 
-    function get_score_kompetensi_teknis($tod)
+    function get_score_kompetensi_teknis($cp_percentage)
     {
+        if ($cp_percentage > 90) return 5;
+        if ($cp_percentage > 80) return 4;
+        if ($cp_percentage > 70) return 3;
+        if ($cp_percentage > 60) return 2;
+        if ($cp_percentage > 50) return 1;
         return null;
     }
 

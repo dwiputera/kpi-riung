@@ -304,7 +304,7 @@ $months = [
                     </tbody>
                 </table>
                 <hr>
-                <h1>Bulan</H1>
+                <h1>Bulan</h1>
                 <p>isi bulan dengan <strong>value</strong> yang bersangkutan di table ini</p>
                 <table class="table table-bordered table-striped">
                     <thead>
@@ -323,7 +323,7 @@ $months = [
                     </tbody>
                 </table>
                 <hr>
-                <h1>Departemen Pengampu</H1>
+                <h1>Departemen Pengampu</h1>
                 <p>isi departemen pengampu dengan <strong>value</strong> yang bersangkutan di table ini</p>
                 <table class="table table-bordered table-striped">
                     <thead>

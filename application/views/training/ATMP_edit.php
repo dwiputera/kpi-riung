@@ -263,7 +263,7 @@ $months = [
                 <h1>Tanggal</h1>
                 <p>isi cell tanggal dengan dengan format <strong>"YYYY-MM-DD"</strong>, contoh: <strong>2025-01-20 (20 Januari 2025)</strong>. jangan pakai format karakter lainnya</p>
                 <hr>
-                <h1>Bulan</H1>
+                <h1>Bulan</h1>
                 <p>isi bulan dengan <strong>value</strong> yang bersangkutan di table ini</p>
                 <table class="table table-bordered table-striped">
                     <thead>
@@ -282,7 +282,7 @@ $months = [
                     </tbody>
                 </table>
                 <hr>
-                <h1>Departemen Pengampu</H1>
+                <h1>Departemen Pengampu</h1>
                 <p>isi departemen pengampu dengan <strong>value</strong> yang bersangkutan di table ini</p>
                 <table class="table table-bordered table-striped">
                     <thead>

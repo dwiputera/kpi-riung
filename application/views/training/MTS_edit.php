@@ -20,7 +20,7 @@ $months = [
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Edit MTS <?= $year ?></h1>
+                <h1 class="m-0">Edit MTS <strong><?= $year ?></strong></h1>
             </div>
         </div>
     </div>
@@ -301,6 +301,25 @@ $months = [
                             <td>Reschedule</td>
                             <td>R</td>
                         </tr>
+                    </tbody>
+                </table>
+                <hr>
+                <h1>Bulan</H1>
+                <p>isi bulan dengan <strong>value</strong> yang bersangkutan di table ini</p>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Departemen Pengampu</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($months as $i_m => $m_i) : ?>
+                            <tr>
+                                <td><?= $m_i ?></td>
+                                <td><?= $i_m ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
                 <hr>

@@ -19,7 +19,7 @@ $months = [
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Edit ATMP <?= $year ?></h1>
+                <h1 class="m-0">Edit ATMP <strong><?= $year ?></strong></h1>
             </div>
         </div>
     </div>
@@ -262,6 +262,25 @@ $months = [
                 <hr>
                 <h1>Tanggal</h1>
                 <p>isi cell tanggal dengan dengan format <strong>"YYYY-MM-DD"</strong>, contoh: <strong>2025-01-20 (20 Januari 2025)</strong>. jangan pakai format karakter lainnya</p>
+                <hr>
+                <h1>Bulan</H1>
+                <p>isi bulan dengan <strong>value</strong> yang bersangkutan di table ini</p>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Departemen Pengampu</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($months as $i_m => $m_i) : ?>
+                            <tr>
+                                <td><?= $m_i ?></td>
+                                <td><?= $i_m ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
                 <hr>
                 <h1>Departemen Pengampu</H1>
                 <p>isi departemen pengampu dengan <strong>value</strong> yang bersangkutan di table ini</p>

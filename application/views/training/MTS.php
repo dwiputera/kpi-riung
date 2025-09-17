@@ -1,3 +1,22 @@
+<?php
+$months = [
+    '01' => 'January',
+    '02' => 'February',
+    '03' => 'March',
+    '04' => 'April',
+    '05' => 'May',
+    '06' => 'June',
+    '07' => 'July',
+    '08' => 'August',
+    '09' => 'September',
+    '10' => 'October',
+    '11' => 'November',
+    '12' => 'December'
+];
+
+$matrix_points = array_column($matrix_points, null, 'id');
+?>
+
 <!-- Content Header (Page header) -->
 <div class="content-header">
     <div class="container-fluid">
@@ -148,8 +167,8 @@
                                         <td class="bg-<?= $status_bg[$training['status']] ?>"><?= $status_str[$training['status']] ?></td>
                                         <td><a href="<?= base_url() ?>training/MTS/ATMP/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= 'assign' ?></a></td>
                                         <td><?= $training['atmp_nama_program'] ?></td>
-                                        <td><?= $training['month'] ?></td>
-                                        <td><?= $training['departemen_pengampu'] ?></td>
+                                        <td><?= $training['month'] ? $months[$training['month']] : '' ?></td>
+                                        <td><?= $training['departemen_pengampu'] ? $matrix_points[$training['departemen_pengampu']]['name'] : '' ?></td>
                                         <td><?= $training['nama_program'] ?></td>
                                         <td><?= $training['batch'] ?></td>
                                         <td><?= $training['jenis_kompetensi'] ?></td>

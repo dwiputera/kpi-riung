@@ -51,33 +51,66 @@
                 <h3 class="card-title">Participant List</h3>
             </div>
             <!-- /.card-header -->
-            <div class="card-body">
-                <a data-toggle="modal" data-target="#addUser" class="btn btn-primary w-100" href="#addUserModal">
-                    <strong>+ Assign user</strong>
-                </a><br><br>
-                <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>NRP</th>
-                            <th>Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php $i = 1; ?>
-                        <?php $status_str = ['P' => 'Pending', 'Y' => 'Done', 'N' => 'Canceled', 'R' => 'Reschedule']; ?>
-                        <?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
-                        <?php foreach ($participants as $training_user) : ?>
+            <?php if ($type == 'mts') : ?>
+                <form action="<?= base_url() ?>training/MTS/participants/<?= md5($mts['id']) ?>?action=status_change" method="post" id="data-form">
+                <?php endif; ?>
+                <div class="card-body">
+                    <a data-toggle="modal" data-target="#addUser" class="btn btn-primary w-100" href="#addUserModal">
+                        <strong>+ Assign user</strong>
+                    </a><br><br>
+                    <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
+                        <thead>
                             <tr>
-                                <td><?= $i++ ?></td>
-                                <td><?= $training_user['NRP'] ?></td>
-                                <td><?= $training_user['FullName'] ?></td>
+                                <th>No</th>
+                                <?php if ($type == 'mts') : ?>
+                                    <th>Status</th>
+                                <?php endif; ?>
+                                <th>NRP</th>
+                                <th>Name</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            <!-- /.card-body -->
+                        </thead>
+                        <tbody>
+                            <?php $i = 1; ?>
+                            <?php $status_str = ['P' => 'Pending', 'Y' => 'Done', 'N' => 'Canceled']; ?>
+                            <?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger']; ?>
+                            <?php foreach ($participants as $training_user) : ?>
+                                <tr>
+                                    <td><?= $i++ ?></td>
+                                    <?php if ($type == 'mts') : ?>
+                                        <td>
+                                            <select class="form-control form-control-sm status-select"
+                                                name="training_users[<?= md5($training_user['id']) ?>]">
+                                                <option value="P" <?= $training_user['status'] == 'P' ? 'selected' : '' ?>>Pending</option>
+                                                <option value="Y" <?= $training_user['status'] == 'Y' ? 'selected' : '' ?>>Done</option>
+                                                <option value="N" <?= $training_user['status'] == 'N' ? 'selected' : '' ?>>Cancelled</option>
+                                            </select>
+                                        </td>
+                                    <?php endif; ?>
+                                    <td><?= $training_user['NRP'] ?></td>
+                                    <td><?= $training_user['FullName'] ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
+                <?php if ($type == 'mts') : ?>
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-lg-3">
+                                <button type="button" class="w-100 btn btn-default" onclick="cancelForm()">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                            <div class="col-lg-9">
+                                <button type="submit" class="w-100 btn btn-info">
+                                    <i class="fas fa-paper-plane"></i> Submit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            <?php endif; ?>
         </div>
         <!-- /.card -->
     </div><!-- /.container-fluid -->
@@ -110,6 +143,13 @@
     </div>
 </div>
 
+<style>
+    .status-select option {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+</style>
+
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 
@@ -120,5 +160,52 @@
         $('#addUser .select2').select2({
             dropdownParent: $('#addUser')
         });
+
+        // Terapkan warna awal setelah halaman selesai load
+        $('.status-select').each(function() {
+            applyStatusColor($(this)); // Warna td & select langsung diterapkan
+        });
+
+        // Panggil applyStatusColor saat DataTable selesai digambar ulang
+        $('#datatable').on('draw.dt', function() {
+            $('.status-select').each(function() {
+                applyStatusColor($(this));
+            });
+        });
     });
+
+    // Fungsi reusable untuk set warna td & select
+    function applyStatusColor($select) {
+        let val = $select.val();
+        let td = $select.closest('td');
+
+        // Hapus semua warna dulu
+        // td.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
+        $select.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
+
+        // Tambahkan warna sesuai status
+        if (val === 'Y') {
+            // td.addClass('bg-success text-white');
+            $select.addClass('bg-success text-white');
+        } else if (val === 'P') {
+            // td.addClass('bg-secondary text-white');
+            $select.addClass('bg-secondary text-white');
+        } else if (val === 'N') {
+            // td.addClass('bg-danger text-white');
+            $select.addClass('bg-danger text-white');
+        } else if (val === 'R') {
+            // td.addClass('bg-warning text-dark');
+            $select.addClass('bg-warning text-dark');
+        }
+    }
+
+    $(document).on('change', '.status-select', function() {
+        applyStatusColor($(this));
+    });
+
+    function cancelForm() {
+        if (confirm('Yakin batal?')) {
+            location.href = '<?= base_url("training/MTS" . ($year ? '?year=' . $year : '')) ?>';
+        }
+    }
 </script>

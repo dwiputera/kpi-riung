@@ -234,25 +234,31 @@
     }
 
     function deleteSelectedRows() {
-        $('#datatable tbody tr').each(function() {
-            let row = $(this);
+        let table = $('#datatable').DataTable();
+
+        // Loop melalui semua baris di DataTable, termasuk yang ada di halaman lain
+        table.rows().every(function() {
+            let row = $(this.node());
             let id = row.data('id');
             let isChecked = row.find('.row-checkbox').prop('checked');
 
             if (isChecked) {
-                // ✅ Always mark checked rows as deleted
+                // Tandai baris yang dipilih untuk dihapus
                 if (!deletedRows.includes(id)) {
                     deletedRows.push(id);
                 }
                 row.addClass('table-danger').css('opacity', '0.7');
             } else {
-                // ✅ Unchecked rows: restore if previously marked deleted
+                // Jika baris tidak dipilih, pastikan untuk menghapus status 'deleted'
                 if (deletedRows.includes(id)) {
                     deletedRows = deletedRows.filter(x => x !== id);
                     row.removeClass('table-danger').css('opacity', '1');
                 }
             }
         });
+
+        // Pastikan DataTable diupdate setelah penghapusan
+        table.draw(false); // Redraw the table to ensure changes are applied across pages
     }
 
     // Create a new row dynamically
@@ -306,6 +312,9 @@
         });
 
         table.columns.adjust().draw(false);
+
+        // First, go to the last page
+        table.page('last').draw('page');
     }
 
     function collectTableData() {

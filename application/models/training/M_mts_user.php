@@ -60,4 +60,18 @@ class M_mts_user extends CI_Model
         if ($data_inserts) $success = $this->db->insert_batch('trn_mts_user', $data_inserts);
         return $success;
     }
+
+    public function status_change()
+    {
+        $success = true;
+        foreach ($this->input->post('training_users') as $i_tu => $tu_i) {
+            $data = [
+                'status' => $tu_i
+            ];
+            echo '<pre>', print_r($data, true);
+            $success = $this->db->where('md5(id)', $i_tu)->update('trn_mts_user', $data);
+            if (!$success) return $success;
+        }
+        return $success;
+    }
 }

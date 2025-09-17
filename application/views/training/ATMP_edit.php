@@ -1,43 +1,17 @@
 <?php
-function renderInput($type, $name, $value, $hash, $class = '')
-{
-    return "<input type=\"{$type}\" class=\"form-control form-control-sm {$class}\" data-trn_id_hash=\"{$hash}\" data-name=\"{$name}\" value=\"{$value}\">";
-}
-
-function renderCell($name, $value, $hash)
-{
-    return "<td contenteditable=\"true\" class=\"editable-cell\" data-trn_id_hash=\"{$hash}\" data-name=\"{$name}\">{$value}</td>";
-}
-
-$numberFields = [
-    'days',
-    'hours',
-    'total_hours',
-    'rmho',
-    'rmip',
-    'rebh',
-    'rmtu',
-    'rmts',
-    'rmgm',
-    'rhml',
-    'total_jobsite',
-    'total_participants',
-    'grand_total_hours',
-    'biaya_pelatihan_per_orang',
-    'biaya_pelatihan',
-    'training_kit_per_orang',
-    'training_kit',
-    'biaya_penginapan_per_orang',
-    'biaya_penginapan',
-    'meeting_package_per_orang',
-    'meeting_package',
-    'makan_per_orang',
-    'makan',
-    'snack_per_orang',
-    'snack',
-    'tiket_per_orang',
-    'tiket',
-    'grand_total'
+$months = [
+    '01' => 'January',
+    '02' => 'February',
+    '03' => 'March',
+    '04' => 'April',
+    '05' => 'May',
+    '06' => 'June',
+    '07' => 'July',
+    '08' => 'August',
+    '09' => 'September',
+    '10' => 'October',
+    '11' => 'November',
+    '12' => 'December'
 ];
 ?>
 
@@ -60,6 +34,13 @@ $numberFields = [
 
             <form id="data-form" action="<?= base_url() ?>training/ATMP/submit" method="post">
                 <div class="card-body">
+                    <?php if (!$advanced) : ?>
+                        <a href="<?= base_url() ?>training/ATMP/edit/<?= $year ?>?advanced=true" class="btn btn-warning w-100">Edit Advanced</a><br><br>
+                    <?php else : ?>
+                        <button type="button" class="btn btn-info w-100" data-toggle="modal" data-target="#modal-inputGuide">
+                            Petunjuk Pengisian
+                        </button><br><br>
+                    <?php endif; ?>
                     <input type="hidden" name="year" value="<?= $year ?>">
                     <input type="hidden" name="proceed" value="Y">
                     <input type="hidden" name="json_data" id="json_data">
@@ -115,7 +96,6 @@ $numberFields = [
                                 <th>TIKET</th>
                                 <th>GRAND TOTAL</th>
                                 <th>KETERANGAN</th>
-                                <th>ACTION</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -124,32 +104,115 @@ $numberFields = [
                                 <tr data-id="<?= $training['id'] ?>" data-hash="<?= $hash ?>">
                                     <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i + 1 ?></td>
-                                    <?= renderCell('month', $training['month'], $hash) ?>
-                                    <?= renderCell('departemen_pengampu', $training['departemen_pengampu'], $hash) ?>
-                                    <?= renderCell('nama_program', $training['nama_program'], $hash) ?>
-                                    <td><?= renderInput('number', 'batch', $training['batch'], $hash) ?></td>
-                                    <?= renderCell('jenis_kompetensi', $training['jenis_kompetensi'], $hash) ?>
-                                    <?= renderCell('sasaran_kompetensi', $training['sasaran_kompetensi'], $hash) ?>
-                                    <td><?= renderInput('number', 'level_kompetensi', $training['level_kompetensi'], $hash) ?></td>
-                                    <?= renderCell('target_peserta', $training['target_peserta'], $hash) ?>
-                                    <?= renderCell('staff_nonstaff', $training['staff_nonstaff'], $hash) ?>
-                                    <?= renderCell('kategori_program', $training['kategori_program'], $hash) ?>
-                                    <?= renderCell('fasilitator', $training['fasilitator'], $hash) ?>
-                                    <?= renderCell('nama_penyelenggara_fasilitator', $training['nama_penyelenggara_fasilitator'], $hash) ?>
-                                    <?= renderCell('tempat', $training['tempat'], $hash) ?>
-                                    <?= renderCell('online_offline', $training['online_offline'], $hash) ?>
-                                    <td><?= renderInput('date', 'start_date', $training['start_date'], $hash) ?></td>
-                                    <td><?= renderInput('date', 'end_date', $training['end_date'], $hash) ?></td>
-                                    <?php foreach ($numberFields as $field): ?>
-                                        <td><?= renderInput('number', $field, $training[$field], $hash) ?></td>
-                                    <?php endforeach; ?>
-                                    <?= renderCell('nama_hotel', $training['nama_hotel'], $hash) ?>
-                                    <?= renderCell('keterangan', $training['keterangan'], $hash) ?>
-                                    <td>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="markRowDeleted(this)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
+                                    <?php if (!$advanced) : ?>
+                                        <td>
+                                            <select data-name="month">
+                                                <option value=""></option>
+                                                <?php foreach ($months as $i_m => $m_i) : ?>
+                                                    <option value="<?= $i_m ?>" <?= $training['month'] == $i_m ? 'selected' : '' ?>><?= $m_i ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select data-name="departemen_pengampu">
+                                                <option value=""></option>
+                                                <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
+                                                    <option value="<?= $mp_i['id'] ?>" <?= $training['departemen_pengampu'] == $mp_i['id'] ? 'selected' : '' ?>><?= $mp_i['name'] ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td contenteditable="true" data-name="nama_program"><?= $training['nama_program'] ?></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="batch" value="<?= $training['batch'] ?>" data-name="batch"></td>
+                                        <td contenteditable="true" data-name="jenis_kompetensi"><?= $training['jenis_kompetensi'] ?></td>
+                                        <td contenteditable="true" data-name="sasaran_kompetensi"><?= $training['sasaran_kompetensi'] ?></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="level_kompetensi" value="<?= $training['level_kompetensi'] ?>" data-name="level_kompetensi"></td>
+                                        <td contenteditable="true" data-name="target_peserta"><?= $training['target_peserta'] ?></td>
+                                        <td contenteditable="true" data-name="staff_nonstaff"><?= $training['staff_nonstaff'] ?></td>
+                                        <td contenteditable="true" data-name="kategori_program"><?= $training['kategori_program'] ?></td>
+                                        <td contenteditable="true" data-name="fasilitator"><?= $training['fasilitator'] ?></td>
+                                        <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"><?= $training['nama_penyelenggara_fasilitator'] ?></td>
+                                        <td contenteditable="true" data-name="tempat"><?= $training['tempat'] ?></td>
+                                        <td contenteditable="true" data-name="online_offline"><?= $training['online_offline'] ?></td>
+                                        <td><input type="date" class="form-control form-control-sm" name="start_date" value="<?= $training['start_date'] ?>" data-name="start_date"></td>
+                                        <td><input type="date" class="form-control form-control-sm" name="end_date" value="<?= $training['end_date'] ?>" data-name="end_date"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="days" value="<?= $training['days'] ?>" data-name="days"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="hours" value="<?= $training['hours'] ?>" data-name="hours"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="total_hours" value="<?= $training['total_hours'] ?>" data-name="total_hours"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="rmho" value="<?= $training['rmho'] ?>" data-name="rmho"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="rmip" value="<?= $training['rmip'] ?>" data-name="rmip"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="rebh" value="<?= $training['rebh'] ?>" data-name="rebh"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="rmtu" value="<?= $training['rmtu'] ?>" data-name="rmtu"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="rmts" value="<?= $training['rmts'] ?>" data-name="rmts"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="rmgm" value="<?= $training['rmgm'] ?>" data-name="rmgm"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="rhml" value="<?= $training['rhml'] ?>" data-name="rhml"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="total_jobsite" value="<?= $training['total_jobsite'] ?>" data-name="total_jobsite"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="total_participants" value="<?= $training['total_participants'] ?>" data-name="total_participants"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="grand_total_hours" value="<?= $training['grand_total_hours'] ?>" data-name="grand_total_hours"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="biaya_pelatihan_per_orang" value="<?= $training['biaya_pelatihan_per_orang'] ?>" data-name="biaya_pelatihan_per_orang"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="biaya_pelatihan" value="<?= $training['biaya_pelatihan'] ?>" data-name="biaya_pelatihan"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="training_kit_per_orang" value="<?= $training['training_kit_per_orang'] ?>" data-name="training_kit_per_orang"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="training_kit" value="<?= $training['training_kit'] ?>" data-name="training_kit"></td>
+                                        <td contenteditable="true" data-name="nama_hotel"><?= $training['nama_hotel'] ?></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan_per_orang" value="<?= $training['biaya_penginapan_per_orang'] ?>" data-name="biaya_penginapan_per_orang"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan" value="<?= $training['biaya_penginapan'] ?>" data-name="biaya_penginapan"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="meeting_package_per_orang" value="<?= $training['meeting_package_per_orang'] ?>" data-name="meeting_package_per_orang"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="meeting_package" value="<?= $training['meeting_package'] ?>" data-name="meeting_package"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="makan_per_orang" value="<?= $training['makan_per_orang'] ?>" data-name="makan_per_orang"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="makan" value="<?= $training['makan'] ?>" data-name="makan"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="snack_per_orang" value="<?= $training['snack_per_orang'] ?>" data-name="snack_per_orang"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="snack" value="<?= $training['snack'] ?>" data-name="snack"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="tiket_per_orang" value="<?= $training['tiket_per_orang'] ?>" data-name="tiket_per_orang"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="tiket" value="<?= $training['tiket'] ?>" data-name="tiket"></td>
+                                        <td><input type="number" class="form-control form-control-sm" name="grand_total" value="<?= $training['grand_total'] ?>" data-name="grand_total"></td>
+                                        <td contenteditable="true" data-name="keterangan"><?= $training['keterangan'] ?></td>
+                                    <?php else : ?>
+                                        <td contenteditable="true" data-name="month"><?= $training['month'] ?></td>
+                                        <td contenteditable="true" data-name="departemen_pengampu"><?= $training['departemen_pengampu'] ?></td>
+                                        <td contenteditable="true" data-name="nama_program"><?= $training['nama_program'] ?></td>
+                                        <td contenteditable="true" data-name="batch"><?= $training['batch'] ?></td>
+                                        <td contenteditable="true" data-name="jenis_kompetensi"><?= $training['jenis_kompetensi'] ?></td>
+                                        <td contenteditable="true" data-name="sasaran_kompetensi"><?= $training['sasaran_kompetensi'] ?></td>
+                                        <td contenteditable="true" data-name="level_kompetensi"><?= $training['level_kompetensi'] ?></td>
+                                        <td contenteditable="true" data-name="target_peserta"><?= $training['target_peserta'] ?></td>
+                                        <td contenteditable="true" data-name="staff_nonstaff"><?= $training['staff_nonstaff'] ?></td>
+                                        <td contenteditable="true" data-name="kategori_program"><?= $training['kategori_program'] ?></td>
+                                        <td contenteditable="true" data-name="fasilitator"><?= $training['fasilitator'] ?></td>
+                                        <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"><?= $training['nama_penyelenggara_fasilitator'] ?></td>
+                                        <td contenteditable="true" data-name="tempat"><?= $training['tempat'] ?></td>
+                                        <td contenteditable="true" data-name="online_offline"><?= $training['online_offline'] ?></td>
+                                        <td contenteditable="true" data-name="start_date"><?= $training['start_date'] ?></td>
+                                        <td contenteditable="true" data-name="end_date"><?= $training['end_date'] ?></td>
+                                        <td contenteditable="true" data-name="days"><?= $training['days'] ?></td>
+                                        <td contenteditable="true" data-name="hours"><?= $training['hours'] ?></td>
+                                        <td contenteditable="true" data-name="total_hours"><?= $training['total_hours'] ?></td>
+                                        <td contenteditable="true" data-name="rmho"><?= $training['rmho'] ?></td>
+                                        <td contenteditable="true" data-name="rmip"><?= $training['rmip'] ?></td>
+                                        <td contenteditable="true" data-name="rebh"><?= $training['rebh'] ?></td>
+                                        <td contenteditable="true" data-name="rmtu"><?= $training['rmtu'] ?></td>
+                                        <td contenteditable="true" data-name="rmts"><?= $training['rmts'] ?></td>
+                                        <td contenteditable="true" data-name="rmgm"><?= $training['rmgm'] ?></td>
+                                        <td contenteditable="true" data-name="rhml"><?= $training['rhml'] ?></td>
+                                        <td contenteditable="true" data-name="total_jobsite"><?= $training['total_jobsite'] ?></td>
+                                        <td contenteditable="true" data-name="total_participants"><?= $training['total_participants'] ?></td>
+                                        <td contenteditable="true" data-name="grand_total_hours"><?= $training['grand_total_hours'] ?></td>
+                                        <td contenteditable="true" data-name="biaya_pelatihan_per_orang"><?= $training['biaya_pelatihan_per_orang'] ?></td>
+                                        <td contenteditable="true" data-name="biaya_pelatihan"><?= $training['biaya_pelatihan'] ?></td>
+                                        <td contenteditable="true" data-name="training_kit_per_orang"><?= $training['training_kit_per_orang'] ?></td>
+                                        <td contenteditable="true" data-name="training_kit"><?= $training['training_kit'] ?></td>
+                                        <td contenteditable="true" data-name="nama_hotel"><?= $training['nama_hotel'] ?></td>
+                                        <td contenteditable="true" data-name="biaya_penginapan_per_orang"><?= $training['biaya_penginapan_per_orang'] ?></td>
+                                        <td contenteditable="true" data-name="biaya_penginapan"><?= $training['biaya_penginapan'] ?></td>
+                                        <td contenteditable="true" data-name="meeting_package_per_orang"><?= $training['meeting_package_per_orang'] ?></td>
+                                        <td contenteditable="true" data-name="meeting_package"><?= $training['meeting_package'] ?></td>
+                                        <td contenteditable="true" data-name="makan_per_orang"><?= $training['makan_per_orang'] ?></td>
+                                        <td contenteditable="true" data-name="makan"><?= $training['makan'] ?></td>
+                                        <td contenteditable="true" data-name="snack_per_orang"><?= $training['snack_per_orang'] ?></td>
+                                        <td contenteditable="true" data-name="snack"><?= $training['snack'] ?></td>
+                                        <td contenteditable="true" data-name="tiket_per_orang"><?= $training['tiket_per_orang'] ?></td>
+                                        <td contenteditable="true" data-name="tiket"><?= $training['tiket'] ?></td>
+                                        <td contenteditable="true" data-name="grand_total"><?= $training['grand_total'] ?></td>
+                                        <td contenteditable="true" data-name="keterangan"><?= $training['keterangan'] ?></td>
+                                    <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -158,18 +221,18 @@ $numberFields = [
                 <div class="card-footer">
                     <div class="row">
                         <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-default btn-cancel">
+                            <button type="button" class="w-100 btn btn-default" onclick="cancelForm()">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
                         </div>
                         <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-danger btn-delete-selected">
+                            <button type="button" class="w-100 btn btn-danger" onclick="deleteSelectedRows()">
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
                         <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-success btn-create">
-                                <i class="fas fa-plus"></i> New Row
+                            <button type="button" class="w-100 btn btn-success" onclick="createRow()">
+                                <i class="fas fa-plus"></i> New
                             </button>
                         </div>
                         <div class="col-lg-3">
@@ -183,6 +246,49 @@ $numberFields = [
         </div>
     </div>
 </section>
+
+<div class="modal fade" id="modal-inputGuide">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Petunjuk Pengisian</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h1>Angka</h1>
+                <p>isi cell angka dengan <strong>angka saja</strong>, <strong>jangan pakai titik(".")</strong>, jangan pakai huruf atau karakter lainnya</p>
+                <hr>
+                <h1>Tanggal</h1>
+                <p>isi cell tanggal dengan dengan format <strong>"YYYY-MM-DD"</strong>, contoh: <strong>2025-01-20 (20 Januari 2025)</strong>. jangan pakai format karakter lainnya</p>
+                <hr>
+                <h1>Departemen Pengampu</H1>
+                <p>isi departemen pengampu dengan <strong>value</strong> yang bersangkutan di table ini</p>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Departemen Pengampu</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
+                            <tr>
+                                <td><?= $mp_i['name'] ?></td>
+                                <td><?= $mp_i['id'] ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <hr>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
 
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
@@ -208,82 +314,192 @@ $numberFields = [
             };
             $('#json_data').val(JSON.stringify(payload));
         });
-
-        // Cancel button
-        $('.btn-cancel').on('click', function() {
-            if (confirm('Are you sure you want to cancel?')) {
-                location.href = '<?= base_url('training/ATMP' . ($year ? '?year=' . $year : '')) ?>';
-            }
-        });
-
-        // Delete selected
-        $('.btn-delete-selected').on('click', function() {
-            $('.row-checkbox').each(function() {
-                let row = $(this).closest('tr');
-                let id = row.data('id');
-
-                if ($(this).is(':checked')) {
-                    // ✅ Mark checked rows for deletion
-                    if (!deletedRows.includes(id)) deletedRows.push(id);
-                    row.addClass('table-danger').css('opacity', '0.7');
-                } else {
-                    // ✅ Unmark unchecked rows if already marked
-                    deletedRows = deletedRows.filter(x => x !== id);
-                    row.removeClass('table-danger').css('opacity', '1');
-                }
-            });
-        });
     });
 
-    // Toggle delete for individual row
+    function cancelForm() {
+        if (confirm('Yakin batal?')) {
+            location.href = '<?= base_url('training/ATMP/' . ($year ? '?year=' . $year : '')) ?>';
+        }
+    }
+
     function markRowDeleted(btn) {
         let row = $(btn).closest('tr');
         let id = row.data('id');
         let checkbox = row.find('.row-checkbox');
 
         if (deletedRows.includes(id)) {
-            // ✅ Restore row
+            // ✅ Restore if already marked deleted
             deletedRows = deletedRows.filter(x => x !== id);
             row.removeClass('table-danger').css('opacity', '1');
-            checkbox.prop('checked', false);
+            checkbox.prop('checked', false); // uncheck when restored
         } else {
             // ✅ Mark as deleted
             deletedRows.push(id);
             row.addClass('table-danger').css('opacity', '0.7');
-            checkbox.prop('checked', true);
+            checkbox.prop('checked', true); // auto-check when deleted
         }
     }
 
+    function deleteSelectedRows() {
+        let table = $('#datatable').DataTable();
+
+        // Loop melalui semua baris di DataTable, termasuk yang ada di halaman lain
+        table.rows().every(function() {
+            let row = $(this.node());
+            let id = row.data('id');
+            let isChecked = row.find('.row-checkbox').prop('checked');
+
+            if (isChecked) {
+                // Tandai baris yang dipilih untuk dihapus
+                if (!deletedRows.includes(id)) {
+                    deletedRows.push(id);
+                }
+                row.addClass('table-danger').css('opacity', '0.7');
+            } else {
+                // Jika baris tidak dipilih, pastikan untuk menghapus status 'deleted'
+                if (deletedRows.includes(id)) {
+                    deletedRows = deletedRows.filter(x => x !== id);
+                    row.removeClass('table-danger').css('opacity', '1');
+                }
+            }
+        });
+
+        // Pastikan DataTable diupdate setelah penghapusan
+        table.draw(false); // Redraw the table to ensure changes are applied across pages
+    }
+
     // Create a new row dynamically
-    function createTrainingRow() {
-        let newId = 'new_' + Date.now();
+    function createRow() {
+        const table = $('#datatable').DataTable();
+        const newId = 'new_' + Date.now();
+
+        // Construct the new row
         let row = `<tr data-id="${newId}" class="table-success">
             <td><input type="checkbox" class="row-checkbox"></td>
             <td>New</td>
-            <td contenteditable="true" data-name="month"></td>
-            <td contenteditable="true" data-name="departemen_pengampu"></td>
-            <td contenteditable="true" data-name="nama_program"></td>
-            <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
-            <td contenteditable="true" data-name="jenis_kompetensi"></td>
-            <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-            <td><input type="number" class="form-control form-control-sm" data-name="level_kompetensi"></td>
-            <td contenteditable="true" data-name="target_peserta"></td>
-            <td contenteditable="true" data-name="staff_nonstaff"></td>
-            <td contenteditable="true" data-name="kategori_program"></td>
-            <td contenteditable="true" data-name="fasilitator"></td>
-            <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
-            <td contenteditable="true" data-name="tempat"></td>
-            <td contenteditable="true" data-name="online_offline"></td>
-            <td><input type="date" class="form-control form-control-sm" data-name="start_date"></td>
-            <td><input type="date" class="form-control form-control-sm" data-name="end_date"></td>
-            <?php foreach ($numberFields as $field): ?>
-                <td><input type="number" class="form-control form-control-sm" data-name="<?= $field ?>"></td>
-            <?php endforeach; ?>
-            <td contenteditable="true" data-name="nama_hotel"></td>
-            <td contenteditable="true" data-name="keterangan"></td>
-            <td><button type="button" class="btn btn-danger btn-sm" onclick="markRowDeleted(this)"><i class="fas fa-trash"></i></button></td>
+            <?php if (!$advanced) : ?>
+                <td>
+                    <select data-name="month">
+                        <option value=""></option>
+                        <?php foreach ($months as $i_m => $m_i) : ?>
+                            <option value="<?= $i_m ?>"><?= $m_i ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+                <td>
+                    <select data-name="departemen_pengampu">
+                        <option value=""></option>
+                        <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
+                            <option value="<?= $mp_i['id'] ?>"><?= $mp_i['name'] ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+                <td contenteditable="true" data-name="nama_program"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
+                <td contenteditable="true" data-name="jenis_kompetensi"></td>
+                <td contenteditable="true" data-name="sasaran_kompetensi"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="level_kompetensi"></td>
+                <td contenteditable="true" data-name="target_peserta"></td>
+                <td contenteditable="true" data-name="staff_nonstaff"></td>
+                <td contenteditable="true" data-name="kategori_program"></td>
+                <td contenteditable="true" data-name="fasilitator"></td>
+                <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
+                <td contenteditable="true" data-name="tempat"></td>
+                <td contenteditable="true" data-name="online_offline"></td>
+                <td><input type="date" class="form-control form-control-sm" data-name="start_date"></td>
+                <td><input type="date" class="form-control form-control-sm" data-name="end_date"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="days"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="hours"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="total_hours"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="rmho"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="rmip"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="rebh"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="rmtu"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="rmts"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="rmgm"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="rhml"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="total_jobsite"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="total_participants"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="grand_total_hours"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan_per_orang"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="training_kit_per_orang"></td>
+                <td><input type="number" class="form-control form-control-sm" data-name="training_kit"></td>
+                <td contenteditable="true" data-name="nama_hotel"></td>
+                <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan_per_orang"  data-name="biaya_penginapan_per_orang"></td>
+                <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan"  data-name="biaya_penginapan"></td>
+                <td><input type="number" class="form-control form-control-sm" name="meeting_package_per_orang"  data-name="meeting_package_per_orang"></td>
+                <td><input type="number" class="form-control form-control-sm" name="meeting_package"  data-name="meeting_package"></td>
+                <td><input type="number" class="form-control form-control-sm" name="makan_per_orang"  data-name="makan_per_orang"></td>
+                <td><input type="number" class="form-control form-control-sm" name="makan"  data-name="makan"></td>
+                <td><input type="number" class="form-control form-control-sm" name="snack_per_orang"  data-name="snack_per_orang"></td>
+                <td><input type="number" class="form-control form-control-sm" name="snack"  data-name="snack"></td>
+                <td><input type="number" class="form-control form-control-sm" name="tiket_per_orang"  data-name="tiket_per_orang"></td>
+                <td><input type="number" class="form-control form-control-sm" name="tiket"  data-name="tiket"></td>
+                <td><input type="number" class="form-control form-control-sm" name="grand_total"  data-name="grand_total"></td>
+                <td contenteditable="true" data-name="keterangan"></td>
+            <?php else : ?>
+                <td contenteditable="true" data-name="month"></td>
+                <td contenteditable="true" data-name="departemen_pengampu"></td>
+                <td contenteditable="true" data-name="nama_program"></td>
+                <td contenteditable="true" data-name="batch"></td>
+                <td contenteditable="true" data-name="jenis_kompetensi"></td>
+                <td contenteditable="true" data-name="sasaran_kompetensi"></td>
+                <td contenteditable="true" data-name="level_kompetensi"></td>
+                <td contenteditable="true" data-name="target_peserta"></td>
+                <td contenteditable="true" data-name="staff_nonstaff"></td>
+                <td contenteditable="true" data-name="kategori_program"></td>
+                <td contenteditable="true" data-name="fasilitator"></td>
+                <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
+                <td contenteditable="true" data-name="tempat"></td>
+                <td contenteditable="true" data-name="online_offline"></td>
+                <td contenteditable="true" data-name="start_date"></td>
+                <td contenteditable="true" data-name="end_date"></td>
+                <td contenteditable="true" data-name="days"></td>
+                <td contenteditable="true" data-name="hours"></td>
+                <td contenteditable="true" data-name="total_hours"></td>
+                <td contenteditable="true" data-name="rmho"></td>
+                <td contenteditable="true" data-name="rmip"></td>
+                <td contenteditable="true" data-name="rebh"></td>
+                <td contenteditable="true" data-name="rmtu"></td>
+                <td contenteditable="true" data-name="rmts"></td>
+                <td contenteditable="true" data-name="rmgm"></td>
+                <td contenteditable="true" data-name="rhml"></td>
+                <td contenteditable="true" data-name="total_jobsite"></td>
+                <td contenteditable="true" data-name="total_participants"></td>
+                <td contenteditable="true" data-name="grand_total_hours"></td>
+                <td contenteditable="true" data-name="biaya_pelatihan_per_orang"></td>
+                <td contenteditable="true" data-name="biaya_pelatihan"></td>
+                <td contenteditable="true" data-name="training_kit_per_orang"></td>
+                <td contenteditable="true" data-name="training_kit"></td>
+                <td contenteditable="true" data-name="nama_hotel"></td>
+                <td contenteditable="true" data-name="biaya_penginapan_per_orang"></td>
+                <td contenteditable="true" data-name="biaya_penginapan"></td>
+                <td contenteditable="true" data-name="meeting_package_per_orang"></td>
+                <td contenteditable="true" data-name="meeting_package"></td>
+                <td contenteditable="true" data-name="makan_per_orang"></td>
+                <td contenteditable="true" data-name="makan"></td>
+                <td contenteditable="true" data-name="snack_per_orang"></td>
+                <td contenteditable="true" data-name="snack"></td>
+                <td contenteditable="true" data-name="tiket_per_orang"></td>
+                <td contenteditable="true" data-name="tiket"></td>
+                <td contenteditable="true" data-name="grand_total"></td>
+                <td contenteditable="true" data-name="keterangan"></td>
+            <?php endif; ?>
+            
         </tr>`;
-        $('#datatable tbody').append(row);
+
+        // Add the row to the table using DataTables API
+        const node = table.row.add($(row)).draw(false).node();
+
+        // Set the custom data-id attribute and class after row is added
+        $(node).attr('data-id', newId).addClass('table-success');
+
+        // Ensure columns are adjusted after the new row is added
+        table.columns.adjust().draw(false);
+
+        // First, go to the last page
+        table.page('last').draw('page');
     }
 
     // Collect table data (existing + new)
@@ -305,16 +521,31 @@ $numberFields = [
         return data;
     }
 
+
     // Extract data from a row
     function collectRow(row) {
         let id = row.data('id');
         let rowData = {
             id: id
         };
-        row.find('td[contenteditable], input').each(function() {
+
+        // Loop through all td elements that are contenteditable, input, or select
+        row.find('td[contenteditable], input, select').each(function() {
             let name = $(this).data('name');
-            if (name) rowData[name] = $(this).is('input') ? $(this).val() : $(this).text();
+            if (name) {
+                if ($(this).is('input')) {
+                    // Handle input elements
+                    rowData[name] = $(this).val();
+                } else if ($(this).is('select')) {
+                    // Handle select elements
+                    rowData[name] = $(this).val();
+                } else {
+                    // Handle contenteditable cells
+                    rowData[name] = $(this).text();
+                }
+            }
         });
+
         return rowData;
     }
 </script>

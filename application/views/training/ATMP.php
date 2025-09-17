@@ -1,3 +1,22 @@
+<?php
+$months = [
+	'01' => 'January',
+	'02' => 'February',
+	'03' => 'March',
+	'04' => 'April',
+	'05' => 'May',
+	'06' => 'June',
+	'07' => 'July',
+	'08' => 'August',
+	'09' => 'September',
+	'10' => 'October',
+	'11' => 'November',
+	'12' => 'December'
+];
+
+$matrix_points = array_column($matrix_points, null, 'id');
+?>
+
 <!-- Content Header (Page header) -->
 <div class="content-header">
 	<div class="container-fluid">
@@ -178,8 +197,8 @@
 							<?php foreach ($trainings as $training) : ?><tr>
 									<td><?= $i++ ?></td>
 									<td><a href="<?= base_url() ?>training/ATMP/MTS/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= count($training['mts']) ?></a></td>
-									<td><?= $training['month'] ?></td>
-									<td><?= $training['departemen_pengampu'] ?></td>
+									<td><?= $training['month'] ? $months[$training['month']] : '' ?></td>
+									<td><?= $training['departemen_pengampu'] ? $matrix_points[$training['departemen_pengampu']]['name'] : '' ?></td>
 									<td><?= $training['nama_program'] ?></td>
 									<td><?= $training['batch'] ?></td>
 									<td><?= $training['jenis_kompetensi'] ?></td>
@@ -249,7 +268,7 @@
 		format: 'YYYY', // Only year
 		viewMode: 'years',
 	});
-	
+
 	// Trigger submit saat tahun berubah dari picker
 	$('#year').on('change.datetimepicker', function(e) {
 		$(this).find('input').closest('form').submit();

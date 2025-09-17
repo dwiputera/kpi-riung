@@ -19,6 +19,7 @@ class MTS extends MY_Controller
         $data['trainings'] = $this->m_mts->get_mts($year, 'trn_mts.year');
         $data['chart_mts_atmp'] = $this->m_mts->get_mts_atmp_chart($year);
         $data['chart_mts_status'] = $this->m_mts->get_mts_status_chart($year);
+        $data['matrix_points'] = $this->db->get_where('org_area_lvl_pstn', array('type' => 'matrix_point'))->result_array();
         $data['year'] = $year;
         $data['content'] = "training/MTS";
         $this->load->view('templates/header_footer', $data);
@@ -33,7 +34,9 @@ class MTS extends MY_Controller
     {
         $data['year'] = $year;
         $data['trainings'] = $this->m_mts->get_mts($year, 'trn_mts.year');
+        $data['matrix_points'] = $this->db->get_where('org_area_lvl_pstn', array('type' => 'matrix_point'))->result_array();
         $data['content'] = "training/MTS_edit";
+        $data['advanced'] = $this->input->get('advanced');
         $this->load->view('templates/header_footer', $data);
     }
 
@@ -105,6 +108,11 @@ class MTS extends MY_Controller
                 $this->set_swal('error', 'Participants Assign Failed');
                 $success = $this->m_m_u->add($mts['id']);
                 if ($success) $this->set_swal('success', 'Participants Assigned Successfully');
+            }
+            if ($this->input->get('action') == 'status_change') {
+                $this->set_swal('error', 'Participants Status Change Failed');
+                $success = $this->m_m_u->status_change();
+                if ($success) $this->set_swal('success', 'Participants Status Changeed Successfully');
             }
             redirect('training/MTS/participants/' . $mts_hash . '?year=' . $year);
         }

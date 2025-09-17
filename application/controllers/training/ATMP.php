@@ -18,6 +18,7 @@ class ATMP extends MY_Controller
             'year'      => $year,
             'atmps'     => $this->m_atmp->get_atmp_docs($year),
             'trainings' => $this->m_atmp->get_atmp($year, 'trn_atmp.year'),
+            'matrix_points' => $this->db->get_where('org_area_lvl_pstn', array('type' => 'matrix_point'))->result_array(),
             'content'   => 'training/ATMP'
         ];
         $this->load->view('templates/header_footer', $data);
@@ -268,7 +269,9 @@ class ATMP extends MY_Controller
         $data = [
             'year'      => $year,
             'trainings' => $this->m_atmp->get_atmp($year, 'trn_atmp.year'),
-            'content'   => 'training/ATMP_edit'
+            'matrix_points' => $this->db->get_where('org_area_lvl_pstn', array('type' => 'matrix_point'))->result_array(),
+            'content'   => 'training/ATMP_edit',
+            'advanced'   => $this->input->get('advanced'),
         ];
 
         $this->load->view('templates/header_footer', $data);

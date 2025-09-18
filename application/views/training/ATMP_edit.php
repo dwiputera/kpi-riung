@@ -390,13 +390,13 @@ $months = [
 
     // Create a new row dynamically
     function createRow() {
+        showOverlayFull();
         const table = $('#datatable').DataTable();
         const newId = 'new_' + Date.now();
         const row_number_add = $('#row_number_add').val();
 
         // Construct the new row
-        for (let index = 0; index < row_number_add; index++) {
-            let row = `<tr data-id="${newId}" class="table-success">
+        let row = `<tr data-id="${newId}" class="table-success">
             <td><input type="checkbox" class="row-checkbox"></td>
             <td>New</td>
             <?php if (!$advanced) : ?>
@@ -511,6 +511,7 @@ $months = [
             
         </tr>`;
 
+        for (let index = 0; index < row_number_add; index++) {
             // Add the row to the table using DataTables API
             const node = table.row.add($(row)).draw(false).node();
 
@@ -523,6 +524,7 @@ $months = [
 
         // First, go to the last page
         table.page('last').draw('page');
+        hideOverlayFull();
     }
 
     // Collect table data (existing + new)

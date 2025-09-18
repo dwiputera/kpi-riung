@@ -97,6 +97,7 @@ class M_atmp extends CI_Model
 
         // DELETES
         if (!empty($deletes)) {
+            $this->db->where_in('atmp_id', $deletes)->delete('trn_atmp_user');
             $this->db->where_in('id', $deletes)->delete('trn_atmp');
             $success = true;
         }

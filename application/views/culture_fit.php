@@ -264,6 +264,7 @@
 
     // Create a new row dynamically
     function createRow() {
+        showOverlayFull();
         const table = $('#datatable').DataTable();
         const newId = 'new_' + Date.now();
         const row_number_add = $('#row_number_add').val();
@@ -320,6 +321,7 @@
 
         // First, go to the last page
         table.page('last').draw('page');
+        hideOverlayFull();
     }
 
     function collectTableData() {

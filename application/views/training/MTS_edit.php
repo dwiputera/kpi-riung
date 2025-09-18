@@ -480,6 +480,7 @@ $months = [
 
     // Create a new row dynamically
     function createRow() {
+        showOverlayFull();
         const table = $('#datatable').DataTable();
         const newId = 'new_' + Date.now();
         const row_number_add = $('#row_number_add').val();
@@ -616,6 +617,7 @@ $months = [
 
             // Set the custom data-id attribute and class after row is added
             $(node).attr('data-id', newId).addClass('table-success');
+            hideOverlayFull();
         }
 
         // Ensure columns are adjusted after the new row is added

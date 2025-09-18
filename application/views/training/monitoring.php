@@ -367,7 +367,6 @@
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
-                    <a href="<?= base_url() ?>training/monitoring/edit/<?= $month ?>" class="btn btn-primary w-100">Edit</a><br><br>
                     <table id="datatable_training" class="table table-bordered table-striped">
                         <thead>
                             <tr>

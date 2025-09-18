@@ -53,7 +53,7 @@ class M_mts extends CI_Model
         $mts_n = array_filter($mts, fn($m) => $m['status'] == 'N') ?? [];
         $mts_r = array_filter($mts, fn($m) => $m['status'] == 'R') ?? [];
         $mts_p = array_filter($mts, fn($m) => $m['status'] == 'P' || !$m['status']) ?? [];
-        
+
         $percentage = function ($count, $total) {
             return $total > 0 ? number_format(($count / $total) * 100, 2) : '0.00';
         };
@@ -82,6 +82,7 @@ class M_mts extends CI_Model
             $updateData = [];
             foreach ($updates as $row) {
                 if (isset($row['id']) && is_numeric($row['id']) && in_array($row['id'], $ids)) {
+                    $row['status'] = $row['status'] != '' ? $row['status'] : 'P';
                     $updateData[] = $row;
                 }
             }
@@ -94,6 +95,7 @@ class M_mts extends CI_Model
 
         // 2. Handle DELETES
         if (!empty($deletes)) {
+            $this->db->where_in('mts_id', $deletes)->delete('trn_mts_user');
             $this->db->where_in('id', $deletes)->delete('trn_mts');
             $success = true;
         }
@@ -110,6 +112,7 @@ class M_mts extends CI_Model
                 if (isset($row['id']) && strpos($row['id'], 'new_') === 0) {
                     unset($row['id']);
                     $row['year'] = $year;
+                    $row['status'] = $row['status'] && $row['status'] != '' ?? 'P';
                     $createData[] = $row;
                 }
             }

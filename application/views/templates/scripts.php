@@ -53,7 +53,7 @@
 <script src="<?= base_url('assets/js/general-display.js') ?>"></script>
 
 <script>
-    $('.show-overlay-full').on('click', function() {
+    $(document).on('click', '.show-overlay-full', function() {
         showOverlayFull();
     });
 

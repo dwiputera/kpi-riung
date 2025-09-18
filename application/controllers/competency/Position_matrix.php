@@ -217,7 +217,7 @@ class Position_matrix extends MY_Controller
             foreach ($mtxp_i['subordinates'] as $i_oalp => $oalp_i) {
                 foreach ($competencies as $i_cp => $cp_i) {
                     $matrix_points[$i_mtxp]['subordinates'][$i_oalp]['target'][$cp_i['id']] = 0;
-                    $target = array_filter($targets, fn($cpt_i, $i_cpt) => $cpt_i['comp_pstn_id'] == $cp_i['id'] && $cpt_i['area_lvl_pstn_id'] == $oalp_i['id'], ARRAY_FILTER_USE_BOTH);
+                    $target = array_filter($targets, fn($cpt_i, $i_cpt) => $cpt_i['comp_pstn_id'] == $cp_i['id'] && $cpt_i['cpt_oalp_id'] == $oalp_i['id'], ARRAY_FILTER_USE_BOTH);
                     $target = array_values($target);
                     if ($target) $matrix_points[$i_mtxp]['subordinates'][$i_oalp]['target'][$cp_i['id']] = $target[0]['target'];
                 }

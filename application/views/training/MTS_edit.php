@@ -242,8 +242,9 @@ $months = [
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
-                        <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-success" onclick="createRow()">
+                        <div class="col-lg-3 d-flex">
+                            <input type="number" class="form-control w-50" id="row_number_add" name="row_number_add" value="1">
+                            <button type="button" class="w-50 btn btn-success" onclick="createRow()">
                                 <i class="fas fa-plus"></i> New
                             </button>
                         </div>
@@ -481,138 +482,141 @@ $months = [
     function createRow() {
         const table = $('#datatable').DataTable();
         const newId = 'new_' + Date.now();
+        const row_number_add = $('#row_number_add').val();
 
         // Construct the new row
-        let row = `<tr data-id="${newId}" class="table-success">
-            <td><input type="checkbox" class="row-checkbox"></td>
-            <td>New</td>
-            <?php if (!$advanced) : ?>
-                <td>
-                    <select class="form-control form-control-sm status-select"
-                        data-name="status"">
-                        <option value="P">Pending</option>
-                        <option value="Y">Done</option>
-                        <option value="N">Cancelled</option>
-                        <option value="R">Reschedule</option>
-                    </select>
-                </td>
-                <td>
-                    <select data-name="month">
-                        <option value=""></option>
-                        <?php foreach ($months as $i_m => $m_i) : ?>
-                            <option value="<?= $i_m ?>"><?= $m_i ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </td>
-                <td>
-                    <select data-name="departemen_pengampu">
-                        <option value=""></option>
-                        <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
-                            <option value="<?= $mp_i['id'] ?>"><?= $mp_i['name'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </td>
-                <td contenteditable="true" data-name="nama_program"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
-                <td contenteditable="true" data-name="jenis_kompetensi"></td>
-                <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-                <td contenteditable="true" data-name="level_kompetensi"></td>
-                <td contenteditable="true" data-name="target_peserta"></td>
-                <td contenteditable="true" data-name="staff_nonstaff"></td>
-                <td contenteditable="true" data-name="kategori_program"></td>
-                <td contenteditable="true" data-name="fasilitator"></td>
-                <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
-                <td contenteditable="true" data-name="tempat"></td>
-                <td contenteditable="true" data-name="online_offline"></td>
-                <td><input type="date" class="form-control form-control-sm" data-name="start_date"></td>
-                <td><input type="date" class="form-control form-control-sm" data-name="end_date"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="days"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="hours"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="total_hours"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmho"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmip"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rebh"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmtu"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmts"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmgm"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rhml"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="total_jobsite"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="total_participants"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="grand_total_hours"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="training_kit_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="training_kit"></td>
-                <td contenteditable="true" data-name="nama_hotel"></td>
-                <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan_per_orang"  data-name="biaya_penginapan_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan"  data-name="biaya_penginapan"></td>
-                <td><input type="number" class="form-control form-control-sm" name="meeting_package_per_orang"  data-name="meeting_package_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="meeting_package"  data-name="meeting_package"></td>
-                <td><input type="number" class="form-control form-control-sm" name="makan_per_orang"  data-name="makan_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="makan"  data-name="makan"></td>
-                <td><input type="number" class="form-control form-control-sm" name="snack_per_orang"  data-name="snack_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="snack"  data-name="snack"></td>
-                <td><input type="number" class="form-control form-control-sm" name="tiket_per_orang"  data-name="tiket_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="tiket"  data-name="tiket"></td>
-                <td><input type="number" class="form-control form-control-sm" name="grand_total"  data-name="grand_total"></td>
-                <td contenteditable="true" data-name="keterangan"></td>
-            <?php else : ?>
-                <td contenteditable="true" data-name="status"></td>
-                <td contenteditable="true" data-name="month"></td>
-                <td contenteditable="true" data-name="departemen_pengampu"></td>
-                <td contenteditable="true" data-name="nama_program"></td>
-                <td contenteditable="true" data-name="batch"></td>
-                <td contenteditable="true" data-name="jenis_kompetensi"></td>
-                <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-                <td contenteditable="true" data-name="level_kompetensi"></td>
-                <td contenteditable="true" data-name="target_peserta"></td>
-                <td contenteditable="true" data-name="staff_nonstaff"></td>
-                <td contenteditable="true" data-name="kategori_program"></td>
-                <td contenteditable="true" data-name="fasilitator"></td>
-                <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
-                <td contenteditable="true" data-name="tempat"></td>
-                <td contenteditable="true" data-name="online_offline"></td>
-                <td contenteditable="true" data-name="start_date"></td>
-                <td contenteditable="true" data-name="end_date"></td>
-                <td contenteditable="true" data-name="days"></td>
-                <td contenteditable="true" data-name="hours"></td>
-                <td contenteditable="true" data-name="total_hours"></td>
-                <td contenteditable="true" data-name="rmho"></td>
-                <td contenteditable="true" data-name="rmip"></td>
-                <td contenteditable="true" data-name="rebh"></td>
-                <td contenteditable="true" data-name="rmtu"></td>
-                <td contenteditable="true" data-name="rmts"></td>
-                <td contenteditable="true" data-name="rmgm"></td>
-                <td contenteditable="true" data-name="rhml"></td>
-                <td contenteditable="true" data-name="total_jobsite"></td>
-                <td contenteditable="true" data-name="total_participants"></td>
-                <td contenteditable="true" data-name="grand_total_hours"></td>
-                <td contenteditable="true" data-name="biaya_pelatihan_per_orang"></td>
-                <td contenteditable="true" data-name="biaya_pelatihan"></td>
-                <td contenteditable="true" data-name="training_kit_per_orang"></td>
-                <td contenteditable="true" data-name="training_kit"></td>
-                <td contenteditable="true" data-name="nama_hotel"></td>
-                <td contenteditable="true" data-name="biaya_penginapan_per_orang"></td>
-                <td contenteditable="true" data-name="biaya_penginapan"></td>
-                <td contenteditable="true" data-name="meeting_package_per_orang"></td>
-                <td contenteditable="true" data-name="meeting_package"></td>
-                <td contenteditable="true" data-name="makan_per_orang"></td>
-                <td contenteditable="true" data-name="makan"></td>
-                <td contenteditable="true" data-name="snack_per_orang"></td>
-                <td contenteditable="true" data-name="snack"></td>
-                <td contenteditable="true" data-name="tiket_per_orang"></td>
-                <td contenteditable="true" data-name="tiket"></td>
-                <td contenteditable="true" data-name="grand_total"></td>
-                <td contenteditable="true" data-name="keterangan"></td>
-            <?php endif; ?>
-            
-        </tr>`;
+        for (let index = 0; index < row_number_add; index++) {
+            let row = `<tr data-id="${newId}" class="table-success">
+                <td><input type="checkbox" class="row-checkbox"></td>
+                <td>New</td>
+                <?php if (!$advanced) : ?>
+                    <td>
+                        <select class="form-control form-control-sm status-select"
+                            data-name="status"">
+                            <option value="P">Pending</option>
+                            <option value="Y">Done</option>
+                            <option value="N">Cancelled</option>
+                            <option value="R">Reschedule</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select data-name="month">
+                            <option value=""></option>
+                            <?php foreach ($months as $i_m => $m_i) : ?>
+                                <option value="<?= $i_m ?>"><?= $m_i ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td>
+                        <select data-name="departemen_pengampu">
+                            <option value=""></option>
+                            <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
+                                <option value="<?= $mp_i['id'] ?>"><?= $mp_i['name'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td contenteditable="true" data-name="nama_program"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
+                    <td contenteditable="true" data-name="jenis_kompetensi"></td>
+                    <td contenteditable="true" data-name="sasaran_kompetensi"></td>
+                    <td contenteditable="true" data-name="level_kompetensi"></td>
+                    <td contenteditable="true" data-name="target_peserta"></td>
+                    <td contenteditable="true" data-name="staff_nonstaff"></td>
+                    <td contenteditable="true" data-name="kategori_program"></td>
+                    <td contenteditable="true" data-name="fasilitator"></td>
+                    <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
+                    <td contenteditable="true" data-name="tempat"></td>
+                    <td contenteditable="true" data-name="online_offline"></td>
+                    <td><input type="date" class="form-control form-control-sm" data-name="start_date"></td>
+                    <td><input type="date" class="form-control form-control-sm" data-name="end_date"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="days"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="hours"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="total_hours"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="rmho"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="rmip"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="rebh"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="rmtu"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="rmts"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="rmgm"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="rhml"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="total_jobsite"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="total_participants"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="grand_total_hours"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan_per_orang"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="training_kit_per_orang"></td>
+                    <td><input type="number" class="form-control form-control-sm" data-name="training_kit"></td>
+                    <td contenteditable="true" data-name="nama_hotel"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan_per_orang"  data-name="biaya_penginapan_per_orang"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan"  data-name="biaya_penginapan"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="meeting_package_per_orang"  data-name="meeting_package_per_orang"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="meeting_package"  data-name="meeting_package"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="makan_per_orang"  data-name="makan_per_orang"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="makan"  data-name="makan"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="snack_per_orang"  data-name="snack_per_orang"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="snack"  data-name="snack"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="tiket_per_orang"  data-name="tiket_per_orang"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="tiket"  data-name="tiket"></td>
+                    <td><input type="number" class="form-control form-control-sm" name="grand_total"  data-name="grand_total"></td>
+                    <td contenteditable="true" data-name="keterangan"></td>
+                <?php else : ?>
+                    <td contenteditable="true" data-name="status"></td>
+                    <td contenteditable="true" data-name="month"></td>
+                    <td contenteditable="true" data-name="departemen_pengampu"></td>
+                    <td contenteditable="true" data-name="nama_program"></td>
+                    <td contenteditable="true" data-name="batch"></td>
+                    <td contenteditable="true" data-name="jenis_kompetensi"></td>
+                    <td contenteditable="true" data-name="sasaran_kompetensi"></td>
+                    <td contenteditable="true" data-name="level_kompetensi"></td>
+                    <td contenteditable="true" data-name="target_peserta"></td>
+                    <td contenteditable="true" data-name="staff_nonstaff"></td>
+                    <td contenteditable="true" data-name="kategori_program"></td>
+                    <td contenteditable="true" data-name="fasilitator"></td>
+                    <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
+                    <td contenteditable="true" data-name="tempat"></td>
+                    <td contenteditable="true" data-name="online_offline"></td>
+                    <td contenteditable="true" data-name="start_date"></td>
+                    <td contenteditable="true" data-name="end_date"></td>
+                    <td contenteditable="true" data-name="days"></td>
+                    <td contenteditable="true" data-name="hours"></td>
+                    <td contenteditable="true" data-name="total_hours"></td>
+                    <td contenteditable="true" data-name="rmho"></td>
+                    <td contenteditable="true" data-name="rmip"></td>
+                    <td contenteditable="true" data-name="rebh"></td>
+                    <td contenteditable="true" data-name="rmtu"></td>
+                    <td contenteditable="true" data-name="rmts"></td>
+                    <td contenteditable="true" data-name="rmgm"></td>
+                    <td contenteditable="true" data-name="rhml"></td>
+                    <td contenteditable="true" data-name="total_jobsite"></td>
+                    <td contenteditable="true" data-name="total_participants"></td>
+                    <td contenteditable="true" data-name="grand_total_hours"></td>
+                    <td contenteditable="true" data-name="biaya_pelatihan_per_orang"></td>
+                    <td contenteditable="true" data-name="biaya_pelatihan"></td>
+                    <td contenteditable="true" data-name="training_kit_per_orang"></td>
+                    <td contenteditable="true" data-name="training_kit"></td>
+                    <td contenteditable="true" data-name="nama_hotel"></td>
+                    <td contenteditable="true" data-name="biaya_penginapan_per_orang"></td>
+                    <td contenteditable="true" data-name="biaya_penginapan"></td>
+                    <td contenteditable="true" data-name="meeting_package_per_orang"></td>
+                    <td contenteditable="true" data-name="meeting_package"></td>
+                    <td contenteditable="true" data-name="makan_per_orang"></td>
+                    <td contenteditable="true" data-name="makan"></td>
+                    <td contenteditable="true" data-name="snack_per_orang"></td>
+                    <td contenteditable="true" data-name="snack"></td>
+                    <td contenteditable="true" data-name="tiket_per_orang"></td>
+                    <td contenteditable="true" data-name="tiket"></td>
+                    <td contenteditable="true" data-name="grand_total"></td>
+                    <td contenteditable="true" data-name="keterangan"></td>
+                <?php endif; ?>
+                
+            </tr>`;
 
-        // Add the row to the table using DataTables API
-        const node = table.row.add($(row)).draw(false).node();
+            // Add the row to the table using DataTables API
+            const node = table.row.add($(row)).draw(false).node();
 
-        // Set the custom data-id attribute and class after row is added
-        $(node).attr('data-id', newId).addClass('table-success');
+            // Set the custom data-id attribute and class after row is added
+            $(node).attr('data-id', newId).addClass('table-success');
+        }
 
         // Ensure columns are adjusted after the new row is added
         table.columns.adjust().draw(false);

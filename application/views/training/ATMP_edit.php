@@ -230,8 +230,9 @@ $months = [
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
-                        <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-success" onclick="createRow()">
+                        <div class="col-lg-3 d-flex">
+                            <input type="number" class="form-control w-50" id="row_number_add" name="row_number_add" value="1">
+                            <button type="button" class="w-50 btn btn-success" onclick="createRow()">
                                 <i class="fas fa-plus"></i> New
                             </button>
                         </div>
@@ -391,9 +392,11 @@ $months = [
     function createRow() {
         const table = $('#datatable').DataTable();
         const newId = 'new_' + Date.now();
+        const row_number_add = $('#row_number_add').val();
 
         // Construct the new row
-        let row = `<tr data-id="${newId}" class="table-success">
+        for (let index = 0; index < row_number_add; index++) {
+            let row = `<tr data-id="${newId}" class="table-success">
             <td><input type="checkbox" class="row-checkbox"></td>
             <td>New</td>
             <?php if (!$advanced) : ?>
@@ -508,11 +511,12 @@ $months = [
             
         </tr>`;
 
-        // Add the row to the table using DataTables API
-        const node = table.row.add($(row)).draw(false).node();
+            // Add the row to the table using DataTables API
+            const node = table.row.add($(row)).draw(false).node();
 
-        // Set the custom data-id attribute and class after row is added
-        $(node).attr('data-id', newId).addClass('table-success');
+            // Set the custom data-id attribute and class after row is added
+            $(node).attr('data-id', newId).addClass('table-success');
+        }
 
         // Ensure columns are adjusted after the new row is added
         table.columns.adjust().draw(false);

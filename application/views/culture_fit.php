@@ -119,8 +119,9 @@
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
-                        <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-success" onclick="createRow()">
+                        <div class="col-lg-3 d-flex">
+                            <input type="number" class="form-control w-50" id="row_number_add" name="row_number_add" value="1">
+                            <button type="button" class="w-50 btn btn-success" onclick="createRow()">
                                 <i class="fas fa-plus"></i> New
                             </button>
                         </div>
@@ -265,51 +266,55 @@
     function createRow() {
         const table = $('#datatable').DataTable();
         const newId = 'new_' + Date.now();
+        const row_number_add = $('#row_number_add').val();
 
-        const rowArray = [
-            '<input type="checkbox" class="row-checkbox">', // kol-1
-            'New', // kol-2
-            '', '', '', '', // kol-3..6
-            '', // performance_review_reference (kol-7)
-            '', // employee_id
-            '', // employee
-            '', // NRP
-            '', // level
-            '', // jabatan
-            '', // layer
-            '', // year
-            '', // manager
-            '', // NRP_manager
-            '', // division
-            '', // work_location
-            '' // nilai_behaviour (kol terakhir)
-        ];
+        // Construct the new row
+        for (let index = 0; index < row_number_add; index++) {
+            const rowArray = [
+                '<input type="checkbox" class="row-checkbox">', // kol-1
+                'New', // kol-2
+                '', '', '', '', // kol-3..6
+                '', // performance_review_reference (kol-7)
+                '', // employee_id
+                '', // employee
+                '', // NRP
+                '', // level
+                '', // jabatan
+                '', // layer
+                '', // year
+                '', // manager
+                '', // NRP_manager
+                '', // division
+                '', // work_location
+                '' // nilai_behaviour (kol terakhir)
+            ];
 
-        const node = table.row.add(rowArray).draw(false).node();
-        $(node).attr('data-id', newId).addClass('table-success');
+            const node = table.row.add(rowArray).draw(false).node();
+            $(node).attr('data-id', newId).addClass('table-success');
 
-        // Set contenteditable untuk kolom-kolom tertentu (pakai index td)
-        const editableIdx = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // sesuaikan
-        $(node).find('td').each(function(i) {
-            if (editableIdx.includes(i)) {
-                const map = {
-                    6: 'performance_review_reference',
-                    7: 'employee_id',
-                    8: 'employee',
-                    9: 'NRP',
-                    10: 'level',
-                    11: 'jabatan',
-                    12: 'layer',
-                    13: 'year',
-                    14: 'manager',
-                    15: 'NRP_manager',
-                    16: 'division',
-                    17: 'work_location',
-                    18: 'nilai_behaviour'
-                };
-                $(this).attr('contenteditable', 'true').attr('data-column', map[i] || '');
-            }
-        });
+            // Set contenteditable untuk kolom-kolom tertentu (pakai index td)
+            const editableIdx = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // sesuaikan
+            $(node).find('td').each(function(i) {
+                if (editableIdx.includes(i)) {
+                    const map = {
+                        6: 'performance_review_reference',
+                        7: 'employee_id',
+                        8: 'employee',
+                        9: 'NRP',
+                        10: 'level',
+                        11: 'jabatan',
+                        12: 'layer',
+                        13: 'year',
+                        14: 'manager',
+                        15: 'NRP_manager',
+                        16: 'division',
+                        17: 'work_location',
+                        18: 'nilai_behaviour'
+                    };
+                    $(this).attr('contenteditable', 'true').attr('data-column', map[i] || '');
+                }
+            });
+        }
 
         table.columns.adjust().draw(false);
 

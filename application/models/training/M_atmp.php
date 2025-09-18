@@ -62,7 +62,9 @@ class M_atmp extends CI_Model
 
         // Gabungkan mts ke hasil utama
         foreach ($result as &$row) {
-            $row['mts'] = isset($mts_data[$row['id']]) ? $mts_data[$row['id']] : [];
+            if (isset($row['mts']) || $row) {
+                $row['mts'] = isset($mts_data[$row['id']]) ? $mts_data[$row['id']] : [];
+            }
         }
 
         return $many ? $result : $result[0];

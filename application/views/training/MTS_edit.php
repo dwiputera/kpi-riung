@@ -136,7 +136,7 @@ $months = [
                                         <td><input type="number" class="form-control form-control-sm" name="batch" value="<?= $training['batch'] ?>" data-name="batch"></td>
                                         <td contenteditable="true" data-name="jenis_kompetensi"><?= $training['jenis_kompetensi'] ?></td>
                                         <td contenteditable="true" data-name="sasaran_kompetensi"><?= $training['sasaran_kompetensi'] ?></td>
-                                        <td><input type="number" class="form-control form-control-sm" name="level_kompetensi" value="<?= $training['level_kompetensi'] ?>" data-name="level_kompetensi"></td>
+                                        <td contenteditable="true" data-name="level_kompetensi"><?= $training['level_kompetensi'] ?></td>
                                         <td contenteditable="true" data-name="target_peserta"><?= $training['target_peserta'] ?></td>
                                         <td contenteditable="true" data-name="staff_nonstaff"><?= $training['staff_nonstaff'] ?></td>
                                         <td contenteditable="true" data-name="kategori_program"><?= $training['kategori_program'] ?></td>
@@ -516,7 +516,7 @@ $months = [
                 <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
                 <td contenteditable="true" data-name="jenis_kompetensi"></td>
                 <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="level_kompetensi"></td>
+                <td contenteditable="true" data-name="level_kompetensi"></td>
                 <td contenteditable="true" data-name="target_peserta"></td>
                 <td contenteditable="true" data-name="staff_nonstaff"></td>
                 <td contenteditable="true" data-name="kategori_program"></td>

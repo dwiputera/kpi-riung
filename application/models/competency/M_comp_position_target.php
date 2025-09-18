@@ -13,7 +13,7 @@ class M_comp_position_target extends CI_Model
         $where = '';
         if ($value) $where = "WHERE $by = '$value'";
         $query = $this->db->query("
-            SELECT *, cp.area_lvl_pstn_id cp_oalp_id, cpt.area_lvl_pstn_id cpt_oalp_id FROM comp_pstn_target cpt
+            SELECT *, cpt.id id, cp.area_lvl_pstn_id cp_oalp_id, cpt.area_lvl_pstn_id cpt_oalp_id FROM comp_pstn_target cpt
             LEFT JOIN comp_position cp ON cp.id = cpt.comp_pstn_id
             $where
         ");
@@ -47,7 +47,7 @@ class M_comp_position_target extends CI_Model
                 $target_found = null;
 
                 foreach ($target_cp as $cpt_i) {
-                    if (md5($cpt_i['area_lvl_pstn_id']) === $i_pstn_subm) {
+                    if (md5($cpt_i['cpt_oalp_id']) === $i_pstn_subm) {
                         $target_found = $cpt_i;
                         break;
                     }

@@ -54,13 +54,33 @@ class Position_matrix extends MY_Controller
             }
         }
 
-        $competencies = $this->m_c_pstn->get_comp_position();
-        $targets = $this->m_c_p_targ->get_comp_position_target();
-        $data['matrix_points'] = $this->create_matrix($matrix_points, $competencies, $targets);
+        if (count($matrix_points) > 3 && !$this->input->post('matrix_points')) {
+            $this->matrix_points_select($matrix_points);
+        } else {
+            if ($this->input->post('matrix_points')) {
+                $matrix_points_base = array_column($matrix_points, null, 'id');
+                $matrix_points = [];
+                foreach ($this->input->post('matrix_points') as $i_mp => $mp_i) {
+                    $matrix_points[] = $matrix_points_base[$mp_i];
+                }
+                $data['matrix_points_chosen'] = $this->input->post('matrix_points');
+            }
+            $competencies = $this->m_c_pstn->get_comp_position();
+            $targets = $this->m_c_p_targ->get_comp_position_target();
+            $data['matrix_points'] = $this->create_matrix($matrix_points, $competencies, $targets);
+            $data['admin'] = true;
+            $data['matrix_position_active'] = $this->input->get('matrix_position_active');
+            $data['competencies'] = $this->group_competencies($matrix_points, $competencies);
+            $data['content'] = "competency/position_matrix";
+            $this->load->view('templates/header_footer', $data);
+        }
+    }
+
+    public function matrix_points_select($matrix_points)
+    {
         $data['admin'] = true;
-        $data['matrix_position_active'] = $this->input->get('matrix_position_active');
-        $data['competencies'] = $this->group_competencies($matrix_points, $competencies);
-        $data['content'] = "competency/position_matrix";
+        $data['matrix_points'] = $matrix_points;
+        $data['content'] = "competency/matrix_points_select";
         $this->load->view('templates/header_footer', $data);
     }
 
@@ -70,7 +90,7 @@ class Position_matrix extends MY_Controller
             foreach ($mtxp_i['subordinates'] as $i_oalp => $oalp_i) {
                 foreach ($competencies as $i_cp => $cp_i) {
                     $matrix_points[$i_mtxp]['subordinates'][$i_oalp]['target'][$cp_i['id']] = 0;
-                    $target = array_filter($targets, fn($cpt_i, $i_cpt) => $cpt_i['comp_pstn_id'] == $cp_i['id'] && $cpt_i['area_lvl_pstn_id'] == $oalp_i['id'], ARRAY_FILTER_USE_BOTH);
+                    $target = array_filter($targets, fn($cpt_i, $i_cpt) => $cpt_i['comp_pstn_id'] == $cp_i['id'] && $cpt_i['cpt_oalp_id'] == $oalp_i['id'], ARRAY_FILTER_USE_BOTH);
                     $target = array_values($target);
                     if ($target) $matrix_points[$i_mtxp]['subordinates'][$i_oalp]['target'][$cp_i['id']] = $target[0]['target'];
                 }

@@ -124,7 +124,6 @@ class M_atmp extends CI_Model
             }
         }
 
-
         return $success;
     }
 }

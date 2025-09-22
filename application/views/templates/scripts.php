@@ -127,3 +127,85 @@
         });
     })();
 </script>
+
+<script>
+    function getJwtExp(token) {
+        try {
+            const base64Payload = token.split('.')[1]; // ambil bagian payload
+            const payload = JSON.parse(atob(base64Payload.replace(/-/g, '+').replace(/_/g, '/')));
+            return payload.exp; // ambil field exp
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function decodeJwt(token) {
+        try {
+            const base64Payload = token.split('.')[1];
+            const payload = JSON.parse(atob(base64Payload.replace(/-/g, '+').replace(/_/g, '/')));
+            return payload;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    let lastToken = null;
+
+    function refreshToken() {
+        $.ajax({
+            url: "<?= base_url('auth/check_token') ?>",
+            method: "GET",
+            dataType: "json",
+            success: function(res) {
+                if (res.status === 'ok' && res.token) {
+                    if (lastToken && lastToken !== res.token) {
+                        console.log("🎉 Token sudah diperbarui!");
+                    } else if (lastToken) {
+                        console.log("ℹ️ Token masih sama, belum butuh refresh.");
+                    }
+                    lastToken = res.token;
+
+                    scheduleTokenRefresh(res.token);
+                } else {
+                    window.location.href = "<?= base_url() ?>";
+                }
+            }
+        });
+    }
+
+    function scheduleTokenRefreshDebug(token) {
+        console.log("⏱ Debug mode: token refresh akan dicoba tiap 3 detik");
+
+        setInterval(function() {
+            console.log("⏳ Cek token sekarang...");
+            refreshToken(token);
+        }, 3 * 1000); // 3 detik untuk debug
+    }
+
+    function scheduleTokenRefresh(token) {
+        const exp = getJwtExp(token);
+        if (!exp) return;
+
+        const now = Math.floor(Date.now() / 1000);
+        const timeLeft = exp - now;
+
+        console.log("Token exp:", exp, "Sekarang:", now, "Sisa:", timeLeft, "detik");
+        if (timeLeft <= 300) {
+            console.log("⚠️ Token hampir habis, refresh sekarang!");
+            refreshToken(token);
+        } else {
+            const refreshIn = (timeLeft - 120) * 1000;
+            console.log("✅ Jadwalkan refresh dalam", refreshIn / 1000, "detik");
+            setTimeout(function() {
+                refreshToken(token);
+            }, refreshIn);
+        }
+    }
+
+    const tokenFromSession = "<?= $this->session->userdata('token') ?>";
+    if (tokenFromSession) {
+        // Pakai salah satu:
+        // scheduleTokenRefreshDebug(tokenFromSession); // untuk test cepat
+        scheduleTokenRefresh(tokenFromSession); // mode normal
+    }
+</script>

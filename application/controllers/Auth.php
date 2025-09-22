@@ -17,6 +17,32 @@ class Auth extends MY_Controller
         }
     }
 
+    public function check_token()
+    {
+        // Panggil manual hook
+        $CI = &get_instance();
+        $CI->load->library('session');
+
+        // Ambil token dari session
+        $token = $CI->session->userdata('token');
+        if (!$token) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['status' => 'error', 'message' => 'No token']));
+            return;
+        }
+
+        // Kalau hook TokenRefreshHook jalan, session mungkin sudah di-refresh.
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status' => 'ok',
+                'token' => $token,
+                'NRP' => $CI->session->userdata('NRP'),
+                'full_name' => $CI->session->userdata('full_name'),
+            ]));
+    }
+
     public function logout()
     {
         $token = $this->session->userdata('token');

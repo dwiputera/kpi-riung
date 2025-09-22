@@ -168,9 +168,9 @@
             if (typeof res.my_score !== 'undefined') setScore(res.my_score);
 
             if (!res.active) {
-                // kalau sebelumnya ada soal aktif → anggap quiz selesai, redirect ke leaderboard quiz ini
-                if (currentQuestionId !== null && res.quiz_id) {
-                    window.location.href = '<?= site_url('quiz/leaderboard/'); ?>' + md5(res.quiz_id);
+                if (currentQuestionId !== null && (res.leaderboard_hash || res.quiz_id)) {
+                    const slug = res.leaderboard_hash || res.quiz_id; // fallback kalau hash belum ada
+                    window.location.href = '<?= site_url('quiz/leaderboard/'); ?>' + slug;
                     return;
                 }
                 // belum start

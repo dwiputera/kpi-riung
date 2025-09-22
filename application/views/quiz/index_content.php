@@ -54,7 +54,8 @@
             if (res && res.ok) {
                 if (res.ended) {
                     // quiz sudah selesai → langsung ke leaderboard
-                    window.location.href = '<?= site_url('quiz/leaderboard/'); ?>' + md5(res.quiz_id);
+                    const slug = res.leaderboard_hash || res.quiz_id; // fallback kalau hash belum ada
+                    window.location.href = '<?= site_url('quiz/leaderboard/'); ?>' + slug;
                 } else {
                     // quiz aktif → ke play
                     window.location.href = '<?= site_url('quiz/play'); ?>';

@@ -130,6 +130,8 @@ class Quiz extends MY_Controller
             $remaining = max(0, $deadline - time());
         }
 
+        $leaderboard_hash = md5((string)$quiz_id);
+
         return $this->json([
             'ok' => true,
             'active' => true,
@@ -138,7 +140,8 @@ class Quiz extends MY_Controller
             'question' => $q['question'],
             'options' => ['A' => $q['option_a'], 'B' => $q['option_b'], 'C' => $q['option_c'], 'D' => $q['option_d']],
             'time_remaining' => $remaining,
-            'my_score' => $my_score
+            'my_score' => $my_score,
+            'leaderboard_hash' => $leaderboard_hash, // <—
         ]);
     }
 

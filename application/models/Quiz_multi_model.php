@@ -10,14 +10,33 @@ class Quiz_multi_model extends CI_Model
     }
 
     /* ===== QUIZ ROOM ===== */
-    public function create_quiz($host_nrp, $pin)
+    public function create_quiz($host_nrp, $pin = null, $title = null)
     {
         $this->db->insert('quiz', [
-            'host_nrp' => $host_nrp,
-            'pin' => $pin,
-            'is_active' => 1
+            'host_nrp'  => $host_nrp,
+            'title'     => $title,
+            'pin'       => null,   // <-- NULL dulu, belum generate
+            'is_active' => 0       // <-- belum aktif
         ]);
         return $this->db->insert_id();
+    }
+
+    public function generate_unique_pin()
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $pin = str_pad((string)mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $exists = $this->db->where('pin', $pin)
+                ->where('is_active', 1)
+                ->count_all_results('quiz') > 0;
+            if (!$exists) return $pin;
+        }
+        return false; // gagal setelah 10x
+    }
+
+    public function set_pin($quiz_id, $pin)
+    {
+        $this->db->where('id', (int)$quiz_id)->update('quiz', ['pin' => $pin]);
+        return $this->db->affected_rows() > 0;
     }
 
     public function get_quiz_by_pin($pin)
@@ -37,8 +56,18 @@ class Quiz_multi_model extends CI_Model
 
     public function list_quiz_by_host($host_nrp, $limit = 50)
     {
-        return $this->db->order_by('id', 'DESC')
-            ->limit($limit)->get_where('quiz', ['host_nrp' => $host_nrp])->result_array();
+        // kalau tabel punya kolom created_at, pakai itu; kalau tidak, pakai id DESC
+        if ($this->db->field_exists('created_at', 'quiz')) {
+            $this->db->order_by('created_at', 'DESC');
+            // tie-breaker tetap by id
+            $this->db->order_by('id', 'DESC');
+        } else {
+            $this->db->order_by('id', 'DESC');
+        }
+
+        return $this->db->limit($limit)
+            ->get_where('quiz', ['host_nrp' => $host_nrp])
+            ->result_array();
     }
 
     /* ===== QUESTIONS ===== */
@@ -119,5 +148,47 @@ class Quiz_multi_model extends CI_Model
         }
         $row = $this->db->select('score')->get_where('quiz_players', ['quiz_id' => $quiz_id, 'nrp' => $nrp])->row_array();
         return ['ok' => true, 'correct' => (bool)$is_correct, 'added' => $added, 'score' => (int)($row['score'] ?? 0)];
+    }
+
+    public function questions_by_quiz($quiz_id)
+    {
+        return $this->db->order_by('id', 'ASC')
+            ->get_where('quiz_question', ['quiz_id' => $quiz_id])->result_array();
+    }
+
+    public function get_first_question_id_by_quiz($quiz_id)
+    {
+        $r = $this->db->select('id')
+            ->where('quiz_id', (int)$quiz_id)
+            ->order_by('id', 'ASC')->limit(1)
+            ->get('quiz_question')->row_array();
+        return $r ? (int)$r['id'] : null;
+    }
+
+    public function get_next_question_id_by_quiz($quiz_id, $current_id)
+    {
+        $r = $this->db->select('id')
+            ->where('quiz_id', (int)$quiz_id)
+            ->where('id >', (int)$current_id)
+            ->order_by('id', 'ASC')->limit(1)
+            ->get('quiz_question')->row_array();
+        return $r ? (int)$r['id'] : null;
+    }
+
+    public function get_quiz_by_pin_any($pin)
+    {
+        // Ambil quiz dengan PIN tsb; utamakan yang aktif, kalau tidak ada, ambil yang selesai terbaru
+        return $this->db->order_by('is_active', 'DESC')
+            ->order_by('ended_at', 'DESC')
+            ->order_by('id', 'DESC')
+            ->get_where('quiz', ['pin' => $pin])
+            ->row_array();
+    }
+
+    public function get_quiz_by_md5($hash)
+    {
+        // menghasilkan: SELECT * FROM quiz WHERE MD5(id) = '{hash}' LIMIT 1
+        return $this->db->where('MD5(id)', $hash)
+            ->get('quiz')->row_array();
     }
 }

@@ -52,23 +52,3 @@ defined('BASEPATH') or exit('No direct script access allowed');
 $route['default_controller'] = 'auth';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
-
-// pages
-$route['quiz']                  = 'quiz/index';
-$route['quiz/host']             = 'quiz/host';
-$route['quiz/host/(:num)']      = 'quiz/host/$1';        // NEW: buka host untuk quiz tertentu
-$route['quiz/play']             = 'quiz/play';
-$route['quiz/leaderboard/(:num)'] = 'quiz/leaderboard/$1';
-
-// apis - player/host (seperti sebelumnya)
-$route['quiz/api/host_state']['get']   = 'quiz/api_host_state';
-$route['quiz/api/join_by_pin']['post'] = 'quiz/api_join_by_pin';
-$route['quiz/api/current']['get']      = 'quiz/api_current';
-$route['quiz/api/answer']['post']      = 'quiz/api_answer';
-$route['quiz/api_leaderboard/(:num)']['get'] = 'quiz/api_leaderboard/$1';
-
-$route['quiz/api/quiz_create']['post'] = 'quiz/api_quiz_create';
-$route['quiz/api/start']['post']       = 'quiz/api_start';
-$route['quiz/api/next']['post']        = 'quiz/api_next';
-$route['quiz/api/end']['post']         = 'quiz/api_end';
-$route['quiz/api/reset']['post']       = 'quiz/api_reset';

@@ -18,6 +18,9 @@ function safe($s)
             <div class="col-12 text-center mb-3">
                 <h2 class="mb-0"><i class="fas fa-trophy text-warning"></i> Leaderboard Akhir</h2>
                 <small class="text-muted">Selamat kepada para pemenang 🎉</small>
+                <?php if (!empty($quiz['title'])): ?>
+                    <small class="d-block mt-1 text-secondary">Quiz: <?= htmlspecialchars($quiz['title'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -77,11 +80,13 @@ function safe($s)
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="card card-outline card-info">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header">
                         <h3 class="card-title mb-0"><i class="fas fa-list-ol mr-1"></i> Peringkat Selanjutnya</h3>
-                        <a href="<?= site_url('quiz'); ?>" class="btn btn-sm btn-outline-secondary">Main Lagi</a>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body">
+                        <div class="text-center">
+                            <a href="<?= site_url('quiz'); ?>" class="btn btn-sm btn-outline-secondary">Main Lagi</a>
+                        </div><br>
                         <div class="table-responsive">
                             <table class="table table-striped table-hover mb-0">
                                 <thead class="thead-light">

@@ -13,7 +13,7 @@
         <div class="row">
             <div class="col-lg-8">
                 <div class="card card-primary">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header">
                         <h3 class="card-title mb-0"><i class="fas fa-question-circle mr-1"></i> Pertanyaan</h3>
                         <span class="badge badge-info" id="myScoreBadge">Skor: 0</span>
                     </div>
@@ -60,31 +60,50 @@
     let timeLimit = null,
         remaining = null;
 
+    // NEW: simpan urutan acak per soal agar konsisten sampai soal berganti
+    let optionOrder = null;
+
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
     function setScore(v) {
         $('#myScore').text(v || 0);
         $('#myScoreBadge').text('Skor: ' + (v || 0));
     }
 
     function renderOptions(data) {
-        const opts = data.options,
-            container = $('#opts').empty();
-        ['A', 'B', 'C', 'D'].forEach(key => {
-            const txt = opts[key];
+        const opts = data.options;
+        const container = $('#opts').empty();
+        const displayLabels = ['A', 'B', 'C', 'D']; // label tampilan saja
+
+        // Pastikan optionOrder sudah ada (ditetapkan di renderQuestion)
+        if (!optionOrder) optionOrder = shuffle(['A', 'B', 'C', 'D']);
+
+        optionOrder.forEach((origKey, idx) => {
+            const txt = opts[origKey];
+            const label = displayLabels[idx]; // label tampilan (A/B/C/D urutan visual)
+
             const col = $('<div/>', {
                 class: 'col-12 col-md-6 mb-2'
             }).appendTo(container);
             const btn = $('<button/>', {
                 class: 'btn btn-outline-primary btn-lg btn-block text-left',
-                html: `<strong>${key}.</strong> ${txt}`
+                html: `<strong>${label}.</strong> ${txt}`
             }).appendTo(col);
 
+            // Penting: submit huruf ASLI (origKey), bukan label tampilan
             btn.on('click', function() {
                 if (answered) return;
                 answered = true;
                 btn.addClass('disabled');
                 $.post('<?= site_url('quiz/api_answer'); ?>', {
                     question_id: currentQuestionId,
-                    chosen: key
+                    chosen: origKey // <<< kirim A/B/C/D ASLI
                 }, function(res) {
                     if (res.ok) {
                         const msg = (res.correct ? '✅ Benar!' : '❌ Salah!') +
@@ -129,7 +148,12 @@
         $('#q').text(data.question);
         answered = false;
         currentQuestionId = data.question_id;
+
+        // NEW: acak urutan untuk soal ini, dan simpan agar konsisten selama soal aktif
+        optionOrder = shuffle(['A', 'B', 'C', 'D']);
+
         renderOptions(data);
+
         if (data.time_remaining !== null) startTimer(data.time_remaining);
         else {
             $('#timer').text('');
@@ -146,7 +170,7 @@
             if (!res.active) {
                 // kalau sebelumnya ada soal aktif → anggap quiz selesai, redirect ke leaderboard quiz ini
                 if (currentQuestionId !== null && res.quiz_id) {
-                    window.location.href = '<?= site_url('quiz/leaderboard/'); ?>' + res.quiz_id;
+                    window.location.href = '<?= site_url('quiz/leaderboard/'); ?>' + md5(res.quiz_id);
                     return;
                 }
                 // belum start

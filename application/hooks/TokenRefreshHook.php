@@ -11,11 +11,11 @@ class TokenRefreshHook
 
     public function __construct()
     {
-        $host = $_SERVER['HTTP_HOST'];
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
         if ($host === 'localhost') {
             $this->sso_server = 'http://localhost/sso/';
-        } elseif (strpos($host, '192.168.') === 0) {
+        } elseif (strpos($host, '192.168.') === 0 || $host === '192.168.200.102') {
             $this->sso_server = 'http://192.168.200.102/sso/';
         } else {
             $this->sso_server = 'https://sso-la.riungmitra.com/';
@@ -25,79 +25,110 @@ class TokenRefreshHook
     public function check_and_refresh_token()
     {
         $CI = &get_instance();
-        // Pastikan session diload
         if (!isset($CI->session)) {
             $CI->load->library('session');
         }
 
-        // Ambil token dari query string jika ada
-        $token = $CI->input->get('token');
-        if ($token) {
-            // Simpan token ke session
-            $CI->session->set_userdata('token', $token);
+        // --- WHITELIST ROUTE: Jangan ganggu Auth controller ---
+        // Supaya /kpi/ (Auth::index) bisa menerima token POST dari SSO tanpa di-redirect
+        $controller = strtolower($CI->router->class ?? '');
+        if ($controller === 'auth') {
+            return; // biarkan Auth menangani login/logout sendiri
+        }
 
-            // Decode payload untuk ambil NRP
-            $parts = explode('.', $token);
-            if (count($parts) === 3) {
-                $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-                if (!empty($payload['data']['NRP'])) {
-                    $CI->session->set_userdata('NRP', $payload['data']['NRP']);
-                    $CI->session->set_userdata('full_name', $payload['data']['full_name']);
+        // --- Ambil token dari POST/GET/Header bila ada (prioritas POST) ---
+        $incoming_token = $CI->input->post('token', true);
+        if (!$incoming_token) {
+            $incoming_token = $CI->input->get('token', true);
+        }
+        if (!$incoming_token) {
+            $auth = $CI->input->server('HTTP_AUTHORIZATION') ?: $CI->input->server('Authorization');
+            if ($auth && stripos($auth, 'Bearer ') === 0) {
+                $incoming_token = trim(substr($auth, 7));
+            }
+        }
+
+        // Jika ada token di request: simpan ke session & isi identitas, lalu JANGAN redirect di sini.
+        if ($incoming_token) {
+            $CI->session->set_userdata('token', $incoming_token);
+
+            // Decode payload ringan hanya untuk ambil identitas
+            try {
+                JWT::$leeway = 60;
+                $publicKey = @file_get_contents(APPPATH . 'keys/public.key');
+                if ($publicKey) {
+                    $decoded = JWT::decode($incoming_token, new Key($publicKey, 'RS256'));
+                    if (!empty($decoded->data->NRP)) {
+                        $CI->session->set_userdata('NRP', $decoded->data->NRP);
+                        $CI->session->set_userdata('full_name', $decoded->data->full_name ?? null);
+                    }
                 }
+            } catch (\Throwable $e) {
+                // biarkan controller Auth yang menangani jika perlu
             }
 
-            // Redirect ke URL tanpa ?token=
-            redirect(current_url());
-            exit;
+            return; // penting: jangan redirect, biarkan controller tujuan berjalan
         }
 
-        // Ambil token dari session
+        // --- Tidak ada token di request, cek token di session ---
         $token = $CI->session->userdata('token');
         if (!$token) {
-            redirect($this->sso_server . '?redirect_uri=' . base_url());
+            // Belum login → arahkan ke SSO login
+            redirect($this->sso_login_url(base_url()));
             exit;
         }
 
-        $publicKey = file_get_contents(APPPATH . 'keys/public.key');
+        // --- Validasi & auto-refresh token di session ---
+        $publicKey = @file_get_contents(APPPATH . 'keys/public.key');
+        if (!$publicKey) {
+            // Jika kunci tidak ada, paksa login ulang
+            $CI->session->unset_userdata('token');
+            redirect($this->sso_login_url(current_url()));
+            exit;
+        }
 
         try {
+            JWT::$leeway = 60;
             $decoded = JWT::decode($token, new Key($publicKey, 'RS256'));
 
-            if ($decoded->iss !== $this->sso_server . '') {
+            // Validasi issuer: prefix check (lebih fleksibel)
+            $iss = (string)($decoded->iss ?? '');
+            if (stripos($iss, rtrim($this->sso_server, '/')) !== 0) {
                 throw new Exception('Invalid issuer');
             }
 
-            $now = time();
-            $time_left = $decoded->exp - $now;
-
+            $now       = time();
+            $time_left = ($decoded->exp ?? 0) - $now;
             if ($time_left < 0) {
                 throw new Exception('Token expired');
             }
 
+            // Refresh jika hampir habis
             if ($time_left < $this->refresh_threshold) {
-                // Token hampir expired, refresh
                 $new_token = $this->refresh_token($token);
                 if ($new_token) {
                     $CI->session->set_userdata('token', $new_token);
-                    // Decode payload untuk ambil NRP
-                    $parts = explode('.', $new_token);
-                    if (count($parts) === 3) {
-                        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-                        if (!empty($payload['data']['NRP'])) {
-                            $CI->session->set_userdata('NRP', $payload['data']['NRP']);
-                            $CI->session->set_userdata('full_name', $payload['data']['full_name']);
+
+                    // Perbarui identitas dari token baru (opsional)
+                    try {
+                        $decoded2 = JWT::decode($new_token, new Key($publicKey, 'RS256'));
+                        if (!empty($decoded2->data->NRP)) {
+                            $CI->session->set_userdata('NRP', $decoded2->data->NRP);
+                            $CI->session->set_userdata('full_name', $decoded2->data->full_name ?? null);
                         }
+                    } catch (\Throwable $e) { /* abaikan */
                     }
                 } else {
+                    // Gagal refresh → logout session & minta login ulang
                     $CI->session->unset_userdata('token');
-                    redirect($this->sso_server . '?redirect_uri=' . current_url());
+                    redirect($this->sso_login_url(current_url()));
                     exit;
                 }
             }
-        } catch (Exception $e) {
-            // Token tidak valid atau expired
+        } catch (\Throwable $e) {
+            // Token invalid/expired → paksa login ulang
             $CI->session->unset_userdata('token');
-            redirect($this->sso_server . '?redirect_uri=' . current_url());
+            redirect($this->sso_login_url(current_url()));
             exit;
         }
     }
@@ -122,5 +153,11 @@ class TokenRefreshHook
             }
         }
         return false;
+    }
+
+    private function sso_login_url($redirect_uri)
+    {
+        // arahkan ke halaman login SSO (auth/login) + redirect_uri
+        return $this->sso_server . 'auth/login?redirect_uri=' . urlencode($redirect_uri);
     }
 }

@@ -418,9 +418,13 @@ $config['sess_regenerate_destroy'] = FALSE;
 $config['cookie_prefix']    = '';
 $config['cookie_domain']    = '';
 $config['cookie_path']        = '/';
-$config['cookie_secure']    = FALSE;
-$config['cookie_httponly']     = FALSE;
-$config['cookie_samesite']     = 'Lax';
+$config['cookie_secure']   = !empty($_SERVER['HTTPS']); // TRUE di prod (HTTPS)
+$config['cookie_httponly'] = TRUE;
+
+// Kalau CI3 kamu support SameSite:
+if (isset($config['cookie_samesite'])) {
+    $config['cookie_samesite'] = 'Lax';
+}
 
 /*
 |--------------------------------------------------------------------------

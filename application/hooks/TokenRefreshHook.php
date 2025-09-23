@@ -32,7 +32,7 @@ class TokenRefreshHook
         // --- WHITELIST ROUTE: Jangan ganggu Auth controller ---
         // Supaya /kpi/ (Auth::index) bisa menerima token POST dari SSO tanpa di-redirect
         $controller = strtolower($CI->router->class ?? '');
-        if ($controller === 'auth') {
+        if ($controller === 'auth' && in_array($CI->uri->segment(2), array('login', 'logout'))) {
             return; // biarkan Auth menangani login/logout sendiri
         }
 

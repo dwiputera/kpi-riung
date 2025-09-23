@@ -14,9 +14,6 @@
 <script src="<?= base_url() ?>assets/AdminLTE-3.2.0/plugins/chart.js/Chart.min.js"></script>
 <!-- Sparkline -->
 <script src="<?= base_url() ?>assets/AdminLTE-3.2.0/plugins/sparklines/sparkline.js"></script>
-<!-- JQVMap -->
-<script src="<?= base_url() ?>assets/AdminLTE-3.2.0/plugins/jqvmap/jquery.vmap.min.js"></script>
-<script src="<?= base_url() ?>assets/AdminLTE-3.2.0/plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
 <!-- jQuery Knob Chart -->
 <script src="<?= base_url() ?>assets/AdminLTE-3.2.0/plugins/jquery-knob/jquery.knob.min.js"></script>
 <!-- daterangepicker -->

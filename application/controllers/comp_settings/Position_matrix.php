@@ -117,19 +117,13 @@ class Position_matrix extends MY_Controller
 
         switch ($action) {
             case 'submit':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "Target Score Submit Failed"
-                ]);
+                flash_swal('error', 'Target Score Submit Failed');
 
                 // Ubah: gunakan result dari model sebagai penentu
                 $success = $this->m_c_p_targ->submit();
 
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "Target Score Submitted Successfully"
-                    ]);
+                    flash_swal('success', 'Target Score Submitted Successfully');
                 }
 
                 redirect('comp_settings/position_matrix' . $matrix_position_active);
@@ -156,44 +150,26 @@ class Position_matrix extends MY_Controller
         }
         switch ($action) {
             case 'add':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "Target add Failed"
-                ]);
+                flash_swal('error', 'Target add Failed');
                 $success = $this->m_c_pstn->add();
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "Target added Successfully"
-                    ]);
+                    flash_swal('success', 'Target added Successfully');
                 }
                 break;
 
             case 'edit':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "Target edit Failed"
-                ]);
+                flash_swal('error', 'Target edit Failed');
                 $success = $this->m_c_pstn->edit();
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "Target edited Successfully"
-                    ]);
+                    flash_swal('success', 'Target edited Successfully');
                 }
                 break;
 
             case 'delete':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "Competency Delete Failed"
-                ]);
+                flash_swal('error', 'Competency Delete Failed');
                 $success = $this->m_c_pstn->delete($hash_id);
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "Competency Deleted Successfully"
-                    ]);
+                    flash_swal('success', 'Competency Deleted Successfully');
                 }
                 break;
 
@@ -340,16 +316,10 @@ class Position_matrix extends MY_Controller
 
     public function dictionary_submit()
     {
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Dictionary Update Failed"
-        ]);
+        flash_swal('error', 'Dictionary Update Failed');
         $success = $this->m_c_pstn->dictionary_submit();
         if ($success) {
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "Dictionary Updated Successfully"
-            ]);
+            flash_swal('success', 'Dictionary Updated Successfully');
         }
         redirect('comp_settings/position_matrix/dictionary_edit');
     }

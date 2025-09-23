@@ -98,53 +98,35 @@ class Position extends MY_Controller
 
     public function add()
     {
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Position Add Failed"
-        ]);
+        flash_swal('error', 'Position Add Failed');
         $pstn_id = $this->m_pstn->add();
         $data['pstn_active'] = $this->m_pstn->get_superiors(md5($pstn_id));
         if ($pstn_id) {
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "Position Added Successfully"
-            ]);
+            flash_swal('success', 'Position Added Successfully');
         }
         redirect('organization_settings/position?pstn_active=' . md5($pstn_id));
     }
 
     public function update()
     {
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Position Update Failed"
-        ]);
+        flash_swal('error', 'Position Update Failed');
         $success = $this->m_pstn->update();
         if ($success) {
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "Position Updateed Successfully"
-            ]);
+            flash_swal('success', 'Position Updateed Successfully');
         }
         redirect('organization_settings/position?pstn_active=' . $this->input->post('position_id'));
     }
 
     public function delete($hash_id)
     {
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Position Delete Failed"
-        ]);
+        flash_swal('error', 'Position Delete Failed');
         $pstn_user = $this->db->get_where('org_area_lvl_pstn_user', array('md5(area_lvl_pstn_id)' => $hash_id))->row_array();
         if (!$pstn_user) {
             $pstn_id = $this->m_pstn->get_superiors($hash_id);
             $success = $this->m_pstn->delete($hash_id);
 
             if ($success) {
-                $this->session->set_flashdata('swal', [
-                    'type' => 'success',
-                    'message' => "Position Deleted Successfully"
-                ]);
+                flash_swal('success', 'Position Deleted Successfully');
             }
 
             $hash_pstn_id = null;
@@ -153,10 +135,7 @@ class Position extends MY_Controller
             }
             redirect('organization_settings/position?pstn_active=' . $hash_pstn_id);
         } else {
-            $this->session->set_flashdata('swal', [
-                'type' => 'error',
-                'message' => "Please Unassign the User First"
-            ]);
+            flash_swal('error', 'Please Unassign the User First');
             redirect('organization_settings/position?pstn_active=' . $hash_id);
         }
     }
@@ -165,32 +144,20 @@ class Position extends MY_Controller
     {
         switch ($action) {
             case 'add':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "User Add Failed"
-                ]);
+                flash_swal('error', 'User Add Failed');
                 $success = $this->m_pstn->position_user("add");
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "User Added Successfully"
-                    ]);
+                    flash_swal('success', 'User Added Successfully');
                 }
                 redirect('organization_settings/position?pstn_active=' . $this->input->post('position_id'));
                 break;
 
             case 'delete':
                 $area_lvl_pstn_id = $this->db->get_where('org_area_lvl_pstn_user', array('md5(id)' => $hash_id))->row_array()['area_lvl_pstn_id'];
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "User Delete Failed"
-                ]);
+                flash_swal('error', 'User Delete Failed');
                 $success = $this->m_pstn->position_user("delete", $hash_id);
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "User Deleted Successfully"
-                    ]);
+                    flash_swal('success', 'User Deleted Successfully');
                 }
                 redirect('organization_settings/position?pstn_active=' . md5($area_lvl_pstn_id));
                 break;

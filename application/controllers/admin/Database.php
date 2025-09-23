@@ -82,16 +82,10 @@ class Database extends MY_Controller
             }
         }
 
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Data Submission Failed"
-        ]);
+        flash_swal('error', 'Data Submission Failed');
 
         if ($success) {
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "Data Submitted Successfully"
-            ]);
+            flash_swal('success', 'Data Submitted Successfully');
         }
 
         redirect("admin/database/table/$table_id");

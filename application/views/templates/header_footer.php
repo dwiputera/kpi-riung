@@ -12,20 +12,24 @@
     <?php $this->load->view('templates/scripts.php'); ?>
 
     <?php if ($this->session->flashdata('swal')): ?>
-        <script>
-            $(window).on('load', function() {
-                // Hide preloader after the page is fully loaded
-                $('.preloader').fadeOut();
+        <?php
+        $swal = $this->session->flashdata('swal');
+        $allowed = ['success', 'error', 'warning', 'info', 'question'];
+        $icon = in_array($swal['type'] ?? '', $allowed, true) ? $swal['type'] : 'info';
 
-                // Now show SweetAlert after preloader fades out
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: '<?= $this->session->flashdata('swal')['type']; ?>',
-                    title: '<?= $this->session->flashdata('swal')['message']; ?>',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
+        $payload = [
+            'toast' => true,
+            'position' => 'top-end',
+            'icon' => $icon,
+            'title' => (string)($swal['message'] ?? ''), // pakai title/text, bukan html
+            'showConfirmButton' => false,
+            'timer' => 3000
+        ];
+        ?>
+        <script>
+            window.addEventListener('load', function() {
+                $('.preloader').fadeOut();
+                Swal.fire(<?= json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>);
             });
         </script>
     <?php endif; ?>

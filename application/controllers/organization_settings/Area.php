@@ -18,40 +18,25 @@ class Area extends MY_Controller
 
     public function add()
     {
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Area Add Failed"
-        ]);
+        flash_swal('error', 'Area Add Failed');
         $success = $this->m_area->add();
         if ($success) {
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "Area Added Successfully"
-            ]);
+            flash_swal('success', 'Area Added Successfully');
         }
         redirect('organization_settings/area');
     }
 
     public function delete($hash_id)
     {
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Area Delete Failed"
-        ]);
+        flash_swal('error', 'Area Delete Failed');
         $position = $this->m_area->get_area_lvl($hash_id);
         if (!$position) {
             $success = $this->m_area->delete($hash_id);
             if ($success) {
-                $this->session->set_flashdata('swal', [
-                    'type' => 'success',
-                    'message' => "Area Deleted Successfully"
-                ]);
+                flash_swal('success', 'Area Deleted Successfully');
             }
         } else {
-            $this->session->set_flashdata('swal', [
-                'type' => 'error',
-                'message' => "Please Delete the Level First"
-            ]);
+            flash_swal('error', 'Please Delete the Level First');
         }
         redirect('organization_settings/area');
     }

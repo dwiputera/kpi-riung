@@ -61,10 +61,7 @@ class TNA extends MY_Controller
             // Rename the file
             rename($upload_data['full_path'], $new_path);
 
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "File uploaded successfully"
-            ]);
+            flash_swal('success', 'File uploaded successfully');
 
             redirect("training/TNA");
             return;
@@ -128,10 +125,7 @@ class TNA extends MY_Controller
 
         $this->db->delete('trn_tna_docs', ['id' => $data['tna']['id']]);
 
-        $this->session->set_flashdata('swal', [
-            'type' => 'success',
-            'message' => "File deleted successfully"
-        ]);
+        flash_swal('success', 'File deleted successfully');
 
         redirect("training/TNA");
     }

@@ -87,16 +87,10 @@ class Position_score extends MY_Controller
     public function submit($mp_hash)
     {
         $year = $this->input->post('year');
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Score Submit Failed"
-        ]);
+        flash_swal('error', 'Score Submit Failed');
         $success = $this->m_c_p_s->submit();
         if ($success) {
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "Score Submitted Successfully"
-            ]);
+            flash_swal('success', 'Score Submitted Successfully');
         }
         redirect("comp_settings/position_score/year/$mp_hash?year=$year");
     }

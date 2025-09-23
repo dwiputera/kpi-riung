@@ -25,10 +25,7 @@ class Culture_fit extends MY_Controller
 
         $success = $this->m_cf->submit($payload, $year);
 
-        $this->session->set_flashdata('swal', [
-            'type' => $success ? 'success' : 'error',
-            'message' => $success ? "Culture Fit Edited Successfully" : "Failed to Update Culture Fit"
-        ]);
+        flash_swal($success ? 'success' : 'error', $success ? "Culture Fit Edited Successfully" : "Failed to Update Culture Fit");
 
         redirect('culture_fit?year=' . $year);
     }

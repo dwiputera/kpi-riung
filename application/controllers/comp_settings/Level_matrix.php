@@ -78,44 +78,26 @@ class Level_matrix extends MY_Controller
         }
         switch ($action) {
             case 'add':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "Target add Failed"
-                ]);
+                flash_swal('error', 'Target add Failed');
                 $success = $this->m_c_lvl->add();
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "Target added Successfully"
-                    ]);
+                    flash_swal('success', 'Target added Successfully');
                 }
                 break;
 
             case 'edit':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "Target edit Failed"
-                ]);
+                flash_swal('error', 'Target edit Failed');
                 $success = $this->m_c_lvl->edit();
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "Target edited Successfully"
-                    ]);
+                    flash_swal('success', 'Target edited Successfully');
                 }
                 break;
 
             case 'delete':
-                $this->session->set_flashdata('swal', [
-                    'type' => 'error',
-                    'message' => "Competency Delete Failed"
-                ]);
+                flash_swal('error', 'Competency Delete Failed');
                 $success = $this->m_c_lvl->delete($hash_id);
                 if ($success) {
-                    $this->session->set_flashdata('swal', [
-                        'type' => 'success',
-                        'message' => "Competency Deleted Successfully"
-                    ]);
+                    flash_swal('success', 'Competency Deleted Successfully');
                 }
                 break;
 

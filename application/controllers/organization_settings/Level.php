@@ -19,16 +19,10 @@ class Level extends MY_Controller
 
     public function add()
     {
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Level Add Failed"
-        ]);
+        flash_swal('error', 'Level Add Failed');
         $success = $this->m_level->add();
         if ($success) {
-            $this->session->set_flashdata('swal', [
-                'type' => 'success',
-                'message' => "Level Added Successfully"
-            ]);
+            flash_swal('success', 'Level Added Successfully');
         }
         redirect('organization_settings/level');
     }
@@ -36,24 +30,15 @@ class Level extends MY_Controller
     public function delete($hash_id)
     {
         $this->load->model('organization/m_position', 'm_pstn');
-        $this->session->set_flashdata('swal', [
-            'type' => 'error',
-            'message' => "Level Delete Failed"
-        ]);
+        flash_swal('error', 'Level Delete Failed');
         $position = $this->m_level->get_area_lvl_pstn($hash_id);
         if (!$position) {
             $success = $this->m_level->delete($hash_id);
             if ($success) {
-                $this->session->set_flashdata('swal', [
-                    'type' => 'success',
-                    'message' => "Level Deleted Successfully"
-                ]);
+                flash_swal('success', 'Level Deleted Successfully');
             }
         } else {
-            $this->session->set_flashdata('swal', [
-                'type' => 'error',
-                'message' => "Please Delete the Position First"
-            ]);
+            flash_swal('error', 'Please Delete the Position First');
         }
         redirect('organization_settings/level');
     }

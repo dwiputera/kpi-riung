@@ -381,7 +381,7 @@ class M_position extends CI_Model
             )
             SELECT
                 oalp.*,
-                oalp.id   AS id,
+                oalp.id AS id,
                 oalp.name AS name,
                 oalp.matrix_point,
                 oal.id    AS oal_id,

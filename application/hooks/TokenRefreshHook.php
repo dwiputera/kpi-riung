@@ -135,12 +135,24 @@ class TokenRefreshHook
 
     private function refresh_token($old_token)
     {
-        $ch = curl_init($this->sso_server . 'auth/refresh_token');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $old_token,
-            'Accept: application/json',
+        if (empty($old_token)) return false;
+
+        $url = rtrim($this->sso_server, '/') . '/auth/refresh_token';
+        $ch = curl_init($url);
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST            => true,
+            CURLOPT_POSTFIELDS      => http_build_query(['token' => $old_token]), // <— kirim di body
+            CURLOPT_HTTPHEADER      => [
+                'Accept: application/json',
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_FOLLOWLOCATION  => true,
+            CURLOPT_MAXREDIRS       => 3,
+            CURLOPT_CONNECTTIMEOUT  => 5,
+            CURLOPT_TIMEOUT         => 10,
         ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $response = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -148,9 +160,7 @@ class TokenRefreshHook
 
         if ($httpcode === 200) {
             $result = json_decode($response, true);
-            if (isset($result['token'])) {
-                return $result['token'];
-            }
+            return $result['token'] ?? false;
         }
         return false;
     }

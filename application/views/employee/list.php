@@ -15,6 +15,7 @@
                             <th>No</th>
                             <th>NRP</th>
                             <th>Name</th>
+                            <th>Matrix Point</th>
                             <th>Position</th>
                             <th>Level</th>
                             <th>Area</th>
@@ -28,6 +29,7 @@
                                 <td><?= $i++ ?></td>
                                 <td><?= $e_i['NRP'] ?></td>
                                 <td><?= $e_i['FullName'] ?></td>
+                                <td><?= $e_i['matrix_point_name'] ?></td>
                                 <td><?= $e_i['oalp_name'] ?></td>
                                 <td><?= $e_i['oal_name'] ?></td>
                                 <td><?= $e_i['oa_name'] ?></td>

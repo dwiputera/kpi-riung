@@ -10,14 +10,18 @@
                 <table id="" class="table table-borderless">
                     <tbody>
                         <tr>
-                            <td>Nama</td>
-                            <td><?= $user['FullName'] ?></td>
-                        </tr>
-                        <tr>
                             <td>NRP</td>
                             <td><?= $user['NRP'] ?></td>
                         </tr>
+                        <tr>
+                            <td>Nama</td>
+                            <td><?= $user['FullName'] ?></td>
+                        </tr>
                         <?php if ($position) : ?>
+                            <tr>
+                                <td>Departemen</td>
+                                <td><?= $position['mp_name'] ?></td>
+                            </tr>
                             <tr>
                                 <td>Jabatan</td>
                                 <td><?= $position['name'] ?></td>

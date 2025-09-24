@@ -150,6 +150,7 @@
                             <?php endforeach; ?>
                         <?php endforeach; ?>
                     </ul>
+                    <br><br><br><br><br>
                 </nav>
                 <!-- /.sidebar-menu -->
             </div>

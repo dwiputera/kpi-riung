@@ -141,6 +141,7 @@ $matrix_points = array_column($matrix_points, null, 'id');
 						<tr>
 							<th>No</th>
 							<th>MTS</th>
+							<th>Participants</th>
 							<th>MONTH</th>
 							<th>DEPARTEMEN PENGAMPU</th>
 							<th>NAMA PROGRAM</th>
@@ -196,6 +197,9 @@ $matrix_points = array_column($matrix_points, null, 'id');
 						<?php foreach ($trainings as $training) : ?><tr>
 								<td><?= $i++ ?></td>
 								<td><a href="<?= base_url() ?>training/ATMP/MTS/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= count($training['mts']) ?></a></td>
+								<td>
+									<a href="<?= base_url() ?>training/ATMP/participants/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['total_participant'] ?? 0 ?></a>
+								</td>
 								<td><?= $training['month'] ? $months[$training['month']] : '' ?></td>
 								<td><?= $training['departemen_pengampu'] ? $matrix_points[$training['departemen_pengampu']]['name'] : '' ?></td>
 								<td><?= $training['nama_program'] ?></td>
@@ -223,9 +227,7 @@ $matrix_points = array_column($matrix_points, null, 'id');
 								<td><?= $training['rmgm'] ?></td>
 								<td><?= $training['rhml'] ?></td>
 								<td><?= $training['total_jobsite'] ?></td>
-								<td>
-									<a href="<?= base_url() ?>training/ATMP/participants/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['total_participant'] ?? 0 ?></a>
-								</td>
+								<td><?= $training['total_participants'] ?></td>
 								<td><?= $training['grand_total_hours'] ?></td>
 								<td><?= $training['biaya_pelatihan_per_orang'] ?></td>
 								<td><?= $training['biaya_pelatihan'] ?></td>

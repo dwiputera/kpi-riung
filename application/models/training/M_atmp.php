@@ -32,7 +32,7 @@ class M_atmp extends CI_Model
 
         // Ambil data utama (ATMP + total participant)
         $query = $this->db->select('
-            trn_atmp.*, 
+            trn_atmp.*, trn_atmp.id id,
             IFNULL(u.total_participant, 0) AS total_participant
         ')
             ->from('trn_atmp')

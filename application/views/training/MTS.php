@@ -107,6 +107,7 @@ $matrix_points = array_column($matrix_points, null, 'id');
                                 <th>No</th>
                                 <th>STATUS</th>
                                 <th>ASSIGN ATMP</th>
+                                <th>Participants</th>
                                 <th>ATMP</th>
                                 <th>MONTH</th>
                                 <th>DEPARTEMEN PENGAMPU</th>
@@ -165,6 +166,9 @@ $matrix_points = array_column($matrix_points, null, 'id');
                                     <td><?= $i++ ?></td>
                                     <td class="bg-<?= $status_bg[$training['status']] ?>"><?= $status_str[$training['status']] ?></td>
                                     <td><a href="<?= base_url() ?>training/MTS/ATMP/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= 'assign' ?></a></td>
+                                    <td>
+                                        <a href="<?= base_url() ?>training/MTS/participants/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['total_participant'] ?? 0 ?></a>
+                                    </td>
                                     <td><?= $training['atmp_nama_program'] ?></td>
                                     <td><?= $training['month'] ? $months[$training['month']] : '' ?></td>
                                     <td><?= $training['departemen_pengampu'] ? $matrix_points[$training['departemen_pengampu']]['name'] : '' ?></td>
@@ -180,8 +184,8 @@ $matrix_points = array_column($matrix_points, null, 'id');
                                     <td><?= $training['nama_penyelenggara_fasilitator'] ?></td>
                                     <td><?= $training['tempat'] ?></td>
                                     <td><?= $training['online_offline'] ?></td>
-                                    <td><?= $training['actual_start_date'] ?></td>
-                                    <td><?= $training['actual_end_date'] ?></td>
+                                    <td><?= $training['start_date'] ?></td>
+                                    <td><?= $training['end_date'] ?></td>
                                     <td><?= $training['days'] ?></td>
                                     <td><?= $training['hours'] ?></td>
                                     <td><?= $training['total_hours'] ?></td>
@@ -193,9 +197,7 @@ $matrix_points = array_column($matrix_points, null, 'id');
                                     <td><?= $training['rmgm'] ?></td>
                                     <td><?= $training['rhml'] ?></td>
                                     <td><?= $training['total_jobsite'] ?></td>
-                                    <td>
-                                        <a href="<?= base_url() ?>training/MTS/participants/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['total_participant'] ?? 0 ?></a>
-                                    </td>
+                                    <td><?= $training['total_participants'] ?></td>
                                     <td><?= $training['grand_total_hours'] ?></td>
                                     <td><?= $training['biaya_pelatihan_per_orang'] ?></td>
                                     <td><?= $training['biaya_pelatihan'] ?></td>

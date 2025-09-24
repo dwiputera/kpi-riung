@@ -69,7 +69,7 @@ class MTS extends MY_Controller
         if (!$this->input->get('action')) {
             $data['mts'] = $mts;
             $data['atmp'] = $atmp;
-            $data['atmps'] = $this->m_atmp->get_atmp($mts['atmp_id'], "id !=");
+            $data['atmps'] = $this->m_atmp->get_atmp($mts['atmp_id'], "year = $year AND id !=");
             $data['year'] = $year;
             $data['content'] = "training/MTS_ATMP";
         } else {

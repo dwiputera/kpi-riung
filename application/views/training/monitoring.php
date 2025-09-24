@@ -44,13 +44,13 @@
         </div>
         <!-- /.card -->
 
-        <?php if ($trainings['mtd']) : ?>
+        <?php if ($chart_status['mtd']) : ?>
             <div class="row">
                 <div class="col-lg-4">
                     <!-- DONUT CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Status <?= $year_month_str ?></h3>
+                            <h3 class="card-title">Status <strong><?= $year_month_str ?></strong></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -64,36 +64,36 @@
                         <div class="card-body">
                             <canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas><br>
                             <div class="row">
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-primary p-0 m-0">
                                         &nbsp; Done:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['mtd']['done']['value']) ?>
                                 </div>
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-danger p-0 m-0">
                                         &nbsp; Cancel:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['mtd']['cancel']['value']) ?>
                                 </div>
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-warning p-0 m-0">
                                         &nbsp; Reschecule:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['mtd']['reschedule']['value']) ?>
                                 </div>
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-secondary p-0 m-0">
                                         &nbsp; Pending:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['mtd']['pending']['value']) ?>
                                 </div>
                             </div>
@@ -107,7 +107,7 @@
                     <!-- BAR CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Budget <?= $year_month_str ?></h3>
+                            <h3 class="card-title">Budget <strong><?= $year_month_str ?></strong></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -156,7 +156,7 @@
                     <!-- BAR CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Participants <?= $year_month_str ?></h3>
+                            <h3 class="card-title">Participants <strong><?= $year_month_str ?></strong></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -203,13 +203,13 @@
             </div>
         <?php endif; ?>
 
-        <?php if ($trainings['ytd']) : ?>
+        <?php if ($chart_status['ytd']) : ?>
             <div class="row">
                 <div class="col-lg-4">
                     <!-- DONUT CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Status <?= $year ?></h3>
+                            <h3 class="card-title">Status <strong><?= $year ?></strong></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -223,36 +223,36 @@
                         <div class="card-body">
                             <canvas id="donutChart_ytd" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas><br>
                             <div class="row">
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-primary p-0 m-0">
                                         &nbsp; Done:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['ytd']['done']['value']) ?>
                                 </div>
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-danger p-0 m-0">
                                         &nbsp; Cancel:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['ytd']['cancel']['value']) ?>
                                 </div>
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-warning p-0 m-0">
                                         &nbsp; Reschecule:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['ytd']['reschedule']['value']) ?>
                                 </div>
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <div class="alert alert-secondary p-0 m-0">
                                         &nbsp; Pending:
                                     </div>
                                 </div>
-                                <div class="col-lg-3 text-right">
+                                <div class="col-lg-2 text-right">
                                     <?= number_format($chart_status['ytd']['pending']['value']) ?>
                                 </div>
                             </div>
@@ -266,7 +266,7 @@
                     <!-- BAR CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Budget <?= $year ?></h3>
+                            <h3 class="card-title">Budget <strong><?= $year ?></strong></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -315,7 +315,7 @@
                     <!-- BAR CHART -->
                     <div class="card card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Participants <?= $year ?></h3>
+                            <h3 class="card-title">Participants <strong><?= $year ?></strong></h3>
 
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -360,6 +360,8 @@
                     </div>
                 </div>
             </div>
+        <?php endif; ?>
+        <?php if ($trainings['ytd']) : ?>
 
             <div class="card card-primary">
                 <div class="card-header">
@@ -367,7 +369,7 @@
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
-                    <table id="datatable_training" class="table table-bordered table-striped">
+                    <table id="datatable_training" class="table table-bordered table-striped datatable-filter-column">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -382,30 +384,9 @@
                                 <th>DAYS</th>
                                 <th>HOURS</th>
                                 <th>TOTAL HOURS</th>
-                                <th>PLAN PARTICIPANT</th>
-                                <th>ACTUAL PARTICIPANT</th>
+                                <th>TOTAL PARTICIPANT</th>
                                 <th>GRAND TOTAL HOURS</th>
-                                <th>PLAN BUDGET</th>
-                                <th>ACTUAL BUDGET</th>
-                            </tr>
-                            <tr>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
-                                <th><input type="text" placeholder="Filter..." class="column-search form-control form-control-sm" /></th>
+                                <th>GRAND TOTAL</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -415,7 +396,11 @@
                             <?php foreach ($trainings['ytd'] as $training) : ?>
                                 <tr>
                                     <td><?= $i++ ?></td>
-                                    <td class="bg-<?= $status_bg[$training['status']] ?>"><?= $status_str[$training['status']] ?></td>
+                                    <?php if (isset($training['status'])) : ?>
+                                        <td class="bg-<?= $status_bg[$training['status']] ?>"><?= $status_str[$training['status']] ?></td>
+                                    <?php else: ?>
+                                        <td></td>
+                                    <?php endif; ?>
                                     <td><?= $training['month'] ?></td>
                                     <td><?= $training['departemen_pengampu'] ?></td>
                                     <td><?= $training['nama_program'] ?></td>
@@ -426,11 +411,9 @@
                                     <td><?= $training['days'] ?></td>
                                     <td><?= $training['hours'] ?></td>
                                     <td><?= $training['days'] * $training['hours'] ?></td>
-                                    <td><?= $training['rmho'] + $training['rhml'] + $training['rmip'] + $training['rebh'] + $training['rmtu'] + $training['rmts'] + $training['rmgm'] ?></td>
-                                    <td><?= $training['actual_participants'] ?></td>
-                                    <td><?= $training['days'] * $training['hours'] * $training['actual_participants'] ?></td>
+                                    <td><?= $training['total_participants'] ?></td>
+                                    <td><?= $training['days'] * $training['hours'] * $training['total_participants'] ?></td>
                                     <td><?= $training['grand_total'] ?></td>
-                                    <td><?= $training['actual_budget'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -443,6 +426,9 @@
     </div><!-- /.container-fluid -->
 </section>
 <!-- /.content -->
+
+<script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
+<script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 
 <!-- Page specific script -->
 <script>
@@ -457,39 +443,9 @@
         $(this).find('input').closest('form').submit();
     });
 
-    <?php if ($trainings['ytd']) : ?>
-        $(function() {
-            $("#datatable_training").DataTable({
-                "autoWidth": false,
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
-                lengthChange: true,
-                pageLength: 10,
-                lengthMenu: [
-                    [10, 25, 50, 100, -1],
-                    [10, 25, 50, 100, "All"]
-                ],
-                scrollX: true,
-                orderCellsTop: true, // 👈 IMPORTANT for multiple thead rows
-                fixedHeader: true, // Optional: keeps header visible on scroll
-            }).buttons().container().appendTo('#datatable_training_wrapper .col-md-6:eq(0)');
-        });
+    setupFilterableDatatable($('.datatable-filter-column'));
 
-        $('#datatable_training thead tr:eq(1) th').each(function(i) {
-            let input = $(this).find('input');
-            if (input.length) {
-                $(input).on('keyup change', function() {
-                    if ($('#datatable_training').DataTable().column(i).search() !== this.value) {
-                        $('#datatable_training').DataTable()
-                            .column(i)
-                            .search(this.value)
-                            .draw();
-                    }
-                });
-            }
-        });
-    <?php endif; ?>
-
-    <?php if ($trainings['mtd']) : ?>
+    <?php if ($chart_status['ytd']) : ?>
         // chart MTD
         $(function() {
             const donutData = {
@@ -640,7 +596,7 @@
         })
     <?php endif; ?>
 
-    <?php if ($trainings['ytd']) : ?>
+    <?php if ($chart_status['ytd']) : ?>
         // chart YTD
         $(function() {
             const donutData_ytd = {

@@ -61,6 +61,9 @@
                 </div>
 
                 <div class="mb-2 text-muted" id="status">Game belum aktif.</div>
+
+                <small id="qNumberHost" class="text-muted d-block mb-1"></small>
+
                 <h4 id="qTitle" class="mb-2"></h4>
                 <ul id="qOpts" class="list-unstyled mb-0"></ul>
 
@@ -166,6 +169,7 @@
                 $('#topInfo').text('Idle').removeClass('badge-success').addClass('badge-secondary');
                 $('#status').text('Game belum aktif.');
                 $('#qTitle').text('');
+                $('#qNumberHost').text('');
                 $('#qOpts').empty();
                 currentQuestionId = null;
                 timeLimit = 0;
@@ -184,6 +188,19 @@
             const opts = res.options || {};
             $('#qOpts').html(Object.entries(opts)
                 .map(([k, v]) => `<li><strong>${k}.</strong> ${v || ''}</li>`).join(''));
+
+            // Tampilkan nomor soal x/total di host
+            if (typeof res.number !== 'undefined' && typeof res.total !== 'undefined') {
+                $('#qNumberHost').text(res.number + '/' + res.total);
+                // opsional: badge status ikut menampilkan nomor
+                $('#topInfo')
+                    .text('Running — ' + res.number + '/' + res.total)
+                    .removeClass('badge-secondary')
+                    .addClass('badge-success');
+            } else {
+                $('#qNumberHost').text('');
+                $('#topInfo').text('Running').removeClass('badge-secondary').addClass('badge-success');
+            }
 
             if (currentQuestionId !== res.question_id) {
                 currentQuestionId = res.question_id;

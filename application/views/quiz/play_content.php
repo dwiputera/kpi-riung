@@ -19,6 +19,7 @@
                     </div>
                     <div class="card-body">
                         <p class="text-muted" id="state">Menunggu host memulai…</p>
+                        <small class="text-muted d-block mb-1" id="qNumber"></small>
                         <h4 id="q" class="mb-3"></h4>
 
                         <div class="progress mb-2" style="height:10px;">
@@ -109,7 +110,7 @@
                         const msg = (res.correct ? '✅ Benar!' : '❌ Salah!') +
                             (typeof res.added !== 'undefined' ? `\n+${res.added} poin` : '') +
                             (typeof res.score !== 'undefined' ? `\nSkor kamu: ${res.score}` : '');
-                        alert(msg);
+                        // alert(msg);
                         if (typeof res.score !== 'undefined') setScore(res.score);
                     } else {
                         alert(res.msg || 'Gagal submit');
@@ -149,9 +150,15 @@
         answered = false;
         currentQuestionId = data.question_id;
 
-        // NEW: acak urutan untuk soal ini, dan simpan agar konsisten selama soal aktif
-        optionOrder = shuffle(['A', 'B', 'C', 'D']);
+        // NEW: tampilkan nomor soal, misalnya "1/10"
+        if (data.number && data.total) {
+            $('#qNumber').text(data.number + '/' + data.total);
+        } else {
+            $('#qNumber').text(''); // fallback kalau tidak ada
+        }
 
+        // acak urutan untuk soal ini
+        optionOrder = shuffle(['A', 'B', 'C', 'D']);
         renderOptions(data);
 
         if (data.time_remaining !== null) startTimer(data.time_remaining);

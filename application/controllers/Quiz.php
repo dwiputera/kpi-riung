@@ -123,6 +123,34 @@ class Quiz extends MY_Controller
         $q = $this->quiz->get_question($quiz['current_question']);
         if (!$q) return $this->json(['ok' => true, 'active' => false, 'quiz_id' => $quiz_id, 'my_score' => $my_score]);
 
+        // === NEW: hitung nomor soal & total soal ===
+        $total = (int)$this->db->where('quiz_id', $quiz_id)->from('quiz_question')->count_all_results();
+
+        // default/fallback
+        $number = 1;
+
+        // Jika ada kolom sort_order, gunakan urutan itu; jika tidak, fallback urutan berdasarkan id
+        if ($this->db->field_exists('sort_order', 'quiz_question')) {
+            $curOrderRow = $this->db->select('sort_order')
+                ->from('quiz_question')
+                ->where('id', (int)$q['id'])
+                ->get()->row_array();
+
+            $curOrder = (int)($curOrderRow['sort_order'] ?? 0);
+
+            $number = (int)$this->db->from('quiz_question')
+                ->where('quiz_id', $quiz_id)
+                ->where('sort_order <=', $curOrder)
+                ->count_all_results();
+        } else {
+            // fallback: gunakan id sebagai urutan naik
+            $number = (int)$this->db->from('quiz_question')
+                ->where('quiz_id', $quiz_id)
+                ->where('id <=', (int)$q['id'])
+                ->count_all_results();
+        }
+        // === END NEW ===
+
         $remaining = null;
         if (!empty($q['time_limit']) && !empty($quiz['question_started_at'])) {
             $started = strtotime($quiz['question_started_at']);
@@ -138,10 +166,19 @@ class Quiz extends MY_Controller
             'quiz_id' => $quiz_id,
             'question_id' => (int)$q['id'],
             'question' => $q['question'],
-            'options' => ['A' => $q['option_a'], 'B' => $q['option_b'], 'C' => $q['option_c'], 'D' => $q['option_d']],
+            'options' => [
+                'A' => $q['option_a'],
+                'B' => $q['option_b'],
+                'C' => $q['option_c'],
+                'D' => $q['option_d']
+            ],
             'time_remaining' => $remaining,
             'my_score' => $my_score,
-            'leaderboard_hash' => $leaderboard_hash, // <—
+            'leaderboard_hash' => $leaderboard_hash,
+
+            // === NEW: kirim ke frontend ===
+            'number' => $number,   // contoh: 1
+            'total'  => $total     // contoh: 10
         ]);
     }
 

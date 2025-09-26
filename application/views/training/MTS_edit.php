@@ -51,6 +51,7 @@ $months = [
                             <tr>
                                 <th><input type="checkbox" id="select-all"></th>
                                 <th>No</th>
+                                <th>ATMP</th>
                                 <th>STATUS</th>
                                 <th>MONTH</th>
                                 <th>DEPARTEMEN PENGAMPU</th>
@@ -107,6 +108,15 @@ $months = [
                                     <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i + 1 ?></td>
                                     <?php if (!$advanced) : ?>
+                                        <td>
+                                            <select class="form-control form-control-sm select2"
+                                                data-name="atmp_id" data-trn_id_hash="<?= $hash ?>">
+                                                <option value=""></option>
+                                                <?php foreach ($atmps as $i_atmp => $atmp_i) : ?>
+                                                    <option value=<?= $atmp_i['id'] ?> <?= $atmp_i['id'] == $training['atmp_id'] ? 'selected' : '' ?>><?= $atmp_i['month'] ?> | <?= $atmp_i['nama_program'] ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
                                         <td>
                                             <select class="form-control form-control-sm status-select"
                                                 data-name="status" data-trn_id_hash="<?= $hash ?>">
@@ -177,6 +187,7 @@ $months = [
                                         <td><input type="number" class="form-control form-control-sm" name="grand_total" value="<?= $training['grand_total'] ?>" data-name="grand_total"></td>
                                         <td contenteditable="true" data-name="keterangan"><?= $training['keterangan'] ?></td>
                                     <?php else : ?>
+                                        <td contenteditable="true" data-name="atmp_id"><?= $training['atmp_id'] ?></td>
                                         <td contenteditable="true" data-name="status"><?= $training['status'] ?></td>
                                         <td contenteditable="true" data-name="month"><?= $training['month'] ?></td>
                                         <td contenteditable="true" data-name="departemen_pengampu"><?= $training['departemen_pengampu'] ?></td>
@@ -368,6 +379,8 @@ $months = [
     $(document).ready(function() {
         setupFilterableDatatable($('.datatable-filter-column'));
 
+        FuzzySelect2.apply('.select2');
+
         // Terapkan warna awal setelah halaman selesai load
         $('.status-select').each(function() {
             applyStatusColor($(this)); // Warna td & select langsung diterapkan
@@ -490,6 +503,15 @@ $months = [
             let row = `<tr data-id="${newId}" class="table-success">
                 <td><input type="checkbox" class="row-checkbox"></td>
                 <td>New</td>
+                <td>
+                    <select class="form-control form-control-sm select2"
+                        data-name="atmp_id">
+                        <option value=""></option>
+                        <?php foreach ($atmps as $i_atmp => $atmp_i) : ?>
+                            <option value=<?= $atmp_i['id'] ?> <?= $atmp_i['id'] == $training['atmp_id'] ? 'selected' : '' ?>><?= $atmp_i['month'] ?> | <?= $atmp_i['nama_program'] ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
                 <?php if (!$advanced) : ?>
                     <td>
                         <select class="form-control form-control-sm status-select"
@@ -561,6 +583,7 @@ $months = [
                     <td><input type="number" class="form-control form-control-sm" name="grand_total"  data-name="grand_total"></td>
                     <td contenteditable="true" data-name="keterangan"></td>
                 <?php else : ?>
+                    <td contenteditable="true" data-name="atmp_id"></td>
                     <td contenteditable="true" data-name="status"></td>
                     <td contenteditable="true" data-name="month"></td>
                     <td contenteditable="true" data-name="departemen_pengampu"></td>

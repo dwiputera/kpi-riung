@@ -126,7 +126,7 @@
                             <span id="picked_position" class="font-weight-bold">Belum dipilih</span>
                         </div>
                         <div class="ml-auto">
-                            <button type="submit" id="btnSaveAssign" class="btn btn-primary btn-sm show-overlay-full" disabled>
+                            <button type="submit" id="btnSaveAssign" class="btn btn-primary btn-sm" disabled>
                                 <i class="fa fa-exchange-alt"></i> Transfer
                             </button>
                         </div>

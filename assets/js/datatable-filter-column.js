@@ -147,7 +147,7 @@
                     }
                     return data;
                 }
-            }]
+            }],
         };
 
         if (isServerSide) {
@@ -160,7 +160,12 @@
             };
         }
 
-        const dt = $table.DataTable(dtOptions);
+        const dt = $table.DataTable(dtOptions).on('draw', function () {
+            let $select2 = $('.select2', this); // cari .select2 di dalam tabel ini
+            if ($select2.length) {
+                FuzzySelect2.apply($select2);
+            }
+        });
         positionButtons(dt, $table);
 
         // === NEW: track last active table for keyboard shortcuts ===

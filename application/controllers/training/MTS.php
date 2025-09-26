@@ -34,6 +34,7 @@ class MTS extends MY_Controller
     {
         $data['year'] = $year;
         $data['trainings'] = $this->m_mts->get_mts($year, 'trn_mts.year');
+        $data['atmps'] = $this->m_atmp->get_atmp($year, 'trn_atmp.year');
         $data['matrix_points'] = $this->db->get_where('org_area_lvl_pstn', array('type' => 'matrix_point'))->result_array();
         $data['content'] = "training/MTS_edit";
         $data['advanced'] = $this->input->get('advanced');

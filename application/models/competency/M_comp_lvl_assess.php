@@ -23,118 +23,118 @@ class M_comp_lvl_assess extends CI_Model
 
         // 2) Query utama pakai HEREDOC (STRING, bukan backtick)
         $sql = <<<'SQL'
-WITH RECURSIVE matrix_point_resolve AS (
-  SELECT
-    oalp.id AS start_id, oalp.id AS current_id, oalp.parent, oalp.matrix_point,
-    oalp.name, oalp.type,
-    CASE WHEN oalp.type = 'matrix_point' THEN oalp.name ELSE NULL END AS matrix_point_name,
-    0 AS depth
-  FROM org_area_lvl_pstn oalp
-  UNION ALL
-  SELECT
-    m.start_id, o.id, o.parent, o.matrix_point, o.name, o.type,
-    CASE WHEN o.type = 'matrix_point' THEN o.name ELSE m.matrix_point_name END AS matrix_point_name,
-    m.depth + 1
-  FROM matrix_point_resolve m
-  JOIN org_area_lvl_pstn o
-    ON o.id = m.parent OR o.id = m.matrix_point
-  WHERE m.matrix_point_name IS NULL
-),
-final_matrix_point AS (
-  SELECT start_id AS node_id, matrix_point_name
-  FROM (
-    SELECT
-      start_id,
-      matrix_point_name,
-      ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
-    FROM matrix_point_resolve
-    WHERE matrix_point_name IS NOT NULL
-  ) ranked
-  WHERE rn = 1
-)
-SELECT
-  e.NRP,
-  MAX(e.FullName)                      AS FullName,
-  cla.id                                AS comp_lvl_assess_id,
-  MAX(cla.method_id)                    AS method_id,
-  MAX(cla.tahun)                        AS tahun,
-  MAX(cla.vendor)                       AS vendor,
-  MAX(cla.recommendation)               AS recommendation,
-  MAX(cla.score)                        AS assess_score,
-  MAX(clam.name)                        AS method,
-  MAX(oalp.id)                          AS oalp_id,
-  MAX(oalp.name)                        AS oalp_name,
-  MAX(oalp.parent)                      AS oalp_parent,
-  MAX(oal.id)                           AS oal_id,
-  MAX(oal.name)                         AS oal_name,
-  MAX(oa.id)                            AS oa_id,
-  MAX(oa.name)                          AS oa_name,
-  MAX(fmp.matrix_point_name)            AS matrix_point_name,
-
-  /* score: array JSON manual dari clas */
-  CASE
-    WHEN COUNT(clas.comp_lvl_id) = 0 THEN '[]'
-    ELSE CONCAT(
-      '[',
-      GROUP_CONCAT(
-        CONCAT(
-          '{',
-            '"score":', IFNULL(clas.score, 'null'), ',',
-            '"comp_lvl_id":', IFNULL(clas.comp_lvl_id, 'null'),
-          '}'
-        )
-        ORDER BY clas.comp_lvl_id
-        SEPARATOR ','
-      ),
-      ']'
-    )
-  END AS score,
-
-  ROUND(AVG(clas.score), 2) AS avg_score,
-
-  /* pstn_scores: array JSON manual dari emp_ipa_score */
-  (
-    SELECT
-      CASE
-        WHEN COUNT(*) = 0 THEN '[]'
-        ELSE CONCAT(
-          '[',
-          GROUP_CONCAT(
-            CONCAT(
-              '{',
-                '"tahun":', IFNULL(eis.tahun, 'null'), ',',
-                '"score":', IFNULL(eis.score, 'null'),
-              '}'
+            WITH RECURSIVE matrix_point_resolve AS (
+            SELECT
+                oalp.id AS start_id, oalp.id AS current_id, oalp.parent, oalp.matrix_point,
+                oalp.name, oalp.type,
+                CASE WHEN oalp.type = 'matrix_point' THEN oalp.name ELSE NULL END AS matrix_point_name,
+                0 AS depth
+            FROM org_area_lvl_pstn oalp
+            UNION ALL
+            SELECT
+                m.start_id, o.id, o.parent, o.matrix_point, o.name, o.type,
+                CASE WHEN o.type = 'matrix_point' THEN o.name ELSE m.matrix_point_name END AS matrix_point_name,
+                m.depth + 1
+            FROM matrix_point_resolve m
+            JOIN org_area_lvl_pstn o
+                ON o.id = m.parent OR o.id = m.matrix_point
+            WHERE m.matrix_point_name IS NULL
+            ),
+            final_matrix_point AS (
+            SELECT start_id AS node_id, matrix_point_name
+            FROM (
+                SELECT
+                start_id,
+                matrix_point_name,
+                ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
+                FROM matrix_point_resolve
+                WHERE matrix_point_name IS NOT NULL
+            ) ranked
+            WHERE rn = 1
             )
-            ORDER BY eis.tahun
-            SEPARATOR ','
-          ),
-          ']'
-        )
-      END
-    FROM emp_ipa_score eis
-    WHERE eis.NRP = e.NRP
-  ) AS pstn_scores,
+            SELECT
+            e.NRP,
+            MAX(e.FullName)                      AS FullName,
+            cla.id                                AS comp_lvl_assess_id,
+            MAX(cla.method_id)                    AS method_id,
+            MAX(cla.tahun)                        AS tahun,
+            MAX(cla.vendor)                       AS vendor,
+            MAX(cla.recommendation)               AS recommendation,
+            MAX(cla.score)                        AS assess_score,
+            MAX(clam.name)                        AS method,
+            MAX(oalp.id)                          AS oalp_id,
+            MAX(oalp.name)                        AS oalp_name,
+            MAX(oalp.parent)                      AS oalp_parent,
+            MAX(oal.id)                           AS oal_id,
+            MAX(oal.name)                         AS oal_name,
+            MAX(oa.id)                            AS oa_id,
+            MAX(oa.name)                          AS oa_name,
+            MAX(fmp.matrix_point_name)            AS matrix_point_name,
 
-  (
-    SELECT ROUND(AVG(eis.score), 2)
-    FROM emp_ipa_score eis
-    WHERE eis.NRP = e.NRP
-  ) AS avg_ipa_score
+            /* score: array JSON manual dari clas */
+            CASE
+                WHEN COUNT(clas.comp_lvl_id) = 0 THEN '[]'
+                ELSE CONCAT(
+                '[',
+                GROUP_CONCAT(
+                    CONCAT(
+                    '{',
+                        '"score":', IFNULL(clas.score, 'null'), ',',
+                        '"comp_lvl_id":', IFNULL(clas.comp_lvl_id, 'null'),
+                    '}'
+                    )
+                    ORDER BY clas.comp_lvl_id
+                    SEPARATOR ','
+                ),
+                ']'
+                )
+            END AS score,
 
-FROM rml_sso_la.users e
-LEFT JOIN comp_lvl_assess cla           ON cla.NRP = e.NRP
-LEFT JOIN comp_lvl_assess_method clam   ON clam.id = cla.method_id
-LEFT JOIN comp_lvl_assess_score clas    ON clas.comp_lvl_assess_id = cla.id
-LEFT JOIN org_area_lvl_pstn_user oalpu  ON oalpu.NRP = e.NRP
-LEFT JOIN org_area_lvl_pstn oalp        ON oalp.id = oalpu.area_lvl_pstn_id
-LEFT JOIN org_area_lvl oal              ON oal.id = oalp.area_lvl_id
-LEFT JOIN org_area oa                   ON oa.id = oalp.area_id
-LEFT JOIN final_matrix_point fmp        ON fmp.node_id = oalp.id
-/* {{WHERE}} */
-GROUP BY e.NRP, cla.id
-ORDER BY e.NRP, cla.id
-SQL;
+            ROUND(AVG(clas.score), 2) AS avg_score,
+
+            /* pstn_scores: array JSON manual dari emp_ipa_score */
+            (
+                SELECT
+                CASE
+                    WHEN COUNT(*) = 0 THEN '[]'
+                    ELSE CONCAT(
+                    '[',
+                    GROUP_CONCAT(
+                        CONCAT(
+                        '{',
+                            '"tahun":', IFNULL(eis.tahun, 'null'), ',',
+                            '"score":', IFNULL(eis.score, 'null'),
+                        '}'
+                        )
+                        ORDER BY eis.tahun
+                        SEPARATOR ','
+                    ),
+                    ']'
+                    )
+                END
+                FROM emp_ipa_score eis
+                WHERE eis.NRP = e.NRP
+            ) AS pstn_scores,
+
+            (
+                SELECT ROUND(AVG(eis.score), 2)
+                FROM emp_ipa_score eis
+                WHERE eis.NRP = e.NRP
+            ) AS avg_ipa_score
+
+            FROM rml_sso_la.users e
+            LEFT JOIN comp_lvl_assess cla           ON cla.NRP = e.NRP
+            LEFT JOIN comp_lvl_assess_method clam   ON clam.id = cla.method_id
+            LEFT JOIN comp_lvl_assess_score clas    ON clas.comp_lvl_assess_id = cla.id
+            LEFT JOIN org_area_lvl_pstn_user oalpu  ON oalpu.NRP = e.NRP
+            LEFT JOIN org_area_lvl_pstn oalp        ON oalp.id = oalpu.area_lvl_pstn_id
+            LEFT JOIN org_area_lvl oal              ON oal.id = oalp.area_lvl_id
+            LEFT JOIN org_area oa                   ON oa.id = oalp.area_id
+            LEFT JOIN final_matrix_point fmp        ON fmp.node_id = oalp.id
+            /* {{WHERE}} */
+            GROUP BY e.NRP, cla.id
+            ORDER BY e.NRP, cla.id
+            SQL;
 
         // Sisipkan WHERE (kalau ada)
         if ($where) {

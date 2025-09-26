@@ -149,10 +149,10 @@
                                 <span id="picked_position" class="font-weight-bold">Belum ada</span>
                             </div>
                             <div class="ml-auto">
-                                <button type="button" id="btnUnassign" class="btn btn-outline-danger btn-sm">
+                                <button type="button" id="btnUnassign" class="btn btn-outline-danger btn-sm show-overlay-full">
                                     <i class="fa fa-times"></i> Unassign
                                 </button>
-                                <button type="submit" id="btnSaveAssign" class="btn btn-primary btn-sm" disabled>
+                                <button type="submit" id="btnSaveAssign" class="btn btn-primary btn-sm show-overlay-full" disabled>
                                     <i class="fa fa-save"></i> Simpan
                                 </button>
                             </div>

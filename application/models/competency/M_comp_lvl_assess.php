@@ -198,17 +198,13 @@ class M_comp_lvl_assess extends CI_Model
                     'score' => $submitted_data['score'][$cl_i['id']],
                 ];
                 $clas = $this->db->get_where('comp_lvl_assess_score', ['comp_lvl_assess_id' => $cla_id, 'comp_lvl_id' => $cl_i['id']])->row_array();
-                echo '<pre>', print_r($clas_data, true);
                 if (!$clas) {
                     $success = $this->db->insert('comp_lvl_assess_score', $clas_data);
-                    echo '<pre>', print_r("insert", true);
                 } else {
                     $this->db->where('comp_lvl_assess_id', $cla_id);
                     $this->db->where('comp_lvl_id', $cl_i['id']);
                     $success = $this->db->update('comp_lvl_assess_score', $clas_data);
-                    echo '<pre>', print_r("update", true);
                 }
-                echo '<pre>', print_r($success, true);
             }
         }
         return $success;

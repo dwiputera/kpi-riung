@@ -45,7 +45,6 @@ class Matrix_point extends MY_Controller
         // Tambahkan sesuai kebutuhan.
         $fkRefs = [
             ['table' => 'comp_position',        'column' => 'area_lvl_pstn_id'],
-            ['table' => 'comp_pstn_target', 'column' => 'area_lvl_pstn_id'],
             // ['table' => 'tabel_lain',       'column' => 'area_lvl_pstn_id'],
         ];
 

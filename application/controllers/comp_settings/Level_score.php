@@ -68,8 +68,6 @@ class Level_score extends MY_Controller
         // $employees = $this->m_emp->get_employee(3, 'oal.id');
         $data['employees'] = $this->create_matrix($employees, $comp_lvl, $cl_scores, $cl_targets, $cl_assess);
         $data['content'] = "competency/level_score_year_edit";
-        echo '<pre>', print_r($data['employees'], true);
-        die;
         $this->load->view('templates/header_footer', $data);
     }
 

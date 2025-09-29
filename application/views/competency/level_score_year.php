@@ -1,7 +1,7 @@
 <!-- Content Header (Page header) -->
 <div class="content-header">
     <div class="container-fluid">
-        <h1 class="m-0">Hard Skill Score</h1>
+        <h1 class="m-0">Soft Skill Score: <strong><?= $assess_method['name'] ?></strong></h1>
     </div><!-- /.container-fluid -->
 </div>
 <!-- /.content-header -->
@@ -16,7 +16,7 @@
             </div>
             <!-- /.card-header -->
             <!-- form start -->
-            <form action="<?= base_url() ?>comp_settings/position_score/year/<?= md5($matrix_point['id']) ?>" method="get">
+            <form action="<?= base_url() ?>comp_settings/level_score/year/<?= md5($assess_method['id']) ?>" method="get">
                 <div class="card-body">
                     <div class="form-group">
                         <label>Year:</label>
@@ -43,11 +43,11 @@
 
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><strong><?= $matrix_point['name'] ?></strong></h3>
+                <h3 class="card-title"><strong><?= $assess_method['name'] ?></strong></h3>
             </div>
             <!-- /.card-header -->
             <div class="card-body">
-                <a href="<?= base_url() ?>comp_settings/position_score/year_edit/<?= md5($matrix_point['id']) ?>?year=<?= $year ?>" class="btn btn-primary w-100"><i class="fa fa-edit"></i> Edit</a><br><br>
+                <a href="<?= base_url() ?>comp_settings/level_score/year_edit/<?= md5($assess_method['id']) ?>?year=<?= $year ?>" class="btn btn-primary w-100"><i class="fa fa-edit"></i> Edit</a><br><br>
                 <table id="" class="table table-bordered table-striped datatable-filter-column" data-filter-columns="4:multiple,5,6">
                     <thead>
                         <tr>
@@ -57,9 +57,12 @@
                             <th>Jabatan</th>
                             <th>Level</th>
                             <th>Area</th>
-                            <?php foreach ($comp_pstn as $i_cp => $cp_i) : ?>
-                                <th colspan="3"><?= $cp_i['name'] ?></th>
+                            <?php foreach ($comp_lvl as $i_cl => $cl_i) : ?>
+                                <th colspan="3"><?= $cl_i['name'] ?></th>
                             <?php endforeach; ?>
+                            <th>Vendor</th>
+                            <th>Recommendation</th>
+                            <th>Score</th>
                         </tr>
                         <tr>
                             <th></th>
@@ -68,11 +71,14 @@
                             <th></th>
                             <th></th>
                             <th></th>
-                            <?php foreach ($comp_pstn as $i_cp => $cp_i) : ?>
+                            <?php foreach ($comp_lvl as $i_cl => $cl_i) : ?>
                                 <th>Plan</th>
                                 <th>Actual</th>
                                 <th>Gap</th>
                             <?php endforeach; ?>
+                            <th></th>
+                            <th></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,10 +91,10 @@
                                 <td><?= $e_i['name'] ?></td>
                                 <td><?= $e_i['oal_name'] ?></td>
                                 <td><?= $e_i['oa_name'] ?></td>
-                                <?php foreach ($comp_pstn as $i_cp => $cp_i) : ?>
+                                <?php foreach ($comp_lvl as $i_cl => $cl_i) : ?>
                                     <?php
-                                    $plan  = $e_i['cp_target'][$cp_i['id']];
-                                    $actual = $e_i['cp_score'][$cp_i['id']];
+                                    $plan  = $e_i['cl_target'][$cl_i['id']];
+                                    $actual = $e_i['cl_score'][$cl_i['id']];
                                     $gap   = (is_numeric($actual) && is_numeric($plan)) ? ($actual - $plan) : null;
                                     $bg    = is_null($gap) ? 'secondary' : ($gap > 0 ? 'success' : ($gap < 0 ? 'danger' : 'primary'));
                                     ?>
@@ -96,6 +102,9 @@
                                     <td><?= is_null($actual) ? '' : $actual ?></td>
                                     <td class="bg-<?= $bg ?>"><?= is_null($gap) ? '' : $gap ?></td>
                                 <?php endforeach; ?>
+                                <td><?= $e_i['vendor'] ?></td>
+                                <td><?= $e_i['recommendation'] ?></td>
+                                <td><?= $e_i['score'] ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

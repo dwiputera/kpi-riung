@@ -111,9 +111,9 @@ class Position_matrix extends MY_Controller
 
             // Filter dict berdasarkan matrix_points
             $comp_pstn_dicts = $this->db->query("
-            SELECT * FROM comp_pstn_dict cpd
-            LEFT JOIN comp_position cp ON cp.id = cpd.comp_pstn_id
-        ")->result_array();
+                SELECT * FROM comp_pstn_dict cpd
+                LEFT JOIN comp_position cp ON cp.id = cpd.comp_pstn_id
+            ")->result_array();
 
             $matrix_point_ids = array_column($matrix_points, 'id');
             $data['comp_pstn_dicts'] = array_filter($comp_pstn_dicts, fn($cpd) => in_array($cpd['area_lvl_pstn_id'], $matrix_point_ids));

@@ -1,7 +1,7 @@
 <!-- Content Header (Page header) -->
 <div class="content-header">
     <div class="container-fluid">
-        <h1 class="m-0">Hard Skill Score Edit</h1>
+        <h1 class="m-0">Soft Skill Score: <strong><?= $assess_method['name'] ?></strong></h1>
     </div><!-- /.container-fluid -->
 </div>
 <!-- /.content-header -->
@@ -16,7 +16,7 @@
             </div>
             <!-- /.card-header -->
             <!-- form start -->
-            <form action="<?= base_url() ?>comp_settings/position_score/year_edit/<?= md5($matrix_point['id']) ?>?year=<?= $year ?>" method="get">
+            <form action="<?= base_url() ?>comp_settings/level_score/year_edit/<?= md5($assess_method['id']) ?>?year=<?= $year ?>" method="get">
                 <div class="card-body">
                     <div class="form-group">
                         <label>Year:</label>
@@ -43,9 +43,10 @@
 
         <div class="card card-primary">
             <!-- /.card-header -->
-            <form action="<?= base_url() ?>comp_settings/position_score/submit/<?= md5($matrix_point['id']) ?>" method="post" id="data-form">
+            <form action="<?= base_url() ?>comp_settings/level_score/submit/<?= md5($assess_method['id']) ?>" method="post" id="data-form">
                 <input type="hidden" name="json_data" id="json_data">
                 <input type="hidden" name="year" value="<?= $year ?>">
+                <input type="hidden" name="method_id" value="<?= $assess_method['id'] ?>">
                 <div class="card-body">
                     <table id="datatable" class="table table-bordered table-striped datatable-filter-column" data-filter-columns="4:multiple,5,6">
                         <thead>
@@ -56,9 +57,12 @@
                                 <th>Jabatan</th>
                                 <th>Level</th>
                                 <th>Area</th>
-                                <?php foreach ($comp_pstn as $i_cp => $cp_i) : ?>
-                                    <th><?= $cp_i['name'] ?></th>
+                                <?php foreach ($comp_lvl as $i_cl => $cl_i) : ?>
+                                    <th><?= $cl_i['name'] ?></th>
                                 <?php endforeach; ?>
+                                <th>Vendor</th>
+                                <th>Recommendation</th>
+                                <th>Score</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -71,9 +75,12 @@
                                     <td><?= $e_i['name'] ?></td>
                                     <td><?= $e_i['oal_name'] ?></td>
                                     <td><?= $e_i['oa_name'] ?></td>
-                                    <?php foreach ($comp_pstn as $i_cp => $cp_i) : ?>
-                                        <td contenteditable="true" data-nrp="<?= $e_i['NRP'] ?>" data-cp_id="<?= $cp_i['id'] ?>"><?= $e_i['cp_score'][$cp_i['id']] ?></td>
+                                    <?php foreach ($comp_lvl as $i_cl => $cl_i) : ?>
+                                        <td contenteditable="true" data-nrp="<?= $e_i['NRP'] ?>" data-cl_id="<?= $cl_i['id'] ?>"><?= $e_i['cl_score'][$cl_i['id']] ?></td>
                                     <?php endforeach; ?>
+                                    <td contenteditable="true" data-nrp="<?= $e_i['NRP'] ?>" data-cl_id="vendor"><?= $e_i['vendor'] ?></td>
+                                    <td contenteditable="true" data-nrp="<?= $e_i['NRP'] ?>" data-cl_id="recommendation"><?= $e_i['recommendation'] ?></td>
+                                    <td contenteditable="true" data-nrp="<?= $e_i['NRP'] ?>" data-cl_id="score"><?= $e_i['score'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -123,7 +130,7 @@
 
         function cancelForm() {
             if (confirm('Yakin batal?')) {
-                location.href = '<?= base_url() ?>comp_settings/position_score/year/<?= md5($matrix_point['id']) ?>?year=<?= ($year ? '?year=' . $year : '') ?>';
+                location.href = '<?= base_url() ?>comp_settings/level_score/year/<?= md5($assess_method['id']) ?>?year=<?= ($year ? '?year=' . $year : '') ?>';
             }
         }
 
@@ -139,12 +146,12 @@
                     $row.find('td[contenteditable="true"]').each(function() {
                         const $td = $(this);
                         const nrp = $td.data('nrp');
-                        const cp_id = $td.data('cp_id');
+                        const cl_id = $td.data('cl_id');
                         const value = $td.text().trim();
 
-                        if (nrp && cp_id) {
+                        if (nrp && cl_id) {
                             if (!data[nrp]) data[nrp] = {};
-                            data[nrp][cp_id] = value;
+                            data[nrp][cl_id] = value;
                         }
                     });
                 });

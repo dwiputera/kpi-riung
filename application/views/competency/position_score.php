@@ -1,11 +1,7 @@
 <!-- Content Header (Page header) -->
 <div class="content-header">
     <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Current Hard Skill Score</h1>
-            </div><!-- /.col -->
-        </div><!-- /.row -->
+        <h1 class="m-0">Current Hard Skill Score</h1>
     </div><!-- /.container-fluid -->
 </div>
 <!-- /.content-header -->
@@ -59,11 +55,15 @@
                                 <td><?= $e_i['oal_name'] ?></td>
                                 <td><?= $e_i['oa_name'] ?></td>
                                 <?php foreach ($comp_pstn as $i_cp => $cp_i) : ?>
-                                    <td><?= $e_i['cp_target'][$cp_i['id']] ?></td>
-                                    <td><?= $e_i['cp_score'][$cp_i['id']] ?></td>
-                                    <?php $gap = $e_i['cp_score'][$cp_i['id']] - $e_i['cp_target'][$cp_i['id']] ?>
-                                    <?php $bg = $gap > 0 ? "success" : ($gap < 0 ? "danger" : "primary") ?>
-                                    <td class="bg-<?= $bg ?>"><?= $gap ?></td>
+                                    <?php
+                                    $plan  = $e_i['cp_target'][$cp_i['id']];
+                                    $actual = $e_i['cp_score'][$cp_i['id']];
+                                    $gap   = (is_numeric($actual) && is_numeric($plan)) ? ($actual - $plan) : null;
+                                    $bg    = is_null($gap) ? 'secondary' : ($gap > 0 ? 'success' : ($gap < 0 ? 'danger' : 'primary'));
+                                    ?>
+                                    <td><?= is_null($plan) ? '' : $plan ?></td>
+                                    <td><?= is_null($actual) ? '' : $actual ?></td>
+                                    <td class="bg-<?= $bg ?>"><?= is_null($gap) ? '' : $gap ?></td>
                                 <?php endforeach; ?>
                             </tr>
                         <?php endforeach; ?>

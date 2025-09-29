@@ -27,6 +27,8 @@ class Level_matrix extends MY_Controller
         $data['level_active'] = $this->input->get('level_active');
         if ($user) {
             $positions = $this->m_pstn->get_subordinates(md5($user['area_lvl_pstn_id']), 'with_matrix');
+            echo '<pre>', print_r($positions, true);
+            die;
             $competencies = $this->m_c_lvl->get_comp_level();
             $targets = $this->m_c_l_targ->get_comp_level_target();
             $data['area_pstns'] = $this->create_matrix($positions, $competencies, $targets);

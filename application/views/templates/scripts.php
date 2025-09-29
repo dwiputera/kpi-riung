@@ -54,6 +54,10 @@
         showOverlayFull();
     });
 
+    window.addEventListener("beforeunload", function(e) {
+        showOverlayFull();
+    });
+
     // Hide overlay when user navigates back or forward
     window.addEventListener('pageshow', function() {
         hideOverlayFull(); // or $('.overlay').hide();

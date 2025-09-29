@@ -11,7 +11,8 @@ class M_employee extends CI_Model
     public function get_employee($value = null, $by = 'md5(id)', $many = true)
     {
         $where = '';
-        if ($value) $where = "WHERE $by = '$value'";
+        if ($value) $where = "AND $by = '$value'";
+        if ($value == 'IS NULL' || $value == 'IS NOT NULL') $where = 'AND ' . $by . ' ' . $value;
         $query = $this->db->query("
             WITH RECURSIVE matrix_point_resolve AS (
                 SELECT 

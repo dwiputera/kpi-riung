@@ -13,8 +13,17 @@ class Culture_fit extends MY_Controller
     {
         $year = $this->input->get('year') ?? date("Y");
         $data['year'] = $year;
-        $data['culture_fit'] = $this->m_cf->get($year, 'year');
-        $data['content'] = "culture_fit";
+        $data['culture_fit'] = $this->m_cf->get_current();
+        $data['content'] = "culture_fit/culture_fit";
+        $this->load->view('templates/header_footer', $data);
+    }
+
+    public function edit()
+    {
+        $year = $this->input->get('year') ?? date("Y");
+        $data['year'] = $year;
+        $data['culture_fit'] = $this->m_cf->get("WHERE year = $year");
+        $data['content'] = "culture_fit/culture_fit_edit";
         $this->load->view('templates/header_footer', $data);
     }
 
@@ -27,6 +36,6 @@ class Culture_fit extends MY_Controller
 
         flash_swal($success ? 'success' : 'error', $success ? "Culture Fit Edited Successfully" : "Failed to Update Culture Fit");
 
-        redirect('culture_fit?year=' . $year);
+        redirect('culture_fit/edit?year=' . $year);
     }
 }

@@ -19,7 +19,7 @@
             </div>
             <!-- /.card-header -->
             <!-- form start -->
-            <form action="<?= base_url() ?>culture_fit" method="get">
+            <form action="<?= base_url() ?>culture_fit/edit" method="get">
                 <div class="card-body">
                     <div class="form-group">
                         <label>Year:</label>
@@ -68,7 +68,6 @@
                                 <th>LEVEL</th>
                                 <th>JABATAN</th>
                                 <th>LAYER</th>
-                                <th>TAHUN</th>
                                 <th>MANAGER</th>
                                 <th>NRP_MANAGER</th>
                                 <th>DIVISION</th>
@@ -78,8 +77,6 @@
                         </thead>
                         <tbody>
                             <?php $i = 1; ?>
-                            <?php $status_str = ['P' => 'Pending', 'Y' => 'Done', 'N' => 'Canceled', 'R' => 'Reschedule']; ?>
-                            <?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
                             <?php foreach ($culture_fit as $i_cf => $cf_i) : ?>
                                 <tr data-id="<?= $cf_i['id'] ?>">
                                     <td><input type="checkbox" class="row-checkbox"></td>
@@ -95,7 +92,6 @@
                                     <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="level"><?= $cf_i['level'] ?></td>
                                     <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="jabatan"><?= $cf_i['jabatan'] ?></td>
                                     <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="layer"><?= $cf_i['layer'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="year"><?= $cf_i['year'] ?></td>
                                     <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="manager"><?= $cf_i['manager'] ?></td>
                                     <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="NRP_manager"><?= $cf_i['NRP_manager'] ?></td>
                                     <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="division"><?= $cf_i['division'] ?></td>
@@ -159,11 +155,6 @@
     $(function() {
         setupFilterableDatatable($('.datatable-filter-column'));
 
-        // Terapkan warna awal setelah halaman selesai load
-        $('.status-select').each(function() {
-            applyStatusColor($(this)); // <- Warna td & select langsung diterapkan
-        });
-
         $('#select-all').on('click', function() {
             $('.row-checkbox').prop('checked', this.checked);
         });
@@ -178,36 +169,6 @@
             };
             $('#json_data').val(JSON.stringify(payload));
         });
-    });
-
-    // Fungsi reusable untuk set warna td & select
-    function applyStatusColor($select) {
-        let val = $select.val();
-        let td = $select.closest('td');
-
-        // Hapus semua warna dulu
-        td.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
-        $select.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
-
-        // Tambahkan warna sesuai status
-        if (val === 'Y') {
-            td.addClass('bg-success text-white');
-            $select.addClass('bg-success text-white');
-        } else if (val === 'P') {
-            td.addClass('bg-secondary text-white');
-            $select.addClass('bg-secondary text-white');
-        } else if (val === 'N') {
-            td.addClass('bg-danger text-white');
-            $select.addClass('bg-danger text-white');
-        } else if (val === 'R') {
-            td.addClass('bg-warning text-dark');
-            $select.addClass('bg-warning text-dark');
-        }
-    }
-
-    // Event change untuk update warna jika select berubah
-    $(document).on('change', '.status-select', function() {
-        applyStatusColor($(this));
     });
 
     function cancelForm() {

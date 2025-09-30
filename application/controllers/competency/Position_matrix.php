@@ -9,36 +9,24 @@ class Position_matrix extends MY_Controller
         $this->load->database();
         $this->load->model('competency/m_comp_position', 'm_c_pstn');
         $this->load->model('competency/m_comp_position_target', 'm_c_p_targ');
+        $this->load->model('competency/m_comp_position_score', 'm_c_p_score'); // <-- ADD: ambil actual score (latest)
         $this->load->model('organization/m_position', 'm_pstn');
         $this->load->model('organization/m_user', 'm_user');
+        $this->load->model('employee/m_employee', 'm_emp'); // <-- ADD: daftar pegawai (punya oalp_id)
     }
 
     public function index()
     {
-        $NRP = $this->session->userdata('NRP');
+        $NRP  = $this->session->userdata('NRP');
         $user = $this->m_user->get_area_lvl_pstn_user($NRP, 'NRP', false);
         $matrix_points = [];
-
-        // $NRP = '10007005'; //afify
-        // $NRP = '10106006'; //pa eko
-        // $NRP = '10122289'; //ceu shanty
-        // $NRP = '10109069'; //pa levy
-        // $NRP = '10111396'; //pa fajri
-        // $NRP = '10124038'; //uda defri
-        // $NRP = '10125097'; //engineering
-        // $NRP = '10106007'; //prod_ops HO
-        // $NRP = '10109088'; //prod_ops area_1
-        // $NRP = '10112853'; //prod_ops area_2
-        // $NRP = '10112726'; //PM REBH
-        // $NRP = '10106010'; //REBH dept head ENGINEERING
-        // $NRP = '10121386'; //REBH sect head ENGINEERING-survey&moco
 
         if ($user) {
             $user_oalp_id_md5 = md5($user['area_lvl_pstn_id']);
             $position = $this->m_pstn->get_area_lvl_pstn($user_oalp_id_md5, 'md5(oalp.id)', false);
             $position_id_md5 = md5($position['id']);
 
-            $superiors = array_reverse($this->m_pstn->get_superiors($position_id_md5));
+            $superiors    = array_reverse($this->m_pstn->get_superiors($position_id_md5));
             $subordinates = $this->m_pstn->get_subordinates($user_oalp_id_md5);
 
             // Cari matrix_point dari atasan
@@ -53,8 +41,8 @@ class Position_matrix extends MY_Controller
                     $mtxp['subordinates'] = $this->m_pstn->get_subordinates($position_id_md5, 'with_without_matrix');
                     $matrix_points[] = $mtxp;
                 } else {
-                    $matrix_point_from_superior = array_values(array_filter($superiors, fn($s) => !empty($s['matrix_point'])));
-                    $matrix_points_subordinates = array_values(array_filter($subordinates, fn($s) => !empty($s['matrix_point'])));
+                    $matrix_point_from_superior   = array_values(array_filter($superiors, fn($s) => !empty($s['matrix_point'])));
+                    $matrix_points_subordinates   = array_values(array_filter($subordinates, fn($s) => !empty($s['matrix_point'])));
 
                     if (empty($matrix_point_from_superior)) {
                         $mtxp['subordinates'] = $this->m_pstn->get_subordinates($position_id_md5, 'without_matrix');
@@ -94,36 +82,62 @@ class Position_matrix extends MY_Controller
             }
         }
 
-        // Data pelengkap
+        // Seleksi matrix_point jika jumlah banyak
         if (count($matrix_points) > 3 && !$this->input->post('matrix_points')) {
             $this->matrix_points_select($matrix_points);
-        } else {
-            if ($this->input->post('matrix_points')) {
-                $matrix_points_base = array_column($matrix_points, null, 'id');
-                $matrix_points = [];
-                foreach ($this->input->post('matrix_points') as $i_mp => $mp_i) {
-                    $matrix_points[] = $matrix_points_base[$mp_i];
-                }
-            }
-            $competencies = $this->m_c_pstn->get_comp_position();
-            $targets = $this->m_c_p_targ->get_comp_position_target();
-            $data['matrix_points'] = $this->create_matrix($matrix_points, $competencies, $targets);
-
-            // Filter dict berdasarkan matrix_points
-            $comp_pstn_dicts = $this->db->query("
-                SELECT * FROM comp_pstn_dict cpd
-                LEFT JOIN comp_position cp ON cp.id = cpd.comp_pstn_id
-            ")->result_array();
-
-            $matrix_point_ids = array_column($matrix_points, 'id');
-            $data['comp_pstn_dicts'] = array_filter($comp_pstn_dicts, fn($cpd) => in_array($cpd['area_lvl_pstn_id'], $matrix_point_ids));
-
-            $data['admin'] = false;
-            $data['matrix_position_active'] = $this->input->get('matrix_position_active');
-            $data['competencies'] = $this->group_competencies($matrix_points, $competencies);
-            $data['content'] = "competency/position_matrix";
-            $this->load->view('templates/header_footer', $data);
+            return;
         }
+
+        if ($this->input->post('matrix_points')) {
+            $matrix_points_base = array_column($matrix_points, null, 'id');
+            $matrix_points = [];
+            foreach ($this->input->post('matrix_points') as $i_mp => $mp_i) {
+                if (isset($matrix_points_base[$mp_i])) $matrix_points[] = $matrix_points_base[$mp_i];
+            }
+        }
+
+        // --- Data inti untuk matrix per PEGAWAI (Plan/Actual/Gap) ---
+        $competencies = $this->m_c_pstn->get_comp_position();              // daftar positional competencies
+        $targets      = $this->m_c_p_targ->get_comp_position_target();     // plan per (comp_pstn_id x area_lvl_pstn_id)
+        $scores       = $this->m_c_p_score->get_cp_score(null, null, true); // actual (latest per NRP x comp_pstn_id)
+
+        // grup kompetensi per matrix_point (sudah ada helpernya)
+        $data['competencies'] = $this->group_competencies($matrix_points, $competencies);
+
+        // Ambil seluruh pegawai yang punya mapping OALP, lalu pecah per matrix_point: hanya subordinates di MP tsb
+        $employees_all = $this->m_emp->get_employee('IS NOT NULL', 'oalp.id');
+
+        // Build: employees_by_mp[mpId] = list pegawai subordinate mp tsb (dengan field plan/actual/gap per comp_pstn)
+        $data['employees_by_mp'] = [];
+        foreach ($matrix_points as $mp) {
+            $mpId     = (int)$mp['id'];
+            $sub_oalp = array_map(fn($p) => (int)$p['id'], $mp['subordinates'] ?? []);
+            $emp_sub  = array_values(array_filter($employees_all, fn($e) => isset($e['oalp_id']) && in_array((int)$e['oalp_id'], $sub_oalp, true)));
+
+            $mp_comp_positions = $data['competencies'][$mpId] ?? []; // list comp_pstn milik MP ini
+            $data['employees_by_mp'][$mpId] = $this->create_employee_matrix_position(
+                $emp_sub,             // pegawai di MP ini
+                $mp_comp_positions,   // daftar comp_pstn di MP ini
+                $scores,              // actual
+                $targets              // plan
+            );
+        }
+
+        // Filter dict berdasarkan matrix_points (dipertahankan seperti semula)
+        $comp_pstn_dicts = $this->db->query("
+            SELECT * FROM comp_pstn_dict cpd
+            LEFT JOIN comp_position cp ON cp.id = cpd.comp_pstn_id
+        ")->result_array();
+        $matrix_point_ids = array_column($matrix_points, 'id');
+        $data['comp_pstn_dicts'] = array_filter($comp_pstn_dicts, fn($cpd) => in_array($cpd['area_lvl_pstn_id'], $matrix_point_ids));
+
+        $data['admin'] = false;
+        $data['matrix_position_active'] = $this->input->get('matrix_position_active');
+        $data['matrix_points'] = $matrix_points;
+
+        // View TETAP: position_matrix.php (sekarang menampilkan baris pegawai)
+        $data['content'] = "competency/position_matrix";
+        $this->load->view('templates/header_footer', $data);
     }
 
     public function matrix_points_select($matrix_points)
@@ -134,83 +148,7 @@ class Position_matrix extends MY_Controller
         $this->load->view('templates/header_footer', $data);
     }
 
-    // public function index()
-    // {
-    //     $NRP = $this->session->userdata('NRP');
-    //     $user = $this->m_user->get_area_lvl_pstn_user($NRP, 'NRP', false);
-    //     $position = [];
-    //     $pstn_matrix_point = [];
-    //     $subordinates = [];
-    //     $superiors = [];
-    //     $superior_matrix_point = [];
-    //     if ($user) {
-    //         $position = $this->m_pstn->get_area_lvl_pstn(md5($user['area_lvl_pstn_id']), 'md5(oalp.id)', false);
-    //         $superiors = array_reverse($this->m_pstn->get_superiors(md5($position['id'])));
-    //         $subordinates = $this->m_pstn->get_subordinates(md5($user['area_lvl_pstn_id']));
-    //         $superior_matrix_point = array_filter($superiors, fn($sup_i, $i_sup) => $sup_i['type'] == "matrix_point" && $sup_i['id'] != $position['id'], ARRAY_FILTER_USE_BOTH);
-    //     }
-    //     $matrix_points = [];
-    //     if ($superior_matrix_point) {
-    //         $mtxp = array_values($superior_matrix_point)[0];
-    //         if ($mtxp['area_id'] == $user['oa_id']) {
-    //             $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5($position['id']));
-    //             $matrix_points[] = $mtxp;
-    //         } else {
-    //             $superior_matrix_point = array_filter($superiors, fn($sup_i, $i_sup) => $sup_i['matrix_point'], ARRAY_FILTER_USE_BOTH);
-    //             $matrix_points_subordinates = array_filter($subordinates, fn($sub_i, $i_sub) => $sub_i['matrix_point'], ARRAY_FILTER_USE_BOTH);
-    //             if (!$superior_matrix_point) {
-    //                 $mtxp['subordinates'] = $this->m_pstn->get_subordinates_without_matrix_points(md5($position['id']));
-    //                 $matrix_points[] = $mtxp;
-    //                 $mtxp_sup = array_column($matrix_points_subordinates, 'matrix_point');
-    //                 $mtxp_sup = implode(',', $mtxp_sup);
-    //                 $matrix_point_super = $this->db->query("
-    //                     SELECT * FROM org_area_lvl_pstn oalp
-    //                     WHERE id IN($mtxp_sup)
-    //                 ")->result_array();
-    //                 foreach ($matrix_point_super as $i_mtxps => $mtxps_i) {
-    //                     $mtxp = $mtxps_i;
-    //                     $subordinate_by_matrix_point = array_filter($matrix_points_subordinates, fn($mps_i, $i_mps) => $mps_i['matrix_point'] == $mtxps_i['id'], ARRAY_FILTER_USE_BOTH);
-    //                     $mtxp['subordinates'] = [];
-    //                     foreach ($subordinate_by_matrix_point as $i_sbmp => $sbmp_i) {
-    //                         $mtxp_subordinates = $this->m_pstn->get_subordinates(md5($sbmp_i['id']));
-    //                         $mtxp['subordinates'] = array_merge($mtxp['subordinates'], $mtxp_subordinates);
-    //                     }
-    //                     $matrix_points[] = $mtxp;
-    //                 }
-    //             } else {
-    //                 $mtxp_sup = array_values($superior_matrix_point)[0]['matrix_point'];
-    //                 $matrix_point_super = $this->db->query("
-    //                     SELECT * FROM org_area_lvl_pstn oalp
-    //                     WHERE id = $mtxp_sup
-    //                 ")->row_array();
-    //                 $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5($position['id']));
-    //                 $matrix_points[] = $mtxp;
-    //             }
-    //         }
-    //     } else {
-    //         $matrix_points_subordinates = array_filter($subordinates, fn($sub_i, $i_sub) => $sub_i['type'] == "matrix_point", ARRAY_FILTER_USE_BOTH);
-    //         foreach ($matrix_points_subordinates as $i_mtxp => $mtxp_i) {
-    //             $mtxp = $mtxp_i;
-    //             $mtxp['subordinates'] = $this->m_pstn->get_subordinates_with_without_matrix_points(md5($mtxp_i['id']));
-    //             $matrix_points[] = $mtxp;
-    //         }
-    //     }
-
-    //     $competencies = $this->m_c_pstn->get_comp_position();
-    //     $targets = $this->m_c_p_targ->get_comp_position_target();
-    //     $data['matrix_points'] = $this->create_matrix($matrix_points, $competencies, $targets);
-    //     $comp_pstn_dicts = $this->db->query("
-    //         SELECT * FROM comp_pstn_dict cpd
-    //         LEFT JOIN comp_position cp ON cp.id = cpd.comp_pstn_id
-    //     ")->result_array();
-    //     $data['comp_pstn_dicts'] = array_filter($comp_pstn_dicts, fn($cpd_i, $i_cpd) => in_array($cpd_i['area_lvl_pstn_id'], array_column($matrix_points, 'id')), ARRAY_FILTER_USE_BOTH);
-    //     $data['admin'] = false;
-    //     $data['matrix_position_active'] = $this->input->get('matrix_position_active');
-    //     $data['competencies'] = $this->group_competencies($matrix_points, $competencies);
-    //     $data['content'] = "competency/position_matrix";
-    //     $this->load->view('templates/header_footer', $data);
-    // }
-
+    // (dipertahankan) – untuk kebutuhan lain di halaman pengaturan target
     public function create_matrix($matrix_points, $competencies, $targets)
     {
         foreach ($matrix_points as $i_mtxp => $mtxp_i) {
@@ -230,7 +168,10 @@ class Position_matrix extends MY_Controller
     {
         $comp_positions = [];
         foreach ($matrix_points as $i_mtxp => $mtxp_i) {
-            $comp_positions[$mtxp_i['id']] = array_filter($competencies, fn($cp_i, $i_cp) => $cp_i['area_lvl_pstn_id'] == $mtxp_i['id'], ARRAY_FILTER_USE_BOTH);
+            $comp_positions[$mtxp_i['id']] = array_values(array_filter(
+                $competencies,
+                fn($cp_i) => $cp_i['area_lvl_pstn_id'] == $mtxp_i['id']
+            ));
         }
         return $comp_positions;
     }
@@ -242,5 +183,55 @@ class Position_matrix extends MY_Controller
         $data['admin'] =  false;
         $data['content'] = "competency/position_dictionary";
         $this->load->view('templates/header_footer', $data);
+    }
+
+    /**
+     * NEW: bentuk matrix Plan/Actual/Gap untuk baris PEGAWAI pada sebuah matrix_point
+     * - Plan  : dari comp_pstn_target (cpt.area_lvl_pstn_id = oalp_id pegawai)
+     * - Actual: dari comp_pstn_score latest per NRP x comp_pstn_id
+     */
+    private function create_employee_matrix_position(array $employees, array $comp_positions, array $cp_scores, array $cp_targets): array
+    {
+        // Actual: scoreMap[NRP][comp_pstn_id] = score
+        $scoreMap = [];
+        foreach ($cp_scores as $s) {
+            $nrp   = $s['NRP'];
+            $cpid  = (int)$s['comp_pstn_id'];
+            if (!isset($scoreMap[$nrp])) $scoreMap[$nrp] = [];
+            $scoreMap[$nrp][$cpid] = is_null($s['score']) ? null : (float)$s['score'];
+        }
+
+        // Plan: targetMap[oalp_id][comp_pstn_id] = target
+        $targetMap = [];
+        foreach ($cp_targets as $t) {
+            $oalp = (int)$t['cpt_oalp_id'];   // target berlaku di posisi pegawai ini
+            $cpid = (int)$t['comp_pstn_id'];
+            if (!isset($targetMap[$oalp])) $targetMap[$oalp] = [];
+            $targetMap[$oalp][$cpid] = is_null($t['target']) ? null : (float)$t['target'];
+        }
+
+        $cpIds = array_map(fn($c) => (int)$c['id'], $comp_positions);
+
+        foreach ($employees as &$e) {
+            $nrp  = $e['NRP'];
+            $oalp = isset($e['oalp_id']) ? (int)$e['oalp_id'] : null;
+
+            $e['cp_plan']   = [];
+            $e['cp_actual'] = [];
+            $e['cp_gap']    = [];
+
+            foreach ($cpIds as $cpid) {
+                $plan   = ($oalp !== null && isset($targetMap[$oalp])) ? ($targetMap[$oalp][$cpid] ?? null) : null;
+                $actual = $scoreMap[$nrp][$cpid] ?? null;
+                $gap    = (is_numeric($plan) && is_numeric($actual)) ? ($actual - $plan) : null;
+
+                $e['cp_plan'][$cpid]   = $plan;
+                $e['cp_actual'][$cpid] = $actual;
+                $e['cp_gap'][$cpid]    = $gap;
+            }
+        }
+        unset($e);
+
+        return $employees;
     }
 }

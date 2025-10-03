@@ -15,65 +15,78 @@ class Position_matrix extends MY_Controller
 
     public function index($position_id = 1)
     {
-        $matrix_point_short = [
-            'ACT' => 49,
-            'CPSD' => 50,
-            'ENG' => 45,
-            'FIN' => 48,
-            'GS' => 47,
-            'HC' => 21,
-            'HSE & RM' => 54,
-            'ICT' => 53,
-            'IA' => 57,
-            'LA' => 23,
-            'OPR' => 9,
-            'PLANT' => 8,
-            'SCM' => 46,
-            'RIM' => 56
-        ];
-        $position = $this->m_pstn->get_area_lvl_pstn(md5($position_id), 'md5(oalp.id)', false);
-        // $pstn_matrix_point = $this->m_c_pstn->get_pstn_matrix_point();
-        $subordinates = $this->m_pstn->get_subordinates(md5($position_id));
-        $superiors = array_reverse($this->m_pstn->get_superiors(md5($position['id'])));
-        // $superior_matrix_point = array_filter($superiors, fn($sup_i, $i_sup) => $sup_i['area_lvl_id'] == $pstn_matrix_point['id'] && $sup_i['id'] != $position['id'], ARRAY_FILTER_USE_BOTH);
-        $superior_matrix_point = array_filter($superiors, fn($sup_i, $i_sup) => $sup_i['type'] == "matrix_point" && $sup_i['id'] != $position['id'], ARRAY_FILTER_USE_BOTH);
+        // --- data dasar
+        $posId   = (int)$position_id;
+        $posMd5  = md5($posId);
+        $position = $this->m_pstn->get_area_lvl_pstn($posMd5, 'md5(oalp.id)', false);
+
+        $subordinates = $this->m_pstn->get_subordinates($posMd5);
+        $superiors    = array_reverse($this->m_pstn->get_superiors(md5((int)$position['id'])));
+
+        // --- tentukan daftar matrix points (atasan jika ada, kalau tidak pakai yang dari bawahan)
         $matrix_points = [];
-        if ($superior_matrix_point) {
-            $mtxp = array_values($superior_matrix_point)[0];
-            $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5($position['id']));
-            $matrix_points[] = $mtxp;
-            // $this->m_pstn->get_subordinates(md5($position['id']));
-        } else {
-            // $matrix_points_subordinates = array_filter($subordinates, fn($sub_i, $i_sub) => $sub_i['area_lvl_id'] == $pstn_matrix_point['id'], ARRAY_FILTER_USE_BOTH);
-            $matrix_points_subordinates = array_filter($subordinates, fn($sub_i, $i_sub) => $sub_i['type'] == "matrix_point", ARRAY_FILTER_USE_BOTH);
-            foreach ($matrix_points_subordinates as $i_mtxp => $mtxp_i) {
-                $mtxp = $mtxp_i;
-                // $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5($mtxp_i['id']));
-                $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5($mtxp_i['id']), 'with_without_matrix');
-                $matrix_points[] = $mtxp;
+
+        // cari atasan bertipe matrix_point (ambil yang pertama ditemukan setelah dibalik)
+        $superior_mtxp = null;
+        foreach ($superiors as $sup) {
+            if (($sup['type'] ?? null) === 'matrix_point' && (int)$sup['id'] !== (int)$position['id']) {
+                $superior_mtxp = $sup;
+                break;
             }
         }
 
+        if ($superior_mtxp) {
+            $mtxp = $superior_mtxp;
+            $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5((int)$position['id']));
+            $matrix_points[] = $mtxp;
+        } else {
+            // ambil matrix point dari bawahan
+            foreach ($subordinates as $sub) {
+                if (($sub['type'] ?? null) === 'matrix_point') {
+                    $mtxp = $sub;
+                    // with_without_matrix sesuai perilaku lama
+                    $mtxp['subordinates'] = $this->m_pstn->get_subordinates(md5((int)$sub['id']), 'with_without_matrix');
+                    $matrix_points[] = $mtxp;
+                }
+            }
+        }
+
+        // --- bila matrix point > 3 dan belum dipilih, tampilkan halaman seleksi
         if (count($matrix_points) > 3 && !$this->input->post('matrix_points')) {
             $this->matrix_points_select($matrix_points);
-        } else {
-            if ($this->input->post('matrix_points')) {
-                $matrix_points_base = array_column($matrix_points, null, 'id');
-                $matrix_points = [];
-                foreach ($this->input->post('matrix_points') as $i_mp => $mp_i) {
-                    $matrix_points[] = $matrix_points_base[$mp_i];
-                }
-                $data['matrix_points_chosen'] = $this->input->post('matrix_points');
-            }
-            $competencies = $this->m_c_pstn->get_comp_position();
-            $targets = $this->m_c_p_targ->get_comp_position_target();
-            $data['matrix_points'] = $this->create_matrix($matrix_points, $competencies, $targets);
-            $data['admin'] = true;
-            $data['matrix_position_active'] = $this->input->get('matrix_position_active');
-            $data['competencies'] = $this->group_competencies($matrix_points, $competencies);
-            $data['content'] = "competency/position_matrix";
-            $this->load->view('templates/header_footer', $data);
+            return;
         }
+
+        // --- jika ada pilihan post matrix_points, filter sesuai pilihan
+        if ($this->input->post('matrix_points')) {
+            $chosen_ids = $this->input->post('matrix_points'); // array of id
+            $byId = [];
+            foreach ($matrix_points as $mp) $byId[(int)$mp['id']] = $mp;
+
+            $filtered = [];
+            foreach ($chosen_ids as $id) {
+                $id = (int)$id;
+                if (isset($byId[$id])) $filtered[] = $byId[$id];
+            }
+            $matrix_points = $filtered;
+            $data['matrix_points_chosen'] = $chosen_ids;
+        }
+
+        // --- ambil kompetensi & target
+        $competencies = $this->m_c_pstn->get_comp_position();
+        $targets      = $this->m_c_p_targ->get_comp_position_target();
+
+        // --- rakit matrix target per subordinate
+        $data['matrix_points'] = $this->create_matrix($matrix_points, $competencies, $targets);
+
+        // --- kelompokkan kompetensi per matrix point (cepat: pakai index)
+        $data['competencies'] = $this->group_competencies($matrix_points, $competencies);
+
+        // --- view
+        $data['admin'] = true;
+        $data['matrix_position_active'] = $this->input->get('matrix_position_active', true);
+        $data['content'] = "competency/position_matrix";
+        $this->load->view('templates/header_footer', $data);
     }
 
     public function matrix_points_select($matrix_points)
@@ -84,233 +97,144 @@ class Position_matrix extends MY_Controller
         $this->load->view('templates/header_footer', $data);
     }
 
-    public function create_matrix($matrix_points, $competencies, $targets)
+    /**
+     * OPTIMIZED:
+     * Build index targetMap[oalp_id][comp_pstn_id] = target, lalu merge cepat.
+     * Hindari array_filter di inner loop.
+     */
+    public function create_matrix(array $matrix_points, array $competencies, array $targets): array
     {
-        foreach ($matrix_points as $i_mtxp => $mtxp_i) {
-            foreach ($mtxp_i['subordinates'] as $i_oalp => $oalp_i) {
-                foreach ($competencies as $i_cp => $cp_i) {
-                    $matrix_points[$i_mtxp]['subordinates'][$i_oalp]['target'][$cp_i['id']] = 0;
-                    $target = array_filter($targets, fn($cpt_i, $i_cpt) => $cpt_i['comp_pstn_id'] == $cp_i['id'] && $cpt_i['cpt_oalp_id'] == $oalp_i['id'], ARRAY_FILTER_USE_BOTH);
-                    $target = array_values($target);
-                    if ($target) $matrix_points[$i_mtxp]['subordinates'][$i_oalp]['target'][$cp_i['id']] = $target[0]['target'];
+        // 1) index target: targetMap[oalp_id][comp_pstn_id] = target
+        $targetMap = [];
+        foreach ($targets as $t) {
+            $oalp = (int)$t['cpt_oalp_id'];
+            $cpid = (int)$t['comp_pstn_id'];
+            $targetMap[$oalp][$cpid] = is_null($t['target']) ? 0.0 : (float)$t['target'];
+        }
+
+        // 2) default 0 untuk semua comp_position id
+        $default = [];
+        foreach ($competencies as $cp) {
+            $default[(int)$cp['id']] = 0.0;
+        }
+
+        // 3) assign ke tiap subordinate di setiap matrix point
+        foreach ($matrix_points as &$mtxp) {
+            if (!isset($mtxp['subordinates']) || !is_array($mtxp['subordinates'])) continue;
+
+            foreach ($mtxp['subordinates'] as &$oalp) {
+                $oalp_id = (int)$oalp['id'];
+                // set default
+                $oalp['target'] = $default;
+
+                if (isset($targetMap[$oalp_id])) {
+                    foreach ($targetMap[$oalp_id] as $cpid => $val) {
+                        $oalp['target'][$cpid] = $val;
+                    }
                 }
             }
+            unset($oalp);
         }
+        unset($mtxp);
+
         return $matrix_points;
     }
 
-    public function group_competencies($matrix_points, $competencies)
+    /**
+     * OPTIMIZED:
+     * Kelompokkan kompetensi per matrix point via pre-index by area_lvl_pstn_id
+     * comp_positions_map[oalp_id][] = row
+     */
+    public function group_competencies(array $matrix_points, array $competencies): array
     {
-        $comp_positions = [];
-        foreach ($matrix_points as $i_mtxp => $mtxp_i) {
-            $comp_positions[$mtxp_i['id']] = array_filter($competencies, fn($cp_i, $i_cp) => $cp_i['area_lvl_pstn_id'] == $mtxp_i['id'], ARRAY_FILTER_USE_BOTH);
+        // index kompetensi per oalp id
+        $compMap = [];
+        foreach ($competencies as $cp) {
+            $oalp_id = (int)$cp['area_lvl_pstn_id'];
+            $compMap[$oalp_id][] = $cp;
         }
-        return $comp_positions;
+
+        $out = [];
+        foreach ($matrix_points as $mtxp) {
+            $id = (int)$mtxp['id'];
+            $out[$id] = $compMap[$id] ?? [];
+        }
+        return $out;
     }
 
     public function comp_pstn_target($action)
     {
-        $matrix_position_active = '';
-        if ($this->input->get('matrix_position_active')) {
-            $matrix_position_active = '?matrix_position_active=' . $this->input->get('matrix_position_active');
-        }
+        $mp_active = $this->input->get('matrix_position_active', true);
+        $suffix    = $mp_active ? ('?matrix_position_active=' . $mp_active) : '';
 
         switch ($action) {
             case 'submit':
                 flash_swal('error', 'Target Score Submit Failed');
-
-                // Ubah: gunakan result dari model sebagai penentu
                 $success = $this->m_c_p_targ->submit();
-
-                if ($success) {
-                    flash_swal('success', 'Target Score Submitted Successfully');
-                }
-
-                redirect('comp_settings/position_matrix' . $matrix_position_active);
+                if ($success) flash_swal('success', 'Target Score Submitted Successfully');
+                redirect('comp_settings/position_matrix' . $suffix);
                 break;
 
             default:
                 show_404();
-                break;
         }
     }
 
-
     public function comp_pstn($action, $hash_id = null, $hash_id2 = null)
     {
-        $matrix_position_active = '';
-        if ($this->input->get('matrix_position_active')) $matrix_position_active = '?matrix_position_active=' . $this->input->get('matrix_position_active');
-        if (!$matrix_position_active) {
+        $mp_active = $this->input->get('matrix_position_active', true);
+        if (!$mp_active) {
             if ($this->input->post('hash_area_lvl_pstn_id')) {
-                $matrix_position_active = '?matrix_position_active=' . $this->input->post('hash_area_lvl_pstn_id');
+                $mp_active = $this->input->post('hash_area_lvl_pstn_id');
             } elseif ($this->input->post('hash_comp_pstn_id')) {
                 $comp_pstn = $this->m_c_pstn->get_comp_position($this->input->post('hash_area_lvl_pstn_id'), 'md5(id)', false);
-                $matrix_position_active = '?matrix_position_active=' . md5($comp_pstn['area_lvl_pstn_id']);
+                if ($comp_pstn && isset($comp_pstn['area_lvl_pstn_id'])) {
+                    $mp_active = md5((int)$comp_pstn['area_lvl_pstn_id']);
+                }
             }
         }
+        $suffix = $mp_active ? ('?matrix_position_active=' . $mp_active) : '';
+
         switch ($action) {
             case 'add':
                 flash_swal('error', 'Target add Failed');
-                $success = $this->m_c_pstn->add();
-                if ($success) {
-                    flash_swal('success', 'Target added Successfully');
-                }
+                $ok = $this->m_c_pstn->add();
+                if ($ok) flash_swal('success', 'Target added Successfully');
                 break;
 
             case 'edit':
                 flash_swal('error', 'Target edit Failed');
-                $success = $this->m_c_pstn->edit();
-                if ($success) {
-                    flash_swal('success', 'Target edited Successfully');
-                }
+                $ok = $this->m_c_pstn->edit();
+                if ($ok) flash_swal('success', 'Target edited Successfully');
                 break;
 
             case 'delete':
                 flash_swal('error', 'Competency Delete Failed');
-                $success = $this->m_c_pstn->delete($hash_id);
-                if ($success) {
-                    flash_swal('success', 'Competency Deleted Successfully');
-                }
+                $ok = $this->m_c_pstn->delete($hash_id);
+                if ($ok) flash_swal('success', 'Competency Deleted Successfully');
                 break;
 
             default:
                 show_404();
-                break;
-        }
-        redirect('comp_settings/position_matrix' . $matrix_position_active);
-    }
-
-    public function import_comp_pstn($sheet = 0)
-    {
-        $sheets = [1 => "engineering"];
-        $this->load->helper('conversion');
-        $this->load->helper('extract_spreadsheet');
-        $sheets = extract_spreadsheet('./uploads/imports_admin/pstn_matrix_import.xlsx');
-        $this->db->query('TRUNCATE TABLE comp_position');
-        $this->db->query('TRUNCATE TABLE comp_pstn_target');
-
-        foreach ($sheets as $i_sht => $rows) {
-            $comp_data_insert = [];
-            $area_lvl_pstn_id = $rows[0][0];
-            if (isset($rows[2])) {
-                $columns = array_filter($rows[2], fn($col_i, $i_col) => $i_col >= 3 && $col_i, ARRAY_FILTER_USE_BOTH);
-                foreach ($columns as $i_col => $col_i) {
-                    $data = [
-                        "area_lvl_pstn_id" => $area_lvl_pstn_id,
-                        "name" => $col_i,
-                    ];
-                    $comp_data_insert[] = $data;
-                }
-                if ($comp_data_insert) echo $this->db->insert_batch('comp_position', $comp_data_insert);
-
-                $comp_positions = $this->db->where("area_lvl_pstn_id", $area_lvl_pstn_id)->get('comp_position')->result_array();
-                $comp_positions = array_values($comp_positions);
-
-                $comp_target_data_insert = [];
-                $rows = array_filter($rows, fn($row_i, $i_row) => $i_row >= 3 && $row_i && $row_i[0], ARRAY_FILTER_USE_BOTH);
-                foreach ($rows as $i_row => $row_i) {
-                    $pstns = explode(",", $row_i[0]);
-                    foreach ($pstns as $i_pstn => $pstn_i) {
-                        $targets = array_filter($row_i, fn($col_i, $i_col) => $i_col >= 3 && $col_i, ARRAY_FILTER_USE_BOTH);
-                        $targets = array_values($targets);
-                        foreach ($targets as $i_targ => $targ_i) {
-                            $data = [
-                                "area_lvl_pstn_id" => $pstn_i,
-                                "comp_pstn_id" => $comp_positions[$i_targ]['id'],
-                                "target" => $targ_i,
-                            ];
-                            $comp_target_data_insert[] = $data;
-                        }
-                    }
-                }
-                if ($comp_target_data_insert) echo $this->db->insert_batch('comp_pstn_target', $comp_target_data_insert);
-            }
-        }
-    }
-
-    public function import_comp_dictionary()
-    {
-        // $this->db->query('TRUNCATE TABLE comp_pstn_dict');
-        $this->load->helper('conversion');
-        $this->load->helper('extract_spreadsheet');
-        $sheets = extract_spreadsheet('./uploads/imports_admin/position_dictionary_competency.xlsx');
-        $sheet = $sheets[1];
-        $comp_pstn_fetch = $this->db->get('comp_position')->result_array();
-        $matrix_point_short = [
-            'ACT' => 49,
-            'CPSD' => 50,
-            'ENG' => 45,
-            'FIN' => 48,
-            'GS' => 47,
-            'HC' => 21,
-            'HSE & RM' => 54,
-            'ICT' => 53,
-            'IA' => 57,
-            'LA' => 23,
-            'OPR' => 9,
-            'PLANT' => 8,
-            'SCM' => 46,
-            'RIM' => 56
-        ];
-        $comp_pstn_dict_insert = [];
-        for ($i = 0; $i < count($sheet); $i += 5) {
-            $comp_pstn_name = $sheet[$i][2];
-            $oalp_id = $matrix_point_short[$sheet[$i][0]];
-            $comp_pstns = array_filter($comp_pstn_fetch, fn($cpf_i, $i_cpf) => strcasecmp($cpf_i['name'], $comp_pstn_name) == 0 && $cpf_i['area_lvl_pstn_id'] == $oalp_id, ARRAY_FILTER_USE_BOTH);
-            if ($comp_pstns) {
-                foreach ($comp_pstns as $i_cp => $cp_i) {
-                    $data = [
-                        "comp_pstn_id" => $cp_i['id'],
-                        "definition" => $sheet[$i][3],
-                        "level_1" => $sheet[$i][5],
-                        "level_2" => $sheet[$i + 1][5],
-                        "level_3" => $sheet[$i + 2][5],
-                        "level_4" => $sheet[$i + 3][5],
-                        "level_5" => $sheet[$i + 4][5],
-                    ];
-                    $comp_pstn_dict_insert[] = $data;
-                }
-            } else {
-                $continue = ['Used Equipment Management', 'Innovation Management', 'Quality Excellent Activity'];
-                if (in_array($comp_pstn_name, $continue)) {
-                    continue;
-                }
-                echo '<pre>', print_r($i, true);
-                echo '<pre>', print_r($oalp_id, true);
-                echo '<pre>', print_r($sheet[$i], true);
-                echo '<pre>', print_r($sheet[$i][2], true);
-                die;
-                // $continue = ['Customer Satisfaction', 'Salesmanship', 'Business Requirement Analysis', 'Culture Management'];
-                // if (in_array($comp_pstn_name, $continue)) {
-                //     continue;
-                // }
-            }
         }
 
-        // if ($comp_pstn_dict_insert) echo $this->db->insert_batch('comp_pstn_dict', $comp_pstn_dict_insert);
-        $query = $this->db->query("
-            SELECT * FROM comp_position cp
-            LEFT JOIN comp_pstn_dict cpd ON cpd.comp_pstn_id = cp.id
-            WHERE definition IS NULL
-        ")->result_array();
-        echo '<pre>', var_dump($query);
-        die;
+        redirect('comp_settings/position_matrix' . $suffix);
     }
 
     public function dictionary($hash_pstn_id)
     {
-        $data['position'] = $this->m_pstn->get_area_lvl_pstn($hash_pstn_id, 'md5(oalp.id)', false);
+        $data['position']     = $this->m_pstn->get_area_lvl_pstn($hash_pstn_id, 'md5(oalp.id)', false);
         $data['dictionaries'] = $this->m_c_pstn->get_comp_position($hash_pstn_id, 'md5(area_lvl_pstn_id)');
-        $data['admin'] = true;
-        $data['content'] = "competency/position_dictionary";
+        $data['admin']        = true;
+        $data['content']      = "competency/position_dictionary";
         $this->load->view('templates/header_footer', $data);
     }
 
     public function dictionary_edit()
     {
-        $data['position'] = $this->m_pstn->get_area_lvl_pstn();
+        $data['position']     = $this->m_pstn->get_area_lvl_pstn();
         $data['dictionaries'] = $this->m_c_pstn->get_comp_position();
-        $data['content'] = "competency/position_dictionary_edit";
+        $data['content']      = "competency/position_dictionary_edit";
         $this->load->view('templates/header_footer', $data);
     }
 
@@ -318,9 +242,7 @@ class Position_matrix extends MY_Controller
     {
         flash_swal('error', 'Dictionary Update Failed');
         $success = $this->m_c_pstn->dictionary_submit();
-        if ($success) {
-            flash_swal('success', 'Dictionary Updated Successfully');
-        }
+        if ($success) flash_swal('success', 'Dictionary Updated Successfully');
         redirect('comp_settings/position_matrix/dictionary_edit');
     }
 }

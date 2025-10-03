@@ -14,84 +14,148 @@ class Position_score extends MY_Controller
 
     public function index()
     {
-        $data['matrix_points'] = $this->db->get_where('org_area_lvl_pstn', array('type' => 'matrix_point'))->result_array();
+        $data = [];
+        $data['matrix_points'] = $this->db
+            ->get_where('org_area_lvl_pstn', ['type' => 'matrix_point'])
+            ->result_array();
+
         $data['content'] = "competency/position_score_matrix_point";
         $this->load->view('templates/header_footer', $data);
     }
 
     public function current($mp_hash)
     {
-        $year = $this->input->get('year') ?? date("Y") + 1;
-        $data['year'] = $year;
-        $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $mp_hash))->row_array();
-        $comp_pstn = $this->db->get_where('comp_position', array('md5(area_lvl_pstn_id)' => $mp_hash))->result_array();
+        // Default tetap +1 seperti versi lama
+        $year        = $this->input->get('year', true);
+        $year        = $year !== null && $year !== '' ? (int)$year : (int)date('Y') + 1;
+
+        $data = [];
+        $data['year']         = $year;
+        $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', ['md5(id)' => $mp_hash])->row_array();
+
+        $comp_pstn = $this->db->get_where('comp_position', ['md5(area_lvl_pstn_id)' => $mp_hash])->result_array();
         $data['comp_pstn'] = $comp_pstn;
-        $cp_scores = $this->m_c_p_s->get_cp_score($mp_hash, "md5(area_lvl_pstn_id)");
+
+        $cp_scores  = $this->m_c_p_s->get_cp_score($mp_hash, "md5(area_lvl_pstn_id)");
         $cp_targets = $this->m_c_p_t->get_comp_position_target($mp_hash, 'md5(cp.area_lvl_pstn_id)');
-        $employees = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
+        $employees  = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
+
         $data['employees'] = $this->create_matrix($employees, $comp_pstn, $cp_scores, $cp_targets);
+
         $data['content'] = "competency/position_score";
         $this->load->view('templates/header_footer', $data);
     }
 
     public function year($mp_hash)
     {
-        $year = $this->input->get('year') ?? date("Y") + 1;
-        $data['year'] = $year;
-        $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $mp_hash))->row_array();
-        $comp_pstn = $this->db->get_where('comp_position', array('md5(area_lvl_pstn_id)' => $mp_hash))->result_array();
+        // Default tetap +1 seperti versi lama
+        $year        = $this->input->get('year', true);
+        $year        = $year !== null && $year !== '' ? (int)$year : (int)date('Y') + 1;
+
+        $data = [];
+        $data['year']         = $year;
+        $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', ['md5(id)' => $mp_hash])->row_array();
+
+        $comp_pstn = $this->db->get_where('comp_position', ['md5(area_lvl_pstn_id)' => $mp_hash])->result_array();
         $data['comp_pstn'] = $comp_pstn;
-        $cp_scores = $this->m_c_p_s->get_cp_score_year($mp_hash, "year = $year AND md5(area_lvl_pstn_id)");
+
+        $cp_scores  = $this->m_c_p_s->get_cp_score_year($mp_hash, "year = $year AND md5(area_lvl_pstn_id)");
         $cp_targets = $this->m_c_p_t->get_comp_position_target($mp_hash, 'md5(cp.area_lvl_pstn_id)');
-        $employees = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
+        $employees  = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
+
         $data['employees'] = $this->create_matrix($employees, $comp_pstn, $cp_scores, $cp_targets);
+
         $data['content'] = "competency/position_score_year";
         $this->load->view('templates/header_footer', $data);
     }
 
     public function year_edit($mp_hash)
     {
-        $year = $this->input->get('year') ?? date("Y");
-        $data['year'] = $year;
-        $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $mp_hash))->row_array();
-        $comp_pstn = $this->db->get_where('comp_position', array('md5(area_lvl_pstn_id)' => $mp_hash))->result_array();
+        // Default tetap tahun berjalan seperti versi lama
+        $year        = $this->input->get('year', true);
+        $year        = $year !== null && $year !== '' ? (int)$year : (int)date('Y');
+
+        $data = [];
+        $data['year']         = $year;
+        $data['matrix_point'] = $this->db->get_where('org_area_lvl_pstn', ['md5(id)' => $mp_hash])->row_array();
+
+        $comp_pstn = $this->db->get_where('comp_position', ['md5(area_lvl_pstn_id)' => $mp_hash])->result_array();
         $data['comp_pstn'] = $comp_pstn;
-        $cp_scores = $this->m_c_p_s->get_cp_score_year($mp_hash, "year = $year AND md5(area_lvl_pstn_id)");
+
+        $cp_scores  = $this->m_c_p_s->get_cp_score_year($mp_hash, "year = $year AND md5(area_lvl_pstn_id)");
         $cp_targets = $this->m_c_p_t->get_comp_position_target($mp_hash, 'md5(cp.area_lvl_pstn_id)');
-        $employees = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
+        $employees  = $this->m_pstn->get_area_lvl_pstn_user($mp_hash, 'md5(mp_id)');
+
         $data['employees'] = $this->create_matrix($employees, $comp_pstn, $cp_scores, $cp_targets);
+
         $data['content'] = "competency/position_score_year_edit";
         $this->load->view('templates/header_footer', $data);
     }
 
-    function create_matrix($employees, $comp_pstn, $cp_scores, $cp_targets)
+    /**
+     * OPTIMIZED:
+     * - Build index scoreMap[NRP][comp_pstn_id] = score
+     * - Build index targetMap[oalp_id][comp_pstn_id] = target
+     * - Satu pass isi tiap employee (tanpa array_filter nested)
+     */
+    private function create_matrix(array $employees, array $comp_pstn, array $cp_scores, array $cp_targets): array
     {
-        foreach ($employees as &$e_i) {
-            foreach ($comp_pstn as $i_cp => $cp_i) {
-                $cp_id = $cp_i['id'];
-                $e_i['cp_score'][$cp_id] = null;
-                $e_i['cp_target'][$cp_id] = null;
-                $score = array_filter($cp_scores, fn($cps_i, $i_cps) => $cps_i['NRP'] == $e_i['NRP'] && $cps_i['comp_pstn_id'] == $cp_id, ARRAY_FILTER_USE_BOTH);
-                if ($score) {
-                    $e_i['cp_score'][$cp_id] = array_shift($score)['score'];
-                }
-                $target = array_filter($cp_targets, fn($cpt_i, $i_cpt) => $cpt_i['cpt_oalp_id'] == $e_i['oalp_id'] && $cpt_i['comp_pstn_id'] == $cp_id, ARRAY_FILTER_USE_BOTH);
-                if ($target) {
-                    $e_i['cp_target'][$cp_id] = array_shift($target)['target'];
-                }
+        // 1) Index skor aktual per NRP & competency position
+        $scoreMap = [];
+        foreach ($cp_scores as $row) {
+            // Pastikan field sesuai model kamu: 'NRP', 'comp_pstn_id', 'score'
+            $nrp  = $row['NRP'];
+            $cpid = (int)$row['comp_pstn_id'];
+            // Ambil nilai apa adanya; jika null biarkan null
+            $scoreMap[$nrp][$cpid] = isset($row['score']) ? (float)$row['score'] : null;
+        }
+
+        // 2) Index target per OALP & competency position
+        $targetMap = [];
+        foreach ($cp_targets as $row) {
+            // Pastikan field sesuai model kamu: 'cpt_oalp_id', 'comp_pstn_id', 'target'
+            $oalp = (int)$row['cpt_oalp_id'];
+            $cpid = (int)$row['comp_pstn_id'];
+            $targetMap[$oalp][$cpid] = isset($row['target']) ? (float)$row['target'] : null;
+        }
+
+        // 3) Daftar id competency position untuk sekali loop
+        $cpIds = [];
+        foreach ($comp_pstn as $cp) {
+            $cpIds[] = (int)$cp['id'];
+        }
+
+        // 4) Isi setiap employee
+        foreach ($employees as &$e) {
+            $nrp  = $e['NRP'];
+            $oalp = isset($e['oalp_id']) ? (int)$e['oalp_id'] : null;
+
+            $e['cp_score']  = [];
+            $e['cp_target'] = [];
+
+            $scoreRow  = $scoreMap[$nrp]  ?? null;
+            $targetRow = ($oalp !== null) ? ($targetMap[$oalp] ?? null) : null;
+
+            foreach ($cpIds as $cpid) {
+                $e['cp_score'][$cpid]  = $scoreRow  !== null ? ($scoreRow[$cpid]  ?? null) : null;
+                $e['cp_target'][$cpid] = $targetRow !== null ? ($targetRow[$cpid] ?? null) : null;
             }
         }
+        unset($e);
+
         return $employees;
     }
 
     public function submit($mp_hash)
     {
-        $year = $this->input->post('year');
+        $year = (int)$this->input->post('year');
         flash_swal('error', 'Score Submit Failed');
+
         $success = $this->m_c_p_s->submit();
         if ($success) {
             flash_swal('success', 'Score Submitted Successfully');
         }
+
         redirect("comp_settings/position_score/year/$mp_hash?year=$year");
     }
 }

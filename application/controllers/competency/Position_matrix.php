@@ -17,67 +17,83 @@ class Position_matrix extends MY_Controller
 
     public function index()
     {
-        $NRP  = $this->session->userdata('NRP');
-        $user = $this->m_user->get_area_lvl_pstn_user($NRP, 'NRP', false);
+        $NRP = $this->session->userdata('NRP');
         $matrix_points = [];
 
+        $user = $this->m_user->get_area_lvl_pstn_user($NRP, 'NRP', false);
         if ($user) {
-            $user_oalp_id_md5 = md5($user['area_lvl_pstn_id']);
-            $position = $this->m_pstn->get_area_lvl_pstn($user_oalp_id_md5, 'md5(oalp.id)', false);
-            $position_id_md5 = md5($position['id']);
+            $user_oalp_md5 = md5($user['area_lvl_pstn_id']);
+            $position      = $this->m_pstn->get_area_lvl_pstn($user_oalp_md5, 'md5(oalp.id)', false);
 
-            $superiors    = array_reverse($this->m_pstn->get_superiors($position_id_md5));
-            $subordinates = $this->m_pstn->get_subordinates($user_oalp_id_md5);
+            if ($position) {
+                $pos_id     = (int) $position['id'];
+                $pos_id_md5 = md5($pos_id);
 
-            // Cari matrix_point dari atasan
-            $superior_matrix_point = array_values(array_filter($superiors, function ($sup) use ($position) {
-                return $sup['type'] === "matrix_point" && $sup['id'] != $position['id'];
-            }));
+                $superiors    = array_reverse($this->m_pstn->get_superiors($pos_id_md5));
+                $subordinates = $this->m_pstn->get_subordinates($user_oalp_md5);
 
-            if (!empty($superior_matrix_point)) {
-                $mtxp = end($superior_matrix_point);
+                $pushMtx = function (&$dst, $mtx, $subs) {
+                    $mtx['subordinates'] = $subs;
+                    $dst[] = $mtx;
+                };
 
-                if ($mtxp['area_id'] == $user['oa_id']) {
-                    $mtxp['subordinates'] = $this->m_pstn->get_subordinates($position_id_md5, 'with_without_matrix');
-                    $matrix_points[] = $mtxp;
-                } else {
-                    $matrix_point_from_superior   = array_values(array_filter($superiors, fn($s) => !empty($s['matrix_point'])));
-                    $matrix_points_subordinates   = array_values(array_filter($subordinates, fn($s) => !empty($s['matrix_point'])));
-
-                    if (empty($matrix_point_from_superior)) {
-                        $mtxp['subordinates'] = $this->m_pstn->get_subordinates($position_id_md5, 'without_matrix');
-                        $matrix_points[] = $mtxp;
-
-                        $mtxp_sup_ids = array_unique(array_column($matrix_points_subordinates, 'matrix_point'));
-                        if (!empty($mtxp_sup_ids)) {
-                            $ids_str = implode(',', $mtxp_sup_ids);
-                            $matrix_point_super = $this->db->query("SELECT * FROM org_area_lvl_pstn WHERE id IN($ids_str)")->result_array();
-
-                            foreach ($matrix_point_super as $mtxps_i) {
-                                $subordinate_ids = array_filter($matrix_points_subordinates, fn($s) => $s['matrix_point'] == $mtxps_i['id']);
-                                $mtxps_i['subordinates'] = [];
-
-                                foreach ($subordinate_ids as $sbmp_i) {
-                                    $mtxps_i['subordinates'] = array_merge(
-                                        $mtxps_i['subordinates'],
-                                        $this->m_pstn->get_subordinates(md5($sbmp_i['id']))
-                                    );
-                                }
-                                $matrix_points[] = $mtxps_i;
-                            }
-                        }
-                    } else {
-                        $mtxp_sup_id = $matrix_point_from_superior[0]['matrix_point'];
-                        $mtxp = $this->db->query("SELECT * FROM org_area_lvl_pstn WHERE id = $mtxp_sup_id")->row_array();
-                        $mtxp['subordinates'] = $this->m_pstn->get_subordinates($position_id_md5);
-                        $matrix_points[] = $mtxp;
+                // cari matrix_point dari atasan
+                $superior_mtx = null;
+                foreach ($superiors as $s) {
+                    if (($s['type'] ?? null) === 'matrix_point' && (int)$s['id'] !== $pos_id) {
+                        $superior_mtx = $s; // last match
                     }
                 }
-            } else {
-                $matrix_points_subordinates = array_values(array_filter($subordinates, fn($s) => $s['type'] === "matrix_point"));
-                foreach ($matrix_points_subordinates as $mtxp_i) {
-                    $mtxp_i['subordinates'] = $this->m_pstn->get_subordinates(md5($mtxp_i['id']), 'with_without_matrix');
-                    $matrix_points[] = $mtxp_i;
+
+                if ($superior_mtx) {
+                    if ((int)$superior_mtx['area_id'] === (int)$user['oa_id']) {
+                        $pushMtx($matrix_points, $superior_mtx, $this->m_pstn->get_subordinates($pos_id_md5, 'with_without_matrix'));
+                    } else {
+                        $mtx_from_sup = null;
+                        foreach ($superiors as $s) {
+                            if (!empty($s['matrix_point'])) {
+                                $mtx_from_sup = (int)$s['matrix_point'];
+                                break;
+                            }
+                        }
+
+                        $sub_mtx_rows = [];
+                        foreach ($subordinates as $row) {
+                            if (!empty($row['matrix_point'])) $sub_mtx_rows[] = $row;
+                        }
+
+                        if (!$mtx_from_sup) {
+                            $pushMtx($matrix_points, $superior_mtx, $this->m_pstn->get_subordinates($pos_id_md5, 'without_matrix'));
+
+                            $ids = [];
+                            foreach ($sub_mtx_rows as $r) $ids[(int)$r['matrix_point']] = true;
+                            if ($ids) {
+                                $mps   = $this->db->where_in('id', array_keys($ids))->get('org_area_lvl_pstn')->result_array();
+                                $group = [];
+                                foreach ($sub_mtx_rows as $r) {
+                                    $group[(int)$r['matrix_point']][] = $r;
+                                }
+                                foreach ($mps as $mp) {
+                                    $subs = [];
+                                    foreach ($group[(int)$mp['id']] ?? [] as $sb) {
+                                        $subs = array_merge($subs, $this->m_pstn->get_subordinates(md5((int)$sb['id'])));
+                                    }
+                                    $pushMtx($matrix_points, $mp, $subs);
+                                }
+                            }
+                        } else {
+                            $mtxp = $this->db->get_where('org_area_lvl_pstn', ['id' => $mtx_from_sup])->row_array();
+                            $pushMtx($matrix_points, $mtxp, $this->m_pstn->get_subordinates($pos_id_md5));
+                        }
+                    }
+                } else {
+                    // tidak ada matrix_point dari atasan
+                    foreach ($subordinates as $row) {
+                        if (($row['type'] ?? null) === 'matrix_point') {
+                            $row['subordinates'] = $this->m_pstn->get_subordinates(md5((int)$row['id']), 'with_without_matrix');
+                            $matrix_points[] = $row;
+                        }
+                    }
                 }
             }
         }
@@ -136,7 +152,7 @@ class Position_matrix extends MY_Controller
         $data['matrix_points'] = $matrix_points;
 
         // View TETAP: position_matrix.php (sekarang menampilkan baris pegawai)
-        $data['content'] = "competency/position_matrix";
+        $data['content'] = "competency/position_matrix_user";
         $this->load->view('templates/header_footer', $data);
     }
 

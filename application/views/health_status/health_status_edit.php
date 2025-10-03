@@ -3,7 +3,7 @@
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Culture Fit <?= $year ?></h1>
+                <h1 class="m-0">Health Status <?= $year ?></h1>
             </div><!-- /.col -->
         </div><!-- /.row -->
     </div><!-- /.container-fluid -->
@@ -19,7 +19,7 @@
             </div>
             <!-- /.card-header -->
             <!-- form start -->
-            <form action="<?= base_url() ?>culture_fit/edit" method="get">
+            <form action="<?= base_url() ?>health_status/edit" method="get">
                 <div class="card-body">
                     <div class="form-group">
                         <label>Year:</label>
@@ -48,7 +48,7 @@
             <div class="card-header">
                 <h3 class="card-title">Behavior Questionnaire</h3>
             </div>
-            <form action="<?= base_url() ?>culture_fit/submit?year=<?= $year ?>" method="post" id="data-form">
+            <form action="<?= base_url() ?>health_status/submit?year=<?= $year ?>" method="post" id="data-form">
                 <input type="hidden" name="json_data" id="json_data">
                 <!-- /.card-header -->
                 <div class="card-body">
@@ -63,44 +63,24 @@
                                 <th>SITE</th>
                                 <th>LEVEL</th>
                                 <th>JABATAN</th>
-                                <th>PERFORMANCE REVIEW REFERENCE</th>
-                                <th>EMPLOYEE ID</th>
-                                <th>EMPLOYEE</th>
                                 <th>NRP</th>
-                                <th>LEVEL</th>
-                                <th>JABATAN</th>
-                                <th>LAYER</th>
-                                <th>MANAGER</th>
-                                <th>NRP_MANAGER</th>
-                                <th>DIVISION</th>
-                                <th>WORK LOCATION</th>
-                                <th>NILAI BEHAVIOUR</th>
+                                <th>HEALTH STATUS</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php $i = 1; ?>
-                            <?php foreach ($culture_fit as $i_cf => $cf_i) : ?>
-                                <tr data-id="<?= $cf_i['id'] ?>">
+                            <?php foreach ($health_status as $i_hs => $hs_i) : ?>
+                                <tr data-id="<?= $hs_i['id'] ?>">
                                     <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i++ ?></td>
-                                    <td><?= $cf_i['NRP'] ?></td>
-                                    <td><?= $cf_i['FullName'] ?></td>
-                                    <td><?= $cf_i['matrix_point_name'] ?></td>
-                                    <td><?= $cf_i['oa_name'] ?></td>
-                                    <td><?= $cf_i['oal_name'] ?></td>
-                                    <td><?= $cf_i['oalp_name'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="performance_review_reference"><?= $cf_i['performance_review_reference'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="employee_id"><?= $cf_i['employee_id'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="employee"><?= $cf_i['employee'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="NRP"><?= $cf_i['NRP'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="level"><?= $cf_i['level'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="jabatan"><?= $cf_i['jabatan'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="layer"><?= $cf_i['layer'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="manager"><?= $cf_i['manager'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="NRP_manager"><?= $cf_i['NRP_manager'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="division"><?= $cf_i['division'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="work_location"><?= $cf_i['work_location'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="nilai_behaviour"><?= $cf_i['nilai_behaviour'] ?></td>
+                                    <td><?= $hs_i['NRP'] ?></td>
+                                    <td><?= $hs_i['FullName'] ?></td>
+                                    <td><?= $hs_i['matrix_point_name'] ?></td>
+                                    <td><?= $hs_i['oa_name'] ?></td>
+                                    <td><?= $hs_i['oal_name'] ?></td>
+                                    <td><?= $hs_i['oalp_name'] ?></td>
+                                    <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="NRP"><?= $hs_i['NRP'] ?></td>
+                                    <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="status_id"><?= $hs_i['status_id'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -177,7 +157,7 @@
 
     function cancelForm() {
         if (confirm('Yakin batal?')) {
-            location.href = '<?= base_url('culture_fit' . ($year ? '?year=' . $year : '')) ?>';
+            location.href = '<?= base_url('health_status' . ($year ? '?year=' . $year : '')) ?>';
         }
     }
 
@@ -240,40 +220,20 @@
                 '<input type="checkbox" class="row-checkbox">', // kol-1
                 'New', // kol-2
                 '', '', '', '', '', '', // kol-3..7
-                '', // performance_review_reference (kol-8)
-                '', // employee_id
-                '', // employee
-                '', // NRP
-                '', // level
-                '', // jabatan
-                '', // layer
-                '', // manager
-                '', // NRP_manager
-                '', // division
-                '', // work_location
-                '' // nilai_behaviour (kol terakhir)
+                '', // NRP (kol-8)
+                '', // status_id
             ];
 
             const node = table.row.add(rowArray).draw(false).node();
             $(node).attr('data-id', newId).addClass('table-success');
 
             // Set contenteditable untuk kolom-kolom tertentu (pakai index td)
-            const editableIdx = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]; // sesuaikan
+            const editableIdx = [8, 9]; // sesuaikan
             $(node).find('td').each(function(i) {
                 if (editableIdx.includes(i)) {
                     const map = {
-                        8: 'performance_review_reference',
-                        9: 'employee_id',
-                        10: 'employee',
-                        11: 'NRP',
-                        12: 'level',
-                        13: 'jabatan',
-                        14: 'layer',
-                        15: 'manager',
-                        16: 'NRP_manager',
-                        17: 'division',
-                        18: 'work_location',
-                        19: 'nilai_behaviour'
+                        8: 'NRP',
+                        9: 'status_id',
                     };
                     $(this).attr('contenteditable', 'true').attr('data-column', map[i] || '');
                 }

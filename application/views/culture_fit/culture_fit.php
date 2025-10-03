@@ -21,12 +21,13 @@
                             <th>NO</th>
                             <th>NRP</th>
                             <th>FULL NAME</th>
-                            <th>JABATAN</th>
+                            <th>MATRIX POINT</th>
                             <th>SITE</th>
+                            <th>LEVEL</th>
+                            <th>JABATAN</th>
                             <th>PERFORMANCE REVIEW REFERENCE</th>
                             <th>EMPLOYEE ID</th>
                             <th>EMPLOYEE</th>
-                            <th>NRP</th>
                             <th>LEVEL</th>
                             <th>JABATAN</th>
                             <th>LAYER</th>
@@ -40,19 +41,18 @@
                     </thead>
                     <tbody>
                         <?php $i = 1; ?>
-                        <?php $status_str = ['P' => 'Pending', 'Y' => 'Done', 'N' => 'Canceled', 'R' => 'Reschedule']; ?>
-                        <?php $status_bg = ['P' => 'none', 'Y' => 'primary', 'N' => 'danger', 'R' => 'warning']; ?>
                         <?php foreach ($culture_fit as $i_cf => $cf_i) : ?>
                             <tr>
                                 <td><?= $i++ ?></td>
                                 <td><?= $cf_i['NRP'] ?></td>
                                 <td><?= $cf_i['FullName'] ?></td>
-                                <td><?= $cf_i['oalp_name'] ?></td>
+                                <td><?= $cf_i['matrix_point_name'] ?></td>
                                 <td><?= $cf_i['oa_name'] ?></td>
+                                <td><?= $cf_i['oal_name'] ?></td>
+                                <td><?= $cf_i['oalp_name'] ?></td>
                                 <td><?= $cf_i['performance_review_reference'] ?></td>
                                 <td><?= $cf_i['employee_id'] ?></td>
                                 <td><?= $cf_i['employee'] ?></td>
-                                <td><?= $cf_i['NRP'] ?></td>
                                 <td><?= $cf_i['level'] ?></td>
                                 <td><?= $cf_i['jabatan'] ?></td>
                                 <td><?= $cf_i['layer'] ?></td>

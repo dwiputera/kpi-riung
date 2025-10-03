@@ -29,6 +29,20 @@ class Database extends MY_Controller
         $this->load->view('templates/header_footer', $data);
     }
 
+    function emptyStringToNull($data)
+    {
+        if (is_array($data)) {
+            return array_map([$this, 'emptyStringToNull'], $data);
+        }
+        if (is_object($data)) {
+            foreach ($data as $k => $v) {
+                $data->$k = $this->emptyStringToNull($v);
+            }
+            return $data;
+        }
+        return $data === '' ? null : $data;
+    }
+
     public function table_submit($table_id)
     {
         $success = false;
@@ -36,9 +50,9 @@ class Database extends MY_Controller
         $tables = $this->db->list_tables();
         $table = $tables[$table_id];
 
-        $updates = $payload['updates'] ?? [];
+        $updates = $this->emptyStringToNull($payload['updates']) ?? [];
         $deletes = $payload['deletes'] ?? [];
-        $creates = $payload['creates'] ?? [];
+        $creates = $this->emptyStringToNull($payload['creates']) ?? [];
 
         // UPDATES
         if (!empty($updates)) {

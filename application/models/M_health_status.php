@@ -4,7 +4,7 @@ use PhpOffice\PhpSpreadsheet\Reader\Xml\Style\NumberFormat;
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class M_culture_fit extends CI_Model
+class M_health_status extends CI_Model
 {
     public function __construct()
     {
@@ -64,19 +64,21 @@ class M_culture_fit extends CI_Model
                 WHERE rn = 1
             )
 
-            SELECT *, cfu.id id, cfu.NRP NRP,
+            SELECT *, hsu.id id, hsu.NRP NRP, hsu.year year,
+                hs.name hs_name,
                 oalp.id oalp_id, oalp.name oalp_name, oalp.parent oalp_parent,
                 oal.id oal_id, oal.name oal_name,
                 oa.id oa_id, oa.name oa_name
-            FROM culture_fit_user cfu
-            LEFT JOIN rml_sso_la.users u ON u.NRP = cfu.NRP
+            FROM health_status_user hsu
+            LEFT JOIN health_status hs ON hs.id = hsu.status_id
+            LEFT JOIN rml_sso_la.users u ON u.NRP = hsu.NRP
             LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
             LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
             LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
             LEFT JOIN org_area oa ON oa.id = oalp.area_id
             LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
             $where
-            ORDER BY cfu.id
+            ORDER BY hsu.id
         ");
         if ($many == false) {
             $query = $query->row_array();
@@ -139,24 +141,21 @@ class M_culture_fit extends CI_Model
                 WHERE rn = 1
             )
 
-            SELECT *, cfu.id id, cfu.NRP NRP,
+            SELECT *, hsu.id id, hsu.NRP NRP, hsu.year year,
+                hs.name hs_name,
                 oalp.id oalp_id, oalp.name oalp_name, oalp.parent oalp_parent,
                 oal.id oal_id, oal.name oal_name,
                 oa.id oa_id, oa.name oa_name
-            FROM culture_fit_user cfu
-            INNER JOIN (
-                SELECT NRP, MAX(year) as max_year
-                FROM culture_fit_user
-                GROUP BY NRP
-            ) tmax ON cfu.NRP = tmax.NRP AND cfu.year = tmax.max_year
-            LEFT JOIN rml_sso_la.users u ON u.NRP = cfu.NRP
+            FROM health_status_user hsu
+            LEFT JOIN health_status hs ON hs.id = hsu.status_id
+            LEFT JOIN rml_sso_la.users u ON u.NRP = hsu.NRP
             LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
             LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
             LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
             LEFT JOIN org_area oa ON oa.id = oalp.area_id
             LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
             $where
-            ORDER BY cfu.id
+            ORDER BY hsu.id
         ");
 
         if ($many == false) {
@@ -181,6 +180,8 @@ class M_culture_fit extends CI_Model
         return $data === '' ? null : $data;
     }
 
+
+
     public function submit($payload, $year)
     {
         $updates = $this->emptyStringToNull($payload['updates']) ?? [];
@@ -191,7 +192,7 @@ class M_culture_fit extends CI_Model
 
         // 1. Handle UPDATES (existing rows)
         if (!empty($updates)) {
-            $ids = array_column($this->db->select('id')->get('culture_fit_user')->result_array(), 'id');
+            $ids = array_column($this->db->select('id')->get('health_status_user')->result_array(), 'id');
 
             $updateData = [];
             foreach ($updates as $row) {
@@ -201,14 +202,14 @@ class M_culture_fit extends CI_Model
             }
 
             if (!empty($updateData)) {
-                $this->db->update_batch('culture_fit_user', $updateData, 'id');
+                $this->db->update_batch('health_status_user', $updateData, 'id');
                 $success = true;
             }
         }
 
         // 2. Handle DELETES
         if (!empty($deletes)) {
-            $this->db->where_in('id', $deletes)->delete('culture_fit_user');
+            $this->db->where_in('id', $deletes)->delete('health_status_user');
             $success = true;
         }
 
@@ -229,7 +230,7 @@ class M_culture_fit extends CI_Model
             }
 
             if (!empty($createData)) {
-                $this->db->insert_batch('culture_fit_user', $createData);
+                $this->db->insert_batch('health_status_user', $createData);
                 $success = true;
             }
         }

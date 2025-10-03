@@ -109,9 +109,9 @@
                                 <td><?= $e['age'] ?></td>
                                 <td><?= $e['score_age'] ?></td>
                                 <td><?= $e['score_nxb_age'] ?></td>
-                                <td><?= $e['status_kesehatan'] ?></td>
-                                <td><?= $e['score_status_kesehatan'] ?></td>
-                                <td><?= $e['score_nxb_status_kesehatan'] ?></td>
+                                <td><?= $e['hs_name'] ?></td>
+                                <td><?= $e['score_health_status'] ?></td>
+                                <td><?= $e['score_nxb_health_status'] ?></td>
                                 <td><?= $e['status'] ?></td>
                                 <td><?= $e['score_kategori_hav_mapping'] ?></td>
                                 <td><?= $e['score_nxb_kategori_hav_mapping'] ?></td>

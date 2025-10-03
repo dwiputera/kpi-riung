@@ -84,13 +84,9 @@ class M_talent extends CI_Model
                     cf.nilai_behaviour culture_fit,
                     fmp.matrix_point_name AS mp_name,
                     fmp.mp_id,
-                    null kompetensi_teknis,
-                    null score_kompetensi_teknis,
-                    null tour_of_duty,
-                    null status_kesehatan,
-                    null score_status_kesehatan,
-                    null rekomendasi_assessment,
-                    null status_kesehatan
+                    hsu.status_id hsu_status_id,
+                    hs.name hs_name,
+                    null tour_of_duty
                 FROM rml_sso_la.users u
                 LEFT JOIN (
                     SELECT * FROM (
@@ -128,10 +124,23 @@ class M_talent extends CI_Model
                             ROW_NUMBER() OVER (
                                 PARTITION BY cf.NRP ORDER BY cf.year DESC, cf.id DESC
                             ) AS rn
-                        FROM culture_fit cf
+                        FROM culture_fit_user cf
                     ) x
                     WHERE x.rn = 1
                 ) cf ON cf.NRP = u.NRP
+                LEFT JOIN (
+                    SELECT NRP, status_id, year
+                    FROM (
+                        SELECT 
+                            hsu.NRP, hsu.status_id, hsu.year,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY hsu.NRP ORDER BY hsu.year DESC, hsu.id DESC
+                            ) AS rn
+                        FROM health_status_user hsu
+                    ) x
+                    WHERE x.rn = 1
+                ) hsu ON hsu.NRP = u.NRP
+                LEFT JOIN health_status hs ON hs.id = hsu.status_id
                 LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP
                 LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
                 LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
@@ -200,7 +209,8 @@ class M_talent extends CI_Model
                 $comp_lvl_assess_score = $this->db->get_where('comp_lvl_assess_score', array('comp_lvl_assess_id' => $comp_lvl_assess['id']))->result_array();
                 $comp_lvl_target_ids = array_column($comp_lvl_target, 'comp_lvl_id');
                 $comp_lvl_assess_score = array_filter($comp_lvl_assess_score, fn($clas_i, $i_clas) => in_array($clas_i['comp_lvl_id'], $comp_lvl_target_ids), ARRAY_FILTER_USE_BOTH);
-                $emp['job_fit_score'] = array_sum(array_column($comp_lvl_assess_score, 'score')) * 100 / array_sum(array_column($comp_lvl_target, 'target'));
+                $job_fit_score = array_sum(array_column($comp_lvl_assess_score, 'score')) * 100 / array_sum(array_column($comp_lvl_target, 'target'));
+                $emp['job_fit_score'] = number_format($job_fit_score, 2);
             }
 
             $emp['score_kompetensi_teknis'] = $this->get_score_kompetensi_teknis($emp['kompetensi_teknis']);
@@ -209,23 +219,23 @@ class M_talent extends CI_Model
             $emp['score_tour_of_duty'] = $this->get_score_tour_of_duty($emp['tour_of_duty']);
             $emp['score_culture_fit'] = $this->get_score_culture_fit($emp['culture_fit']);
             $emp['score_age'] = $this->get_score_age($emp['age']);
-            $emp['score_status_kesehatan'] = $this->get_score_status_kesehatan($emp['status_kesehatan']);
+            $emp['score_health_status'] = $this->get_score_health_status($emp['hsu_status_id']);
             $emp['score_kategori_hav_mapping'] = $this->get_score_kategori_hav_mapping($emp['status']);
             $emp['score_assess_score'] = $this->get_score_assess_score($emp['assess_score']);
             $emp['score_correlation_matrix'] = $this->get_score_correlation_matrix($emp['correlation_matrix']);
 
-            $emp['score_nxb_kompetensi_teknis'] = $emp['score_kompetensi_teknis'] * $percentage['kompetensi_teknis'] / 100;
-            $emp['score_nxb_job_fit_score'] = $emp['score_job_fit_score'] * $percentage['job_fit_score'] / 100;
-            $emp['score_nxb_avg_ipa_score'] = $emp['score_avg_ipa_score'] * $percentage['avg_ipa_score'] / 100;
-            $emp['score_nxb_tour_of_duty'] = $emp['score_tour_of_duty'] * $percentage['tour_of_duty'] / 100;
-            $emp['score_nxb_culture_fit'] = $emp['score_culture_fit'] * $percentage['culture_fit'] / 100;
-            $emp['score_nxb_age'] = $emp['score_age'] * $percentage['age'] / 100;
-            $emp['score_nxb_status_kesehatan'] = $emp['score_status_kesehatan'] * $percentage['status_kesehatan'] / 100;
-            $emp['score_nxb_kategori_hav_mapping'] = $emp['score_kategori_hav_mapping'] * $percentage['kategori_hav_mapping'] / 100;
-            $emp['score_nxb_assess_score'] = $emp['score_assess_score'] * $percentage['assess_score'] / 100;
-            $emp['score_nxb_correlation_matrix'] = $emp['score_correlation_matrix'] * $percentage['correlation_matrix'] / 100;
+            $emp['score_nxb_kompetensi_teknis'] = number_format($emp['score_kompetensi_teknis'] * $percentage['kompetensi_teknis'] / 100, 2);
+            $emp['score_nxb_job_fit_score'] = number_format($emp['score_job_fit_score'] * $percentage['job_fit_score'] / 100, 2);
+            $emp['score_nxb_avg_ipa_score'] = number_format($emp['score_avg_ipa_score'] * $percentage['avg_ipa_score'] / 100, 2);
+            $emp['score_nxb_tour_of_duty'] = number_format($emp['score_tour_of_duty'] * $percentage['tour_of_duty'] / 100, 2);
+            $emp['score_nxb_culture_fit'] = number_format($emp['score_culture_fit'] * $percentage['culture_fit'] / 100, 2);
+            $emp['score_nxb_age'] = number_format($emp['score_age'] * $percentage['age'] / 100, 2);
+            $emp['score_nxb_health_status'] = number_format($emp['score_health_status'] * $percentage['health_status'] / 100, 2);
+            $emp['score_nxb_kategori_hav_mapping'] = number_format($emp['score_kategori_hav_mapping'] * $percentage['kategori_hav_mapping'] / 100, 2);
+            $emp['score_nxb_assess_score'] = number_format($emp['score_assess_score'] * $percentage['assess_score'] / 100, 2);
+            $emp['score_nxb_correlation_matrix'] = number_format($emp['score_correlation_matrix'] * $percentage['correlation_matrix'] / 100, 2);
 
-            $score_to_sum = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'status_kesehatan', 'kategori_hav_mapping', 'assess_score', 'correlation_matrix');
+            $score_to_sum = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'health_status', 'kategori_hav_mapping', 'assess_score', 'correlation_matrix');
 
             $emp['total_score'] = 0;
             foreach ($score_to_sum as $sts) {
@@ -237,7 +247,7 @@ class M_talent extends CI_Model
 
     function get_percentage($level_id)
     {
-        $criteria = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'status_kesehatan', 'kategori_hav_mapping', 'assess_score', 'correlation_matrix');
+        $criteria = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'health_status', 'kategori_hav_mapping', 'assess_score', 'correlation_matrix');
         $percentage = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         if (in_array($level_id, array(2))) {
             $percentage = [8, 32, 10, 10, 5, 5, 5, 10, 10, 5];
@@ -311,8 +321,11 @@ class M_talent extends CI_Model
         return null;
     }
 
-    function get_score_status_kesehatan($status_kesehatan)
+    function get_score_health_status($health_status)
     {
+        if ($health_status == 1) return 5;
+        if ($health_status == 2) return 3;
+        if ($health_status == 3) return 1;
         return null;
     }
 

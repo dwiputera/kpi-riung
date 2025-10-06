@@ -130,12 +130,12 @@ class Matrix_point extends MY_Controller
     {
         // Ambil daftar kolom tabel dari INFORMATION_SCHEMA
         $cols = $this->db->query("
-        SELECT COLUMN_NAME
-        FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = ?
-        ORDER BY ORDINAL_POSITION
-    ", [$table])->result_array();
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = ?
+            ORDER BY ORDINAL_POSITION
+        ", [$table])->result_array();
 
         $allCols = array_map(function ($r) {
             return $r['COLUMN_NAME'];
@@ -159,13 +159,13 @@ class Matrix_point extends MY_Controller
 
         // Hapus duplikat: yang id lebih besar dihapus
         $sql = "
-        DELETE t1 FROM `{$table}` t1
-        JOIN `{$table}` t2
-          ON t1.id > t2.id
-         AND t1.`{$fkColumn}` = t2.`{$fkColumn}`
-         AND {$onClause}
-        WHERE t1.`{$fkColumn}` = ?
-    ";
+            DELETE t1 FROM `{$table}` t1
+            JOIN `{$table}` t2
+            ON t1.id > t2.id
+            AND t1.`{$fkColumn}` = t2.`{$fkColumn}`
+            AND {$onClause}
+            WHERE t1.`{$fkColumn}` = ?
+        ";
         $this->db->query($sql, [$target_id]);
     }
 }

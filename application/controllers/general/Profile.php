@@ -19,10 +19,12 @@ class Profile extends MY_Controller
         $NRP = $this->session->userdata('NRP');
         $user = $this->m_user->get_user($NRP, 'NRP', false);
         $position = $this->m_user->get_area_lvl_pstn_user($NRP, 'NRP', false);
+        if ($position) {
+            $user_oalp_id_md5 = md5($position['area_lvl_pstn_id']);
+            $position = $this->m_pstn->get_area_lvl_pstn($user_oalp_id_md5, 'md5(oalp.id)', false);
+            $position_id_md5 = md5($position['id']);
+        }
 
-        $user_oalp_id_md5 = md5($position['area_lvl_pstn_id']);
-        $position = $this->m_pstn->get_area_lvl_pstn($user_oalp_id_md5, 'md5(oalp.id)', false);
-        $position_id_md5 = md5($position['id']);
 
         $data['user'] = $user;
         $data['position'] = $position;
@@ -34,71 +36,74 @@ class Profile extends MY_Controller
         $data['comp_lvl_targ'] = null;
         $data['competency_matrix_level'] = null;
 
-        $superiors = array_reverse($this->m_pstn->get_superiors($position_id_md5));
-        $subordinates = $this->m_pstn->get_subordinates($user_oalp_id_md5);
-        $subordinates = array_shift($subordinates);
-
-        // Cari matrix_point dari atasan
-        $superior_matrix_point = array_values(array_filter($superiors, function ($sup) use ($position) {
-            return $sup['type'] === "matrix_point" && $sup['id'] != $position['id'];
-        }));
-
         if ($position) {
-            if ($position['type'] == "matrix_point") {
-                $matrix_point = $position;
-            } elseif (!empty($superior_matrix_point)) {
-                $mtxp = end($superior_matrix_point);
+            # code...
+            $superiors = array_reverse($this->m_pstn->get_superiors($position_id_md5));
+            $subordinates = $this->m_pstn->get_subordinates($user_oalp_id_md5);
+            $subordinates = array_shift($subordinates);
 
-                if ($mtxp['area_id'] == $position['oa_id']) {
-                    $matrix_point = $mtxp;
-                } else {
-                    $matrix_point_from_superior = array_values(array_filter($superiors, fn($s) => !empty($s['matrix_point'])));
-                    $matrix_points_subordinates = array_values(array_filter($subordinates, fn($s) => !empty($s['matrix_point'])));
+            // Cari matrix_point dari atasan
+            $superior_matrix_point = array_values(array_filter($superiors, function ($sup) use ($position) {
+                return $sup['type'] === "matrix_point" && $sup['id'] != $position['id'];
+            }));
 
-                    if (empty($matrix_point_from_superior)) {
+            if ($position) {
+                if ($position['type'] == "matrix_point") {
+                    $matrix_point = $position;
+                } elseif (!empty($superior_matrix_point)) {
+                    $mtxp = end($superior_matrix_point);
+
+                    if ($mtxp['area_id'] == $position['oa_id']) {
                         $matrix_point = $mtxp;
-
-                        $mtxp_sup_ids = array_unique(array_column($matrix_points_subordinates, 'matrix_point'));
-                        if (!empty($mtxp_sup_ids)) {
-                            $ids_str = implode(',', $mtxp_sup_ids);
-                            $matrix_point_super = $this->db->query("SELECT * FROM org_area_lvl_pstn WHERE id IN($ids_str)")->result_array();
-
-                            foreach ($matrix_point_super as $mtxps_i) {
-                                $subordinate_ids = array_filter($matrix_points_subordinates, fn($s) => $s['matrix_point'] == $mtxps_i['id']);
-                                $mtxps_i['subordinates'] = [];
-
-                                foreach ($subordinate_ids as $sbmp_i) {
-                                    $mtxps_i['subordinates'] = array_merge(
-                                        $mtxps_i['subordinates'],
-                                        $this->m_pstn->get_subordinates(md5($sbmp_i['id']))
-                                    );
-                                }
-                                $matrix_point = $mtxps_i;
-                            }
-                        }
                     } else {
-                        $mtxp_sup_id = $matrix_point_from_superior[0]['matrix_point'];
-                        $mtxp = $this->db->query("SELECT * FROM org_area_lvl_pstn WHERE id = $mtxp_sup_id")->row_array();
-                        $matrix_point = $mtxp;
-                    }
-                }
-            } else {
-                $matrix_point = [];
-            }
-            if ($matrix_point) {
-                $competencies = $this->m_c_pstn->get_comp_position($matrix_point['id'], 'area_lvl_pstn_id');
-                $data['comp_pstn'] = $competencies;
-                $comp_target = $this->m_c_p_targ->get_comp_position_target($position['id'], 'cpt.area_lvl_pstn_id');
-                $data['comp_pstn_targ'] = $comp_target;
-                $competency_matrix = $this->create_matrix_position($position, $competencies, $comp_target);
-                $data['competency_matrix_position'] = $competency_matrix;
-            }
+                        $matrix_point_from_superior = array_values(array_filter($superiors, fn($s) => !empty($s['matrix_point'])));
+                        $matrix_points_subordinates = array_values(array_filter($subordinates, fn($s) => !empty($s['matrix_point'])));
 
-            $competencies = $this->m_c_lvl->get_comp_level();
-            $data['comp_lvl'] = $competencies;
-            $comp_target = $this->m_c_l_targ->get_comp_level_target($position['id'], 'area_lvl_pstn_id');
-            $competency_matrix = $this->create_matrix_level($position, $competencies, $comp_target);
-            $data['competency_matrix_level'] = $competency_matrix;
+                        if (empty($matrix_point_from_superior)) {
+                            $matrix_point = $mtxp;
+
+                            $mtxp_sup_ids = array_unique(array_column($matrix_points_subordinates, 'matrix_point'));
+                            if (!empty($mtxp_sup_ids)) {
+                                $ids_str = implode(',', $mtxp_sup_ids);
+                                $matrix_point_super = $this->db->query("SELECT * FROM org_area_lvl_pstn WHERE id IN($ids_str)")->result_array();
+
+                                foreach ($matrix_point_super as $mtxps_i) {
+                                    $subordinate_ids = array_filter($matrix_points_subordinates, fn($s) => $s['matrix_point'] == $mtxps_i['id']);
+                                    $mtxps_i['subordinates'] = [];
+
+                                    foreach ($subordinate_ids as $sbmp_i) {
+                                        $mtxps_i['subordinates'] = array_merge(
+                                            $mtxps_i['subordinates'],
+                                            $this->m_pstn->get_subordinates(md5($sbmp_i['id']))
+                                        );
+                                    }
+                                    $matrix_point = $mtxps_i;
+                                }
+                            }
+                        } else {
+                            $mtxp_sup_id = $matrix_point_from_superior[0]['matrix_point'];
+                            $mtxp = $this->db->query("SELECT * FROM org_area_lvl_pstn WHERE id = $mtxp_sup_id")->row_array();
+                            $matrix_point = $mtxp;
+                        }
+                    }
+                } else {
+                    $matrix_point = [];
+                }
+                if ($matrix_point) {
+                    $competencies = $this->m_c_pstn->get_comp_position($matrix_point['id'], 'area_lvl_pstn_id');
+                    $data['comp_pstn'] = $competencies;
+                    $comp_target = $this->m_c_p_targ->get_comp_position_target($position['id'], 'cpt.area_lvl_pstn_id');
+                    $data['comp_pstn_targ'] = $comp_target;
+                    $competency_matrix = $this->create_matrix_position($position, $competencies, $comp_target);
+                    $data['competency_matrix_position'] = $competency_matrix;
+                }
+
+                $competencies = $this->m_c_lvl->get_comp_level();
+                $data['comp_lvl'] = $competencies;
+                $comp_target = $this->m_c_l_targ->get_comp_level_target($position['id'], 'area_lvl_pstn_id');
+                $competency_matrix = $this->create_matrix_level($position, $competencies, $comp_target);
+                $data['competency_matrix_level'] = $competency_matrix;
+            }
         }
         $data['content'] = "general/profile";
         $this->load->view('templates/header_footer', $data);

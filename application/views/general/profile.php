@@ -36,7 +36,15 @@
                             </tr>
                         <?php else: ?>
                             <tr class="text-center bg-danger">
-                                <td colspan="2"><strong>Belum Masuk SO</strong></td>
+                                <td colspan="2">
+                                    <strong>
+                                        Belum Masuk SO
+                                        <br>
+                                        Silahkan Hubungi Learning Academy dengan format
+                                        <br>
+                                        NRP, Nama Pegawai, Jabatan, Site, Departemen/Divisi
+                                    </strong>
+                                </td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

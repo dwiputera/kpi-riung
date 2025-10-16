@@ -147,6 +147,11 @@ class M_health_status extends CI_Model
                 oal.id oal_id, oal.name oal_name,
                 oa.id oa_id, oa.name oa_name
             FROM health_status_user hsu
+            INNER JOIN (
+                SELECT NRP, MAX(year) as max_year
+                FROM health_status_user
+                GROUP BY NRP
+            ) tmax ON hsu.NRP = tmax.NRP AND hsu.year = tmax.max_year
             LEFT JOIN health_status hs ON hs.id = hsu.status_id
             LEFT JOIN rml_sso_la.users u ON u.NRP = hsu.NRP
             LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = u.NRP

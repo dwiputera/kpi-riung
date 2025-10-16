@@ -27,6 +27,7 @@
                             <th>JABATAN</th>
                             <th>TAHUN</th>
                             <th>STATUS KESEHATAN</th>
+                            <th>STATUS KESEHATAN STRING</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -43,6 +44,7 @@
                                 <td><?= $hs_i['oalp_name'] ?></td>
                                 <td><?= $hs_i['year'] ?></td>
                                 <td class="bg-<?= $status_bg[$hs_i['status_id']] ?>"><?= strtoupper($hs_i['hs_name']) ?></td>
+                                <td><?= strtoupper($hs_i['status_string']) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

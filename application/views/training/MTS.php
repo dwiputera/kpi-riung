@@ -107,8 +107,8 @@ $matrix_points = array_column($matrix_points, null, 'id');
                                 <th>No</th>
                                 <th>STATUS</th>
                                 <th>ASSIGN ATMP</th>
-                                <th>Participants</th>
                                 <th>ATMP</th>
+                                <th>Participants</th>
                                 <th>MONTH</th>
                                 <th>DEPARTEMEN PENGAMPU</th>
                                 <th>NAMA PROGRAM</th>
@@ -165,11 +165,11 @@ $matrix_points = array_column($matrix_points, null, 'id');
                                 <tr>
                                     <td><?= $i++ ?></td>
                                     <td class="bg-<?= $status_bg[$training['status']] ?>"><?= $status_str[$training['status']] ?></td>
-                                    <td><a href="<?= base_url() ?>training/MTS/ATMP/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= 'assign' ?></a></td>
+                                    <td><a href="<?= base_url() ?>training/MTS/ATMP/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['atmp_nama_program'] ? 1 : 0 ?></a></td>
+                                    <td><?= $training['atmp_nama_program'] ?></td>
                                     <td>
                                         <a href="<?= base_url() ?>training/MTS/participants/<?= md5($training['id']) ?>?year=<?= $year ?>" class="btn btn-primary btn-sm" target="_blank"><?= $training['total_participant'] ?? 0 ?></a>
                                     </td>
-                                    <td><?= $training['atmp_nama_program'] ?></td>
                                     <td><?= $training['month'] ? $months[$training['month']] : '' ?></td>
                                     <td><?= $training['departemen_pengampu'] ? $matrix_points[$training['departemen_pengampu']]['name'] : '' ?></td>
                                     <td><?= $training['nama_program'] ?></td>

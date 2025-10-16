@@ -65,6 +65,7 @@
                                 <th>JABATAN</th>
                                 <th>NRP</th>
                                 <th>HEALTH STATUS</th>
+                                <th>HEALTH STATUS STRING</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -81,6 +82,7 @@
                                     <td><?= $hs_i['oalp_name'] ?></td>
                                     <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="NRP"><?= $hs_i['NRP'] ?></td>
                                     <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="status_id"><?= $hs_i['status_id'] ?></td>
+                                    <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="status_string"><?= $hs_i['status_string'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -222,18 +224,20 @@
                 '', '', '', '', '', '', // kol-3..7
                 '', // NRP (kol-8)
                 '', // status_id
+                '', // status_string
             ];
 
             const node = table.row.add(rowArray).draw(false).node();
             $(node).attr('data-id', newId).addClass('table-success');
 
             // Set contenteditable untuk kolom-kolom tertentu (pakai index td)
-            const editableIdx = [8, 9]; // sesuaikan
+            const editableIdx = [8, 9, 10]; // sesuaikan
             $(node).find('td').each(function(i) {
                 if (editableIdx.includes(i)) {
                     const map = {
                         8: 'NRP',
                         9: 'status_id',
+                        10: 'status_string',
                     };
                     $(this).attr('contenteditable', 'true').attr('data-column', map[i] || '');
                 }

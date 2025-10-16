@@ -34,7 +34,7 @@ class Health_status extends MY_Controller
 
         $success = $this->m_hs->submit($payload, $year);
 
-        flash_swal($success ? 'success' : 'error', $success ? "Culture Fit Edited Successfully" : "Failed to Update Culture Fit");
+        flash_swal($success ? 'success' : 'error', $success ? "Health Status Edited Successfully" : "Failed to Update Health Status");
 
         redirect('health_status/edit?year=' . $year);
     }

@@ -32,7 +32,7 @@
                     </thead>
                     <tbody>
                         <?php $i = 1; ?>
-                        <?php $status_bg = [null => 'none', 1 => 'primary', 3 => 'danger', 2 => 'warning']; ?>
+                        <?php $status_bg = [null => 'none', 1 => 'primary', 2 => 'info', 3 => 'secondary', 4 => 'warning', 5 => 'danger']; ?>
                         <?php foreach ($health_status as $i_hs => $hs_i) : ?>
                             <tr>
                                 <td><?= $i++ ?></td>

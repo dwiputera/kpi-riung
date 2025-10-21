@@ -138,30 +138,54 @@ class TokenRefreshHook
         if (empty($old_token)) return false;
 
         $url = rtrim($this->sso_server, '/') . '/auth/refresh_token';
-        $ch = curl_init($url);
+        $max_attempts = 3; // jumlah percobaan maksimal
+        $attempt = 0;
 
-        curl_setopt_array($ch, [
-            CURLOPT_POST            => true,
-            CURLOPT_POSTFIELDS      => http_build_query(['token' => $old_token]), // <— kirim di body
-            CURLOPT_HTTPHEADER      => [
-                'Accept: application/json',
-                'Content-Type: application/x-www-form-urlencoded',
-            ],
-            CURLOPT_RETURNTRANSFER  => true,
-            CURLOPT_FOLLOWLOCATION  => true,
-            CURLOPT_MAXREDIRS       => 3,
-            CURLOPT_CONNECTTIMEOUT  => 5,
-            CURLOPT_TIMEOUT         => 10,
-        ]);
+        do {
+            $attempt++;
 
-        $response = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST            => true,
+                CURLOPT_POSTFIELDS      => http_build_query(['token' => $old_token]), // kirim di body
+                CURLOPT_HTTPHEADER      => [
+                    'Accept: application/json',
+                    'Content-Type: application/x-www-form-urlencoded',
+                ],
+                CURLOPT_RETURNTRANSFER  => true,
+                CURLOPT_FOLLOWLOCATION  => true,
+                CURLOPT_MAXREDIRS       => 3,
+                CURLOPT_CONNECTTIMEOUT  => 50,
+                CURLOPT_TIMEOUT         => 60,
+            ]);
 
-        if ($httpcode === 200) {
-            $result = json_decode($response, true);
-            return $result['token'] ?? false;
-        }
+            $response  = curl_exec($ch);
+            $httpcode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            // Kalau berhasil (200), langsung return
+            if ($httpcode === 200) {
+                $result = json_decode($response, true);
+                if (isset($result['token']) && !empty($result['token'])) {
+                    return $result['token'];
+                }
+            }
+
+            // Log error biar tahu kenapa gagal
+            log_message('error', sprintf(
+                'Refresh token attempt #%d gagal (HTTP %s): %s %s',
+                $attempt,
+                $httpcode ?: 'no_code',
+                $curlError ? "cURL error: $curlError" : '',
+                $response ?: ''
+            ));
+
+            // Delay kecil sebelum ulangi (misal 2 detik)
+            sleep(2);
+        } while ($attempt < $max_attempts);
+
+        // Kalau tetap gagal setelah 3x percobaan
         return false;
     }
 

@@ -6,7 +6,8 @@ class Testing extends MY_Controller
 
     public function animation()
     {
-        $this->load->view('animation');
+        $data['content'] = "animation";
+        $this->load->view('templates/header_footer', $data);
     }
 
     public function tetris()

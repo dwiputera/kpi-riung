@@ -14,11 +14,10 @@ class Import_tna_2026 extends CI_Controller
         // $sheets = extract_spreadsheet("./uploads/imports_admin/LNA 2026 import.xlsx") ?? [];
         // $data['sheets'] = $sheets;
         // $this->session->set_userdata($data);
+        // // echo '<pre>', print_r($this->session->userdata['sheets'], true);
         // die;
 
         $sheets = $this->session->userdata('sheets');
-        // echo '<pre>', print_r($sheets[$sheet], true);
-        // die;
         $rows = array_filter($sheets[$sheet], fn($r_i, $i_r) => $i_r >= 2, ARRAY_FILTER_USE_BOTH);
         $comp_pstns = $this->db->get('comp_position')->result_array();
 
@@ -106,7 +105,7 @@ class Import_tna_2026 extends CI_Controller
                     } else {
                         $data = [
                             'year' => 2026,
-                            'NRP' => $nrp_i,
+                            'NRP' => $position['NRP'],
                             'comp_pstn_id' => $comp_pstn['id'],
                             'score' => $score_i[10],
                         ];
@@ -116,14 +115,16 @@ class Import_tna_2026 extends CI_Controller
                             SELECT * FROM comp_pstn_score
                             WHERE year = 2026
                             AND comp_pstn_id = $comp_pstn[id]
-                            AND NRP = '$nrp_i'
+                            AND NRP = '$position[NRP]'
                         ")->row_array();
 
                         if ($exist) {
-                            $this->db->where('id', $exist['id']);
-                            $success = $this->db->update('comp_pstn_score', $data);
+                            echo '<pre>', print_r('exist', true);
+                            // $this->db->where('id', $exist['id']);
+                            // $success = $this->db->update('comp_pstn_score', $data);
                         } else {
-                            $success = $this->db->insert('comp_pstn_score', $data);
+                            echo '<pre>', print_r('not', true);
+                            // $success = $this->db->insert('comp_pstn_score', $data);
                         }
                     }
                 }

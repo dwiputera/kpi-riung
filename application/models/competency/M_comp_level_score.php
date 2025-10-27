@@ -75,7 +75,7 @@ class M_comp_level_score extends CI_Model
         $nrps = (array) json_decode($this->input->post('json_data'));
         $nrps = $this->emptyStringToNull($nrps);
         $success = true;
-        $cla_columns = ['vendor', 'recommendation', 'score'];
+        $cla_columns = ['vendor', 'recommendation', 'remarks', 'score'];
         $filled = array_filter($nrps, function ($obj) {
             return count(array_filter((array) $obj)) > 0;
         });

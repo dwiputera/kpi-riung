@@ -62,6 +62,7 @@
                             <?php endforeach; ?>
                             <th>Vendor</th>
                             <th>Recommendation</th>
+                            <th>Remarks</th>
                             <th>Score</th>
                         </tr>
                         <tr>
@@ -76,6 +77,7 @@
                                 <th>Actual</th>
                                 <th>Gap</th>
                             <?php endforeach; ?>
+                            <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
@@ -104,6 +106,7 @@
                                 <?php endforeach; ?>
                                 <td><?= $e_i['vendor'] ?></td>
                                 <td><?= $e_i['recommendation'] ?></td>
+                                <td><?= $e_i['remarks'] ?></td>
                                 <td><?= $e_i['score'] ?></td>
                             </tr>
                         <?php endforeach; ?>

@@ -142,6 +142,7 @@ class Level_score extends MY_Controller
                 'id'             => $a['id'] ?? null,
                 'vendor'         => $a['vendor'] ?? null,
                 'recommendation' => $a['recommendation'] ?? null,
+                'remarks'        => $a['remarks'] ?? null,
                 'score'          => isset($a['score']) ? (float)$a['score'] : null,
             ];
         }
@@ -170,9 +171,10 @@ class Level_score extends MY_Controller
                 $e['cla_id']         = $assessMap[$nrp]['id'];
                 $e['vendor']         = $assessMap[$nrp]['vendor'];
                 $e['recommendation'] = $assessMap[$nrp]['recommendation'];
+                $e['remarks'] = $assessMap[$nrp]['remarks'];
                 $e['score']          = $assessMap[$nrp]['score'];
             } else {
-                $e['cla_id'] = $e['vendor'] = $e['recommendation'] = null;
+                $e['cla_id'] = $e['vendor'] = $e['recommendation'] = $e['remarks'] = null;
                 $e['score']  = null;
             }
         }

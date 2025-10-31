@@ -90,9 +90,7 @@ class M_comp_level_score extends CI_Model
                 $success = $this->db->where('id', $cla['id'])->delete('comp_lvl_assess');
             }
         }
-
-        // 10125097
-        // 10122289
+        
         foreach ($filled as $i_nrp => $nrp_i) {
             $cla = $this->db
                 ->get_where('comp_lvl_assess', array('NRP' => $i_nrp, 'method_id' => $this->input->post('method_id'), 'tahun' => $this->input->post('year')))
@@ -128,7 +126,7 @@ class M_comp_level_score extends CI_Model
                     if ($clas) {
                         $success = $this->db->where('id', $clas['id'])->update('comp_lvl_assess_score', array('score' => $cl_i));
                     } else {
-                        $success = $this->db->insert('comp_lvl_assess_score', array('comp_lvl_assess_id' => $cla_id, 'score' => $cl_i));
+                        $success = $this->db->insert('comp_lvl_assess_score', array('comp_lvl_assess_id' => $cla_id, 'score' => $cl_i, 'comp_lvl_id' => $i_cl));
                     }
                 } else {
                     if ($clas) {

@@ -8,7 +8,7 @@ class MY_Controller extends CI_Controller
         parent::__construct();
 
         // Permission check only, token already validated by hook
-        if (!$this->m_permission->has_permission() && $this->uri->segment(1) != 'testing' && $this->uri->segment(1) != 'dummy') {
+        if (!$this->m_permission->has_permission() && !in_array($this->uri->segment(1), array('testing', 'dummy', 'drive'))) {
             // show_error('Unauthorized access', 403);
             redirect('auth/logout');
         }

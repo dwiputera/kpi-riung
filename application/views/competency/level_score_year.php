@@ -90,7 +90,7 @@
                                 <td><?= $i++ ?></td>
                                 <td><?= $e_i['FullName'] ?></td>
                                 <td><?= $e_i['NRP'] ?></td>
-                                <td><?= $e_i['name'] ?></td>
+                                <td><?= $e_i['oalp_name'] ?></td>
                                 <td><?= $e_i['oal_name'] ?></td>
                                 <td><?= $e_i['oa_name'] ?></td>
                                 <?php foreach ($comp_lvl as $i_cl => $cl_i) : ?>

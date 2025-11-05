@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "riungdriveapi",
+  "private_key_id": "3e9a0d193ca14346ddd1f24802e8062e85e84051",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCM92V0iseKh86A\n+2OtcwP8FV1uIM6Jaey220ysqUUBMRyU6FDiKx7mATjoGZIJtygJ5AHUpOb0DPek\nKN8/Qu6WhKYYEwf3DwVAt8fgMFmvJZh6UfJiASeaSu34+s/LS2H7qfrmYz1P0xKG\nWuoA0ZBXTIjokUNRiXaL0b0sacOUndxzyJgeKN37J3PZDcBpj2BVdmugPC415o4Y\nDFz1SsVgfV2Vc4OZHMyngjTNzSKovXDmPOqctmZSvxMMvrJ62qnKIr2d1dvuk6bQ\n5QTl3eRNN0htefQcTrdBt69ewEcvuWt3QJYYJJvvvvAGOVN1i2dZ43kvFZpYi9kt\nJrMuV0hxAgMBAAECggEAGVShYgJIHgAOXwYNYM8goa0zJ0V056NlmmwoyIP4NuEc\n2jMuyZ1nBXylvatOnzlO1AwpOg1RxPwJifGgQC1mUxzN/dh5n28PChScMZBupTbz\nwdM042CCvcqGHa3wJf9LQZ5HTBv8Gfp7QzJWB0ShE9bYaTYlKyMw7qoHPNJahztc\nY89AyW4qsF2sl9qjG4VWwO1JHzhwkexzJCDMWoRPCA3LkNp+SrwF7wHPD/+v0HSB\npRdp25KFuBT+8j/gBF72u/twEv4T6aQgc2qnWVm3QoCKNUwPPFCrOx5Ov1kfDaVu\n/9iRb6yI3VqHh96bcXIctK+uJdCbLwz0+Y913028cwKBgQDDXsThd4D+YktG2ZEc\n6uMceN/POY/hi7OFu9j5WNcu7p95D8p6QpEP25293T2Rk4VyLb3J9LMespl4Rlj1\n2ycXPB4H4+UdFV+e/6Wtgpv+0eyHX0uRepLvZQayN0tU9F6jsNhOM0pgV62NgIyN\nwqGmr7DS2sgVH93zhecygek4fwKBgQC4toEpntH0vJ9U1/CoA09LsUjzO/TEsgDA\nMtAAno581xVo0U7XbBThU6zFEixsPpGWO97EEtZDtd6bY6I9Q+P7LpKz3oXDUl8E\nDkOpVzaJKmMCZ2vs6UaqRSdKhyPw4NZFn09JYLTf9YMLq1rmPWUoOBt6+8HwfDS6\nTpROCh6HDwKBgQCegmFSXNb3jWBt1095Gsmw7BEJ3DX0VJgOxN3BUGcl2MziOAGb\nOC7hotlUlg/B8OKwRJRbKoG5QkZp4wmCT5BjtY7X7/qPoiu2oMwW/oT6Ne+l1ZdG\nLSDRwjGwnlQsVSgDvxOAPvT1Pa29xLJEwcjNqHXaXU9AdF5rmhR+UhCamQKBgQCM\nNOwh/Y39KVf//NGNlsWP/QgUqUQIMd1kBq3ganpZxKFZqNchqcbHqs4P4NWbbHry\nAIv9ZRcC2oAYjy5NNsVMmnN82MHMGzBIUdOGLM8WmvgAkSRY9lFPWaKTbbUYWHIM\n8voqBqAFB8TrDKy4641nU/94ALWbp4wWhyMHgaLefQKBgG3lz2aGpjzC4LqKDL3B\nnIkhOO+Ub08gRXS8MeHPTrAwU/SdXZD/9uLjzL8ymP3Y7slMorUWqVtfxODYf4so\nvHyfLkK47bzmPPQCnsvQfOsaHNVqUle+heUNyFpgNMMfCHDCKLZ20+EuIQEoI2xX\nGjsQWyvUlOwwQ/5XPIXffGSd\n-----END PRIVATE KEY-----\n",
+  "client_email": "ci-drive-access@riungdriveapi.iam.gserviceaccount.com",
+  "client_id": "106606046517864747712",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ci-drive-access%40riungdriveapi.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

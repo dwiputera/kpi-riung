@@ -52,10 +52,11 @@ class M_employee extends CI_Model
             final_matrix_point AS (
                 SELECT 
                     start_id AS node_id,
+                    current_id AS mp_id,
                     matrix_point_name
                 FROM (
                     SELECT 
-                        start_id, 
+                        start_id, current_id,
                         matrix_point_name,
                         ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
                     FROM matrix_point_resolve
@@ -66,6 +67,7 @@ class M_employee extends CI_Model
 
             SELECT *, 
                 users.NRP NRP,
+                TIMESTAMPDIFF(YEAR, users.BirthDate, CURDATE()) AS age,
                 oalp.id oalp_id, oalp.name oalp_name, oalp.parent oalp_parent,
                 oal.id oal_id, oal.name oal_name,
                 oa.id oa_id, oa.name oa_name

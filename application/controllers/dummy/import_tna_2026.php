@@ -6,6 +6,89 @@ class Import_tna_2026 extends CI_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->load->model('employee/M_employee', 'm_emp');
+    }
+
+    function json()
+    {
+        $year = 2026;
+        $mp_lnas = json_decode(file_get_contents(__DIR__ . '/import_tna_2026.json'), true);
+
+        $mp_ids = [
+            'eng' => 45,
+            'opr' => 9,
+        ];
+
+        foreach ($mp_lnas as $mp => $mp_lna) {
+            // if (in_array($mp, array('eng'))) continue;
+            if ($mp != 'opr') continue;
+
+            echo '<pre>', print_r($mp, true);
+            $nrp_scores = [];
+            $mp_id = $mp_ids[$mp];
+            $comp_pstn = $this->db->get_where('comp_position', array('area_lvl_pstn_id' => $mp_id))->result_array();
+            foreach ($mp_lna as $i_row => $row_i) {
+                if (!isset($row_i['NRP'])) continue;
+
+                $nrp_raw = trim((string)$row_i['NRP']);
+                $nrp = $nrp_raw;
+                if (strlen($nrp_raw) == 6) $nrp = '10' . $nrp_raw;
+                if (strlen($nrp_raw) == 7) $nrp = '1' . $nrp_raw;
+                $result = array_filter($comp_pstn, function ($item) use ($row_i) {
+                    return strcasecmp($item['name'], $row_i['Nama Kompetensi']) === 0;
+                });
+
+                if (!$result) {
+                    echo '<pre>', print_r($row_i, true);
+                    die;
+                } else {
+                    $result = reset($result);
+                    $row_i['comp_pstn_id'] = $result['id'];
+                }
+                $nrp_scores[$nrp][] = array(
+                    'NRP' => $nrp,
+                    'year' => $year,
+                    'comp_pstn_id' => $row_i['comp_pstn_id'],
+                    'score' => $row_i['Actual'],
+                );
+            }
+
+            foreach ($nrp_scores as $i_nrp_score => $nrp_score_i) {
+                $emp = $this->m_emp->get_employee($i_nrp_score, 'users.NRP', false);
+                if ($emp['mp_id'] != $mp_id) {
+                    echo '<pre>', print_r($emp, true);
+                    die;
+                }
+                $scores = $this->db->get_where('comp_pstn_score', array('NRP' => $i_nrp_score, 'year' => $year))->result_array();
+
+                $missing = array_filter(
+                    $scores,
+                    fn($score) =>
+                    !in_array($score['comp_pstn_id'], array_column($nrp_score_i, 'comp_pstn_id'))
+                );
+
+                if ($missing) {
+                    // code to delete here
+                    echo '<pre>', print_r($missing, true);
+                    echo '<pre>', print_r($scores, true);
+                    echo '<pre>', print_r($nrp_score_i, true);
+                    die;
+                }
+                foreach ($nrp_score_i as $i_score => $score_i) {
+                    $comp_pstn_score = $this->db->get_where('comp_pstn_score', array('NRP' => $i_nrp_score, 'comp_pstn_id' => $score_i['comp_pstn_id'], 'year' => $year))->row_array();
+                    if (!$comp_pstn_score) {
+                        echo '<pre>', print_r('insert', true);
+                        echo '<pre>', print_r($score_i, true);
+                        // $this->db->insert('comp_pstn_score', $score_i);
+                    } else {
+                        echo '<pre>', print_r('update', true);
+                        echo '<pre>', print_r($score_i, true);
+                        // $this->db->where('id', $comp_pstn_score['id'])->update('comp_pstn_score', $score_i);
+                    }
+                }
+            }
+        }
+        die;
     }
 
     function import($sheet)

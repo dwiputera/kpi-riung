@@ -49,11 +49,11 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center bg-warning">1<br>PEMULA (ENTRY)</td>
-                                        <td class="text-center bg-warning">2<br>DASAR (BASIC)</td>
-                                        <td class="text-center bg-warning">3<br>MAMPU (INTERMEDIATE)</td>
-                                        <td class="text-center bg-warning">4<br>CAKAP (ADVANCED)</td>
-                                        <td class="text-center bg-warning">5<br>AHLI (EXPERT)</td>
+                                        <td class="text-center bg-warning">1<br>MENGINGAT</td>
+                                        <td class="text-center bg-warning">2<br>MEMAHAMI</td>
+                                        <td class="text-center bg-warning">3<br>MENGAPLIKASIKAN</td>
+                                        <td class="text-center bg-warning">4<br>MENGANALISIS</td>
+                                        <td class="text-center bg-warning">5<br>MENGEVALUASI & MENCIPTA</td>
                                     </tr>
                                     <tr>
                                         <td><?= $dict_i['level_1'] ?></td>

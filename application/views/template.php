@@ -140,6 +140,10 @@
             showOverlayFull();
         });
 
+        window.addEventListener("beforeunload", function(e) {
+            showOverlayFull();
+        });
+
         // Hide overlay when user navigates back or forward
         window.addEventListener('pageshow', function() {
             hideOverlayFull(); // or $('.overlay').hide();
@@ -233,6 +237,7 @@
         }
 
         let lastToken = null;
+        const testing = false;
 
         function refreshToken() {
             $.ajax({
@@ -241,28 +246,31 @@
                 dataType: "json",
                 success: function(res) {
                     if (res.status === 'ok' && res.token) {
-                        if (lastToken && lastToken !== res.token) {
-                            console.log("🎉 Token sudah diperbarui!");
-                        } else if (lastToken) {
-                            console.log("ℹ️ Token masih sama, belum butuh refresh.");
+                        if (testing) {
+                            if (lastToken && lastToken !== res.token) {
+                                console.log("🎉 Token sudah diperbarui!");
+                            } else if (lastToken) {
+                                console.log("ℹ️ Token masih sama, belum butuh refresh.");
+                            }
                         }
                         lastToken = res.token;
 
-                        scheduleTokenRefresh(res.token);
+                        setTimeout(function() {
+                            scheduleTokenRefresh(res.token);
+                        }, 5000);
                     } else {
                         window.location.href = "<?= base_url() ?>";
                     }
-                }
+                },
+                error: function(xhr, status, error) {
+                    if (testing) {
+                        console.error("❌ Gagal memeriksa token:", status, error);
+                        console.log("🔁 Coba ulangi pengecekan token dalam 5 detik...");
+                    }
+                    setTimeout(refreshToken, 5000); // otomatis coba lagi 5 detik kemudian
+                },
+                timeout: 5000
             });
-        }
-
-        function scheduleTokenRefreshDebug(token) {
-            console.log("⏱ Debug mode: token refresh akan dicoba tiap 3 detik");
-
-            setInterval(function() {
-                console.log("⏳ Cek token sekarang...");
-                refreshToken(token);
-            }, 3 * 1000); // 3 detik untuk debug
         }
 
         function scheduleTokenRefresh(token) {
@@ -272,13 +280,29 @@
             const now = Math.floor(Date.now() / 1000);
             const timeLeft = exp - now;
 
-            console.log("Token exp:", exp, "Sekarang:", now, "Sisa:", timeLeft, "detik");
+            if (testing) {
+                console.log("Token exp:", exp, "Sekarang:", now, "Sisa:", timeLeft, "detik");
+            }
+
             if (timeLeft <= 300) {
-                console.log("⚠️ Token hampir habis, refresh sekarang!");
+                if (testing) {
+                    console.log("⚠️ Token hampir habis, refresh sekarang!");
+                }
                 refreshToken(token);
             } else {
                 const refreshIn = (timeLeft - 120) * 1000;
-                console.log("✅ Jadwalkan refresh dalam", refreshIn / 1000, "detik");
+                if (testing) {
+                    console.log("✅ Jadwalkan refresh dalam", refreshIn / 1000, "detik");
+                    let countdown = Math.floor(refreshIn / 1000);
+                    const interval = setInterval(() => {
+                        countdown--;
+                        console.log("⏳ Refresh dalam:", countdown, "detik");
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                        }
+                    }, 1000);
+                }
+
                 setTimeout(function() {
                     refreshToken(token);
                 }, refreshIn);
@@ -287,8 +311,6 @@
 
         const tokenFromSession = "<?= $this->session->userdata('token') ?>";
         if (tokenFromSession) {
-            // Pakai salah satu:
-            // scheduleTokenRefreshDebug(tokenFromSession); // untuk test cepat
             scheduleTokenRefresh(tokenFromSession); // mode normal
         }
     </script>

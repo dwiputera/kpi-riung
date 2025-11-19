@@ -9,10 +9,10 @@ class Position_matrix extends MY_Controller
         $this->load->database();
         $this->load->model('competency/m_comp_position', 'm_c_pstn');
         $this->load->model('competency/m_comp_position_target', 'm_c_p_targ');
-        $this->load->model('competency/m_comp_position_score', 'm_c_p_score'); // <-- ADD: ambil actual score (latest)
+        $this->load->model('competency/m_comp_position_score', 'm_c_p_score');
         $this->load->model('organization/m_position', 'm_pstn');
         $this->load->model('organization/m_user', 'm_user');
-        $this->load->model('employee/m_employee', 'm_emp'); // <-- ADD: daftar pegawai (punya oalp_id)
+        $this->load->model('employee/m_employee', 'm_emp');
     }
 
     public function index()
@@ -21,6 +21,7 @@ class Position_matrix extends MY_Controller
         $matrix_points = [];
 
         $user = $this->m_user->get_area_lvl_pstn_user($NRP, 'NRP', false);
+
         if ($user) {
             $user_oalp_md5 = md5($user['area_lvl_pstn_id']);
             $position      = $this->m_pstn->get_area_lvl_pstn($user_oalp_md5, 'md5(oalp.id)', false);
@@ -29,74 +30,22 @@ class Position_matrix extends MY_Controller
                 $pos_id     = (int) $position['id'];
                 $pos_id_md5 = md5($pos_id);
 
-                $superiors    = array_reverse($this->m_pstn->get_superiors($pos_id_md5));
                 $subordinates = $this->m_pstn->get_subordinates($user_oalp_md5);
 
-                $pushMtx = function (&$dst, $mtx, $subs) {
-                    $mtx['subordinates'] = $subs;
-                    $dst[] = $mtx;
-                };
-
-                // cari matrix_point dari atasan
-                $superior_mtx = null;
-                foreach ($superiors as $s) {
-                    if (($s['type'] ?? null) === 'matrix_point' && (int)$s['id'] !== $pos_id) {
-                        $superior_mtx = $s; // last match
+                $matrix_point_ids[] = $position['mp_id'];
+                foreach ($subordinates as $i_sub => $sub_i) {
+                    if ($sub_i['type'] == 'matrix_point') {
+                        $matrix_point_ids[] = $sub_i['id'];
+                    }
+                    if ($sub_i['matrix_point']) {
+                        $matrix_point_ids[] = $sub_i['matrix_point'];
                     }
                 }
-
-                if ($superior_mtx) {
-                    if ((int)$superior_mtx['area_id'] === (int)$user['oa_id']) {
-                        $pushMtx($matrix_points, $superior_mtx, $this->m_pstn->get_subordinates($pos_id_md5, 'with_without_matrix'));
-                    } else {
-                        $mtx_from_sup = null;
-                        foreach ($superiors as $s) {
-                            if (!empty($s['matrix_point'])) {
-                                $mtx_from_sup = (int)$s['matrix_point'];
-                                break;
-                            }
-                        }
-
-                        $sub_mtx_rows = [];
-                        foreach ($subordinates as $row) {
-                            if (!empty($row['matrix_point'])) $sub_mtx_rows[] = $row;
-                        }
-
-                        if (!$mtx_from_sup) {
-                            $pushMtx($matrix_points, $superior_mtx, $this->m_pstn->get_subordinates($pos_id_md5, 'without_matrix'));
-
-                            $ids = [];
-                            foreach ($sub_mtx_rows as $r) $ids[(int)$r['matrix_point']] = true;
-                            if ($ids) {
-                                $mps   = $this->db->where_in('id', array_keys($ids))->get('org_area_lvl_pstn')->result_array();
-                                $group = [];
-                                foreach ($sub_mtx_rows as $r) {
-                                    $group[(int)$r['matrix_point']][] = $r;
-                                }
-                                foreach ($mps as $mp) {
-                                    $subs = [];
-                                    foreach ($group[(int)$mp['id']] ?? [] as $sb) {
-                                        $subs = array_merge($subs, $this->m_pstn->get_subordinates(md5((int)$sb['id'])));
-                                    }
-                                    $pushMtx($matrix_points, $mp, $subs);
-                                }
-                            }
-                        } else {
-                            $mtxp = $this->db->get_where('org_area_lvl_pstn', ['id' => $mtx_from_sup])->row_array();
-                            $pushMtx($matrix_points, $mtxp, $this->m_pstn->get_subordinates($pos_id_md5));
-                        }
-                    }
-                } else {
-                    // tidak ada matrix_point dari atasan
-                    foreach ($subordinates as $row) {
-                        if (($row['type'] ?? null) === 'matrix_point') {
-                            $row['subordinates'] = $this->m_pstn->get_subordinates(md5((int)$row['id']), 'with_without_matrix');
-                            $matrix_points[] = $row;
-                        }
-                    }
-                }
+                $matrix_point_ids = array_unique($matrix_point_ids);
             }
         }
+
+        $matrix_points = $this->db->where_in('id', $matrix_point_ids)->get('org_area_lvl_pstn')->result_array();
 
         // Seleksi matrix_point jika jumlah banyak
         if (count($matrix_points) > 3 && !$this->input->post('matrix_points')) {
@@ -125,10 +74,26 @@ class Position_matrix extends MY_Controller
 
         // Build: employees_by_mp[mpId] = list pegawai subordinate mp tsb (dengan field plan/actual/gap per comp_pstn)
         $data['employees_by_mp'] = [];
+
         foreach ($matrix_points as $mp) {
-            $mpId     = (int)$mp['id'];
-            $sub_oalp = array_map(fn($p) => (int)$p['id'], $mp['subordinates'] ?? []);
-            $emp_sub  = array_values(array_filter($employees_all, fn($e) => isset($e['oalp_id']) && in_array((int)$e['oalp_id'], $sub_oalp, true)));
+            $mpId = (int)$mp['id'];
+            $emp_sub  = array_values(array_filter($employees_all, fn($e) => isset($e['mp_id']) && $e['mp_id'] == $mpId && in_array($e['oalp_id'], array_column($subordinates, 'id'), true)));
+
+            $emp_sub = array_values(array_filter($employees_all, function ($e) use ($mpId, $subordinates, $user, $NRP) {
+                $isSubordinate = isset($e['mp_id']) && $e['mp_id'] == $mpId && in_array($e['oalp_id'], array_column($subordinates, 'id'), true);
+                $isSameOalp = isset($e['oalp_id'], $user['oalp_id']) && $e['oalp_id'] == $user['oalp_id'];
+                $isSameNrp = isset($e['NRP'], $NRP) && $e['NRP'] == $NRP;
+
+                if ($isSameOalp) {
+                    if ($isSameNrp) {
+                        return true;
+                    }
+                } else {
+                    if ($isSubordinate) {
+                        return true;
+                    }
+                }
+            }));
 
             $mp_comp_positions = $data['competencies'][$mpId] ?? []; // list comp_pstn milik MP ini
             $data['employees_by_mp'][$mpId] = $this->create_employee_matrix_position(

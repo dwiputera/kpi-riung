@@ -117,6 +117,7 @@ class Level_matrix extends MY_Controller
     private function filter_subordinate_employees(array $employees, array $positions): array
     {
         $sub_oalp_set = [];
+        $main_position = $positions[0];
         foreach ($positions as $p) {
             $sub_oalp_set[(int)$p['id']] = true; // atau 'oal_id' jika itu kunci yang valid
         }
@@ -124,7 +125,13 @@ class Level_matrix extends MY_Controller
         $out = [];
         foreach ($employees as $e) {
             if (isset($e['oalp_id']) && isset($sub_oalp_set[(int)$e['oalp_id']])) {
-                $out[] = $e;
+                if ($e['oalp_id'] == $main_position['id']) {
+                    if ($e['NRP'] == $this->session->userdata('NRP')) {
+                        $out[] = $e;
+                    }
+                } else {
+                    $out[] = $e;
+                }
             }
         }
         return $out;

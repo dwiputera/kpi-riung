@@ -214,9 +214,15 @@
         showOverlayFull();
         const table = $('#datatable').DataTable();
         const newId = 'new_' + Date.now();
-        const row_number_add = $('#row_number_add').val();
+        const row_number_add = parseInt($('#row_number_add').val(), 10) || 1;
 
-        // Construct the new row
+        const editableIdx = [8, 9, 10];
+        const map = {
+            8: 'NRP',
+            9: 'status_id',
+            10: 'status_string',
+        };
+
         for (let index = 0; index < row_number_add; index++) {
             const rowArray = [
                 '<input type="checkbox" class="row-checkbox">', // kol-1
@@ -227,27 +233,26 @@
                 '', // status_string
             ];
 
-            const node = table.row.add(rowArray).draw(false).node();
+            // 👉 JANGAN .draw(false) di sini
+            const node = table.row.add(rowArray).node();
+
             $(node).attr('data-id', newId).addClass('table-success');
 
-            // Set contenteditable untuk kolom-kolom tertentu (pakai index td)
-            const editableIdx = [8, 9, 10]; // sesuaikan
             $(node).find('td').each(function(i) {
                 if (editableIdx.includes(i)) {
-                    const map = {
-                        8: 'NRP',
-                        9: 'status_id',
-                        10: 'status_string',
-                    };
-                    $(this).attr('contenteditable', 'true').attr('data-column', map[i] || '');
+                    $(this)
+                        .attr('contenteditable', 'true')
+                        .attr('data-column', map[i] || '');
                 }
             });
         }
 
+        // 👉 Draw SEKALI saja di akhir
         table.columns.adjust().draw(false);
 
-        // First, go to the last page
+        // Pindah ke halaman terakhir
         table.page('last').draw('page');
+
         hideOverlayFull();
     }
 

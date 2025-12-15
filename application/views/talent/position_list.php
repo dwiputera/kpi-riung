@@ -20,9 +20,10 @@
                 <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
                     <thead>
                         <tr>
-                            <th>Action</th>
+                            <th><i class="fa fa-list"></i>&nbsp;Show Candidate List By</th>
                             <th>No</th>
                             <th>Position</th>
+                            <th>Area</th>
                             <th>Level</th>
                             <th>Matrix Point</th>
                         </tr>
@@ -32,11 +33,13 @@
                         <?php foreach ($positions as $pstn) : ?>
                             <?php if (!$pstn['mp_id']) continue; ?>
                             <tr>
-                                <td>
-                                    <a href="<?= base_url() ?>talent/candidate_list/<?= md5($pstn['id']) ?>" class="btn btn-xs btn-primary w-100"><i class="fa fa-list"></i>&nbsp;Candidate List</a>
+                                <td class="row">
+                                    <a href="<?= base_url() ?>talent/candidate_list/<?= md5($pstn['id']) ?>?method=AC" class="btn btn-xs btn-primary col-lg-6"><strong>Assessment Center</strong></a>
+                                    <a href="<?= base_url() ?>talent/candidate_list/<?= md5($pstn['id']) ?>?method=PR" class="btn btn-xs btn-info col-lg-6"><strong>Potential Review</strong></a>
                                 </td>
                                 <td><?= $i++ ?></td>
                                 <td><?= $pstn['name'] ?></td>
+                                <td><?= $pstn['oa_name'] ?></td>
                                 <td><?= $pstn['oal_name'] ?></td>
                                 <td><?= $pstn['mp_name'] ?></td>
                             </tr>

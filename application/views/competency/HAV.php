@@ -84,6 +84,15 @@
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                <br>
+                <div class="row">
+                    <button id="submitTablePR" class="btn btn-primary col-md-6">
+                        Record Hav Mapping <?= date('Y') ?> (Potential Review)
+                    </button>
+                    <button id="submitTableAC" class="btn btn-primary col-md-6">
+                        Record Hav Mapping <?= date('Y') ?> (Assessment Center)
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -103,8 +112,120 @@
     }
 </style>
 
-<script src="<?= base_url('assets/js/chart.umd.min.js') ?>"></script>
+<script src=" <?= base_url('assets/js/chart.umd.min.js') ?>"></script>
 <script src="<?= base_url('assets/js/chartjs-plugin-datalabels.min.js') ?>"></script>
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 <script src="<?= base_url('assets/js/HAV/HAV.js') ?>"></script>
+
+<script>
+    $(document).ready(function() {
+        var table = $('#employeeTable').DataTable(); // Inisialisasi DataTable
+
+        // Handle klik tombol submit
+        $('#submitTablePR').click(function(event) {
+            // Tampilkan konfirmasi sebelum lanjut
+            var isConfirmed = confirm('Are you sure to record the data?');
+
+            // Jika pengguna memilih Cancel, hentikan aksi tombol
+            if (!isConfirmed) {
+                event.preventDefault(); // Batalkan aksi default (misalnya submit form)
+            } else {
+                var tableData = [];
+
+                // Ambil data yang sudah terfilter di DataTable (hanya yang terlihat setelah filter diterapkan)
+                table.rows({
+                    filter: 'applied'
+                }).every(function() {
+                    var row = this.data();
+                    var rowData = {
+                        no: row[1],
+                        area: row[2],
+                        level: row[3],
+                        matrix_point: row[4],
+                        position: row[5],
+                        method: row[6],
+                        status: row[7],
+                        NRP: row[8],
+                        name: row[9],
+                        performance: row[10],
+                        potential: row[11]
+                    };
+                    tableData.push(rowData);
+                });
+
+                // Kirim data tabel yang terfilter ke API menggunakan AJAX
+                $.ajax({
+                    url: '<?= base_url('HAV/mapping/submit_table_data?method=PR') ?>', // Ganti dengan URL API kamu
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(tableData),
+                    success: function(response) {
+                        alert('Data Recorded!');
+                        console.log(response);
+                    },
+                    error: function(xhr, status, error) {
+                        alert('There is an error while recording the data.');
+                        console.error(error);
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        var table = $('#employeeTable').DataTable(); // Inisialisasi DataTable
+
+        // Handle klik tombol submit
+        $('#submitTableAC').click(function(event) {
+            // Tampilkan konfirmasi sebelum lanjut
+            var isConfirmed = confirm('Are you sure to record the data?');
+
+            // Jika pengguna memilih Cancel, hentikan aksi tombol
+            if (!isConfirmed) {
+                event.preventDefault(); // Batalkan aksi default (misalnya submit form)
+            } else {
+                var tableData = [];
+
+                // Ambil data yang sudah terfilter di DataTable (hanya yang terlihat setelah filter diterapkan)
+                table.rows({
+                    filter: 'applied'
+                }).every(function() {
+                    var row = this.data();
+                    var rowData = {
+                        no: row[1],
+                        area: row[2],
+                        level: row[3],
+                        matrix_point: row[4],
+                        position: row[5],
+                        method: row[6],
+                        status: row[7],
+                        NRP: row[8],
+                        name: row[9],
+                        performance: row[10],
+                        potential: row[11]
+                    };
+                    tableData.push(rowData);
+                });
+
+                // Kirim data tabel yang terfilter ke API menggunakan AJAX
+                $.ajax({
+                    url: '<?= base_url('HAV/mapping/submit_table_data?method=AC') ?>', // Ganti dengan URL API kamu
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(tableData),
+                    success: function(response) {
+                        alert('Data Recorded!');
+                        console.log(response);
+                    },
+                    error: function(xhr, status, error) {
+                        alert('There is an error while recording the data.');
+                        console.error(error);
+                    }
+                });
+            }
+        });
+    });
+</script>

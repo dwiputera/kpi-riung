@@ -267,4 +267,34 @@ class Mapping extends MY_Controller
 
         return $matches;
     }
+
+    function submit_table_data()
+    {
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true);
+        $method = $this->input->get('method') == 'AC' ? 1 : 2;
+
+        $year = date('Y');
+        foreach ($data as $i_dat => $dat_i) {
+            if ($dat_i['status'] == "Calculating...") continue;
+            $query = $this->db->where('NRP', $dat_i['NRP'])->where('year', $year)->where('method_id', $method)->get('emp_hav_rcrd')->row_array();
+
+            $insdat = [
+                'year' => $year,
+                'NRP' => $dat_i['NRP'],
+                'status' => $dat_i['status'],
+                'method_id' => $method,
+            ];
+
+            if ($query) {
+                // Jika NRP sudah ada, lakukan update
+                $this->db->where('id', $query['id']);
+                $this->db->update('emp_hav_rcrd', $insdat);
+            } else {
+                // Jika NRP belum ada, lakukan insert
+                $this->db->insert('emp_hav_rcrd', $insdat);
+            }
+        }
+        die;
+    }
 }

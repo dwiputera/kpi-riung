@@ -18,49 +18,74 @@ class M_hav extends CI_Model
             ['Unfit', 'Sleeping Tiger', 'Sleeping Tiger', 'Sleeping Tiger']
         ];
 
-        $labels = array_reverse($rawLabels); // agar urutan dari bawah ke atas seperti di Chart.js
+        // agar urutan dari bawah ke atas seperti di Chart.js
+        $labels = array_reverse($rawLabels);
 
         if (empty($employees)) return [];
 
-        // Hitung batas minimum & maksimum
+        // Filter data valid
         $filtered = array_filter($employees, function ($e) {
-            return isset($e['assess_score'], $e['avg_ipa_score']) && is_numeric($e['assess_score']) && is_numeric($e['avg_ipa_score']);
+            return isset($e['assess_score'], $e['avg_ipa_score'])
+                && is_numeric($e['assess_score'])
+                && is_numeric($e['avg_ipa_score']);
         });
 
-        $potentials = array_column($filtered, 'assess_score');
+        if (empty($filtered)) {
+            // tidak ada data valid
+            foreach ($employees as &$emp) {
+                $emp['status'] = null;
+            }
+            return $employees;
+        }
+        $potentials   = array_column($filtered, 'assess_score');
         $performances = array_column($filtered, 'avg_ipa_score');
 
-        $xMin = floor(min($potentials) - 5);
-        $xMax = ceil(max($potentials) + 5);
-        $yMin = floor(min($performances) - 5);
-        $yMax = ceil(max($performances) + 5);
+        function floor1($value)
+        {
+            return floor($value * 10) / 10;
+        }
+
+        function ceil1($value)
+        {
+            return ceil($value * 10) / 10;
+        }
+
+        // PAKAI MARGIN
+        $xMin = floor1(min($potentials)   - 0.1);
+        $xMax = ceil1(max($potentials)    + 0.1);
+        $yMin = floor1(min($performances) - 0.1);
+        $yMax = ceil1(max($performances)  + 0.1);
 
         $xStep = ($xMax - $xMin) / 4;
         $yStep = ($yMax - $yMin) / 4;
 
-        // Tentukan status untuk tiap karyawan
+        // pre-calc buat sedikit micro-optim
+        $invXStep = 1 / $xStep;
+        $invYStep = 1 / $yStep;
+
         foreach ($employees as &$emp) {
-            if (!isset($emp['assess_score'], $emp['avg_ipa_score']) || !is_numeric($emp['assess_score']) || !is_numeric($emp['avg_ipa_score'])) {
-                $emp['status'] = null; // atau "(Unknown)"
+            if (
+                !isset($emp['assess_score'], $emp['avg_ipa_score']) ||
+                !is_numeric($emp['assess_score']) ||
+                !is_numeric($emp['avg_ipa_score'])
+            ) {
+
+                $emp['status'] = null; // atau '(Unknown)'
                 continue;
             }
 
-            $x = floatval($emp['assess_score']);
-            $y = floatval($emp['avg_ipa_score']);
-            $emp['status'] = '(Unknown)';
+            $x = (float)$emp['assess_score'];
+            $y = (float)$emp['avg_ipa_score'];
 
-            for ($i = 0; $i < 4; $i++) {
-                for ($j = 0; $j < 4; $j++) {
-                    $xStart = $xMin + $j * $xStep;
-                    $xEnd = $xStart + $xStep;
-                    $yStart = $yMin + $i * $yStep;
-                    $yEnd = $yStart + $yStep;
+            // hitung index kolom (0–3) dan baris (0–3) langsung
+            $col = (int)floor(($x - $xMin) * $invXStep);
+            $row = (int)floor(($y - $yMin) * $invYStep);
 
-                    if ($x >= $xStart && $x < $xEnd && $y >= $yStart && $y < $yEnd) {
-                        $emp['status'] = $labels[$i][$j];
-                        break 2;
-                    }
-                }
+            // clamp supaya tetap 0–3
+            if ($col < 0 || $col > 3 || $row < 0 || $row > 3) {
+                $emp['status'] = '(Unknown)';
+            } else {
+                $emp['status'] = $labels[$row][$col];
             }
         }
 

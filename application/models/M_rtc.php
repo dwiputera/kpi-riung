@@ -1,18 +1,16 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class M_employee extends CI_Model
+class M_rtc extends CI_Model
 {
     public function __construct()
     {
         parent::__construct();
     }
 
-    public function get_employee($value = null, $by = 'md5(id)', $many = true)
+    function get($where = '', $many = true)
     {
-        $where = '';
-        if ($value) $where = "AND $by = '$value'";
-        if ($value == 'IS NULL' || $value == 'IS NOT NULL') $where = 'AND ' . $by . ' ' . $value;
+
         $query = $this->db->query("
             WITH RECURSIVE matrix_point_resolve AS (
                 SELECT 
@@ -64,28 +62,14 @@ class M_employee extends CI_Model
                 ) ranked
                 WHERE rn = 1
             )
-
-            SELECT *, 
-                users.NRP NRP,
-                TIMESTAMPDIFF(YEAR, users.BirthDate, CURDATE()) AS age,
-                oalp.id oalp_id, oalp.name oalp_name, oalp.parent oalp_parent,
-                oal.id oal_id, oal.name oal_name,
-                oa.id oa_id, oa.name oa_name
-            FROM rml_sso_la.users
-            LEFT JOIN emp ON emp.NRP = users.NRP
-            LEFT JOIN org_area_lvl_pstn_user oalpu ON oalpu.NRP = users.NRP
-            LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = oalpu.area_lvl_pstn_id
+            SELECT * FROM rtc
+            LEFT JOIN org_area_lvl_pstn oalp ON oalp.id = rtc.oalp_id
             LEFT JOIN org_area_lvl oal ON oal.id = oalp.area_lvl_id
             LEFT JOIN org_area oa ON oa.id = oalp.area_id
             LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalp.id
-            WHERE users.NRP IS NOT NULL
             $where
         ");
-        if (($value && !$many) || $many == false) {
-            $query = $query->row_array();
-        } else {
-            $query = $query->result_array();
-        }
-        return $query;
+        if ($many == false) return $query->row_array();
+        return $query->result_array();
     }
 }

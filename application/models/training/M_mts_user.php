@@ -36,6 +36,18 @@ class M_mts_user extends CI_Model
         return $query;
     }
 
+    public function get_user_mts($where = '', $many = true)
+    {
+        $query = $this->db->query("
+            SELECT *
+            FROM trn_mts_user tmu
+            LEFT JOIN trn_mts tm ON tm.id = tmu.mts_id
+            $where
+        ");
+        if ($many == true) return $query->result_array();
+        return $query->row_array();
+    }
+
     public function add($mts_id)
     {
         $success = false;

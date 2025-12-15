@@ -79,7 +79,7 @@
                         foreach ($employees as $e): ?>
                             <tr>
                                 <td>
-                                    <a href="<?= base_url('talent/profile/' . md5($position['id']) . '/' . md5($e['NRP'])) ?>" target="_blank"
+                                    <a href="<?= base_url('talent/profile/' . md5($position['id']) . '/' . md5($e['NRP'])) ?>?method=<?= $method ?>" target="_blank"
                                         class="label label-primary"><i class="fa fa-eye"></i>
                                     </a>
                                 </td>

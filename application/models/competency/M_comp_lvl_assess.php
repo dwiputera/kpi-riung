@@ -24,37 +24,37 @@ class M_comp_lvl_assess extends CI_Model
         // 2) Query utama pakai HEREDOC (STRING, bukan backtick)
         $sql = <<<'SQL'
             WITH RECURSIVE matrix_point_resolve AS (
-            SELECT
-                oalp.id AS start_id, oalp.id AS current_id, oalp.parent, oalp.matrix_point,
-                oalp.name, oalp.type,
-                CASE WHEN oalp.type = 'matrix_point' THEN oalp.name ELSE NULL END AS matrix_point_name,
-                0 AS depth
-            FROM org_area_lvl_pstn oalp
-            UNION ALL
-            SELECT
-                m.start_id, o.id, o.parent, o.matrix_point, o.name, o.type,
-                CASE WHEN o.type = 'matrix_point' THEN o.name ELSE m.matrix_point_name END AS matrix_point_name,
-                m.depth + 1
-            FROM matrix_point_resolve m
-            JOIN org_area_lvl_pstn o
-                ON o.id = m.parent OR o.id = m.matrix_point
-            WHERE m.matrix_point_name IS NULL
-            ),
-            final_matrix_point AS (
-            SELECT start_id AS node_id, matrix_point_name
-            FROM (
                 SELECT
-                start_id,
-                matrix_point_name,
-                ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
-                FROM matrix_point_resolve
-                WHERE matrix_point_name IS NOT NULL
-            ) ranked
-            WHERE rn = 1
+                    oalp.id AS start_id, oalp.id AS current_id, oalp.parent, oalp.matrix_point,
+                    oalp.name, oalp.type,
+                    CASE WHEN oalp.type = 'matrix_point' THEN oalp.name ELSE NULL END AS matrix_point_name,
+                    0 AS depth
+                FROM org_area_lvl_pstn oalp
+                UNION ALL
+                SELECT
+                    m.start_id, o.id, o.parent, o.matrix_point, o.name, o.type,
+                    CASE WHEN o.type = 'matrix_point' THEN o.name ELSE m.matrix_point_name END AS matrix_point_name,
+                    m.depth + 1
+                FROM matrix_point_resolve m
+                JOIN org_area_lvl_pstn o
+                    ON o.id = m.parent OR o.id = m.matrix_point
+                WHERE m.matrix_point_name IS NULL
+            ),
+                final_matrix_point AS (
+                SELECT start_id AS node_id, matrix_point_name
+                FROM (
+                    SELECT
+                    start_id,
+                    matrix_point_name,
+                    ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
+                    FROM matrix_point_resolve
+                    WHERE matrix_point_name IS NOT NULL
+                ) ranked
+                WHERE rn = 1
             )
             SELECT
             e.NRP,
-            MAX(e.FullName)                      AS FullName,
+            MAX(e.FullName)                       AS FullName,
             cla.id                                AS comp_lvl_assess_id,
             MAX(cla.method_id)                    AS method_id,
             MAX(cla.tahun)                        AS tahun,
@@ -70,6 +70,7 @@ class M_comp_lvl_assess extends CI_Model
             MAX(oa.id)                            AS oa_id,
             MAX(oa.name)                          AS oa_name,
             MAX(fmp.matrix_point_name)            AS matrix_point_name,
+            assessment_insight_strength, assessment_insight_development, talent_insight,
 
             /* score: array JSON manual dari clas */
             CASE

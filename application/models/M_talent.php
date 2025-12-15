@@ -9,7 +9,7 @@ class M_talent extends CI_Model
         $this->db->query("SET SESSION sql_mode = REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', '')");
     }
 
-    public function get_candidate($position)
+    public function get_candidate($position, $method_id)
     {
         if ($position) {
             $this->load->model('competency/m_comp_position', 'm_c_pstn');
@@ -21,6 +21,7 @@ class M_talent extends CI_Model
 
             $this->load->model('m_hav');
             $this->load->model('organization/m_position');
+            $this->load->model('m_tour_of_duty', 'm_tod');
 
             $employees = $this->db->query("
                 WITH RECURSIVE matrix_point_resolve AS (
@@ -101,7 +102,7 @@ class M_talent extends CI_Model
                             ) AS rn,
                             method_id
                         FROM comp_lvl_assess cla 
-                        WHERE cla.method_id IN (1)
+                        WHERE cla.method_id IN ($method_id)
                         #AND cla.tahun <= 2024
                         GROUP BY cla.NRP, cla.tahun, cla.method_id
                     ) AS ranked
@@ -152,6 +153,9 @@ class M_talent extends CI_Model
 
             foreach ($employees as &$e) {
                 $e['correlation_matrix'] = $correlation_matrix[$e['mp_id']]['correlations'][$position['mp_id']];
+                $tour_of_duty = $this->m_tod->get_tod_with_mp("WHERE NRP = '$e[NRP]' ORDER BY date DESC");
+                $durations = $this->m_tod->calculate_duration_per_matrix_point($tour_of_duty);
+                $e['tour_of_duty'] = $this->get_score_tour_of_duty($durations);
             }
 
             $this->load->model('competency/M_comp_level_target', 'm_c_l_t');
@@ -159,7 +163,7 @@ class M_talent extends CI_Model
             $comp_lvl_target = array_filter($comp_lvl_target, fn($clt_i, $i_clt) => $clt_i['target'], ARRAY_FILTER_USE_BOTH);
 
             $employees = $this->m_hav->calculate_hav_status($employees);
-            $employees = $this->m_tal->calculate_candidate_scores($employees, $position, $comp_lvl_target);
+            $employees = $this->m_tal->calculate_candidate_scores($employees, $position, $comp_lvl_target, $method_id);
             $candidate_nrps = array_column($employees, 'NRP'); // ambil semua value kolom 'id'
             $positions = $this->m_position->get_area_lvl_pstn_user($candidate_nrps, 'u.NRP');
             $map = array_column($positions, null, 'NRP');
@@ -172,7 +176,7 @@ class M_talent extends CI_Model
         return [];
     }
 
-    function calculate_candidate_scores($employees, $position, $comp_lvl_target)
+    function calculate_candidate_scores($employees, $position, $comp_lvl_target, $method_id)
     {
         $this->load->model('competency/m_comp_position_score', 'm_c_p_s');
         $percentage = $this->get_percentage($position['oal_id']);
@@ -204,7 +208,7 @@ class M_talent extends CI_Model
             }
 
             $emp['job_fit_score'] = null;
-            $comp_lvl_assess = $this->db->get_where('comp_lvl_assess', array('NRP' => $emp['NRP'], 'method_id' => 1))->row_array();
+            $comp_lvl_assess = $this->db->get_where('comp_lvl_assess', array('NRP' => $emp['NRP'], 'method_id' => $method_id))->row_array();
             if ($comp_lvl_assess) {
                 $comp_lvl_assess_score = $this->db->get_where('comp_lvl_assess_score', array('comp_lvl_assess_id' => $comp_lvl_assess['id']))->result_array();
                 $comp_lvl_target_ids = array_column($comp_lvl_target, 'comp_lvl_id');
@@ -216,7 +220,7 @@ class M_talent extends CI_Model
             $emp['score_kompetensi_teknis'] = $this->get_score_kompetensi_teknis($emp['kompetensi_teknis']);
             $emp['score_job_fit_score'] = $this->get_score_job_fit_score($emp['job_fit_score']);
             $emp['score_avg_ipa_score'] = $this->get_score_avg_ipa_score($emp['avg_ipa_score']);
-            $emp['score_tour_of_duty'] = $this->get_score_tour_of_duty($emp['tour_of_duty']);
+            $emp['score_tour_of_duty'] = $emp['tour_of_duty'];
             $emp['score_culture_fit'] = $this->get_score_culture_fit($emp['culture_fit']);
             $emp['score_age'] = $this->get_score_age($emp['age']);
             $emp['score_health_status'] = $this->get_score_health_status($emp['hsu_status_id']);
@@ -296,8 +300,18 @@ class M_talent extends CI_Model
         return null;
     }
 
-    function get_score_tour_of_duty($tod)
+    function get_score_tour_of_duty($durations)
     {
+        if (!is_array($durations)) return null;
+        $core_function_ids = [8, 9, 45];
+        if (!$durations) return 0;
+        $tod_core = array_filter($durations, fn($dur_i) => in_array($dur_i['matrix_point_id'], $core_function_ids));
+        if (!$tod_core) return 1;
+        $tod_not_core = array_filter($durations, fn($dur_i) => !in_array($dur_i['matrix_point_id'], $core_function_ids));
+        if (!$tod_not_core) return 1;
+        $tod_not_core_year_more = array_filter($tod_not_core, fn($todnc_i) => $todnc_i['year_count'] >= 1);
+        if (count($tod_not_core_year_more) >= 4) return 5;
+        if (count($tod_not_core_year_more) >= 2) return 4;
         return null;
     }
 
@@ -323,10 +337,7 @@ class M_talent extends CI_Model
 
     function get_score_health_status($health_status)
     {
-        if ($health_status == 1) return 5;
-        if ($health_status == 2) return 3;
-        if ($health_status == 3) return 1;
-        return null;
+        return $health_status;
     }
 
     function get_score_kategori_hav_mapping($kategori_hav_mapping)

@@ -6,6 +6,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KPIHCLA | Riung Mitra Lestari</title>
     <?php $this->load->view('templates/styles.php'); ?>
+    <style>
+        /* Overlay full screen */
+        .overlay-loading {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+        }
+
+        /* Hidden using bootstrap d-none */
+        .overlay-loading.d-none {
+            display: none !important;
+        }
+
+        .overlay-loading-inner {
+            width: 780px;
+            /* LEBIH BESAR */
+            max-width: 95%;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 35px 45px;
+            border-radius: 1rem;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
+            text-align: left;
+        }
+
+        /* Title text */
+        .overlay-loading-text {
+            font-size: 1.15rem;
+            /* lebih besar */
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        /* Terminal box — BESAR BANGET */
+        .overlay-terminal {
+            background: #020617;
+            color: #cbd5e1;
+            border-radius: 0.75rem;
+            padding: 20px 24px;
+            max-height: 420px;
+            /* TINGGI BESAR */
+            min-height: 300px;
+            /* MINIMAL TETAP BESAR */
+            overflow-y: auto;
+            font-family: "Source Code Pro", monospace;
+            font-size: 0.95rem;
+            /* lebih besar */
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
+            white-space: pre-wrap;
+            line-height: 1.45rem;
+        }
+
+        /* Progress bar */
+        .progress {
+            height: 12px !important;
+            /* lebih besar */
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            transition: width 0.1s linear;
+        }
+    </style>
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
@@ -177,6 +246,161 @@
         </aside>
     </div>
     <!-- ./wrapper -->
+
+    <!-- Overlay Loading -->
+    <div id="overlay-loading" class="overlay-loading d-none">
+        <div class="overlay-loading-inner">
+
+            <div class="overlay-loading-text">
+                Loading KPIHCLA System... Please wait
+            </div>
+
+            <pre id="overlay-terminal" class="overlay-terminal">
+[BOOT] Starting KPIHCLA Loader v2.1
+        </pre>
+
+            <div class="progress">
+                <div id="overlay-progress-bar" class="progress-bar bg-info" role="progressbar"></div>
+            </div>
+        </div>
+    </div>
+
 </body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var params = new URLSearchParams(window.location.search);
+
+        if (params.get('overlay') === 'loading') {
+            var duration = parseInt(params.get('duration'), 10);
+            if (isNaN(duration) || duration <= 0) duration = 2000;
+
+            var $overlay = $('#overlay-loading');
+            var $bar = $('#overlay-progress-bar');
+            var $terminal = $('#overlay-terminal');
+
+            var steps = [
+                "[INFO] Initializing core modules...",
+                "[INFO] Checking user authentication...",
+                "[INFO] Session verified successfully.",
+                "[INFO] Loading Human Capital parameters...",
+                "[INFO] Fetching hierarchical access scheme...",
+                "[INFO] Reading KPI Master Structure...",
+                "[INFO] Syncing role permissions...",
+                "[INFO] Loading staff database...",
+                "[INFO] Calculating performance indicators...",
+                "[INFO] Merging KPI with daily operational data...",
+                "[INFO] Rendering KPI dashboard components...",
+                "[INFO] Applying RML design system...",
+                "[INFO] Checking unresolved tasks...",
+                "[INFO] Finalizing UI & preparing view...",
+                "[INFO] Loading job family competency maps...",
+                "[INFO] Syncing employee movement records...",
+                "[INFO] Preparing manpower analytics module...",
+                "[INFO] Validating organizational structure...",
+                "[INFO] Verifying matrix points configuration...",
+                "[INFO] Integrating training database...",
+                "[INFO] Resolving department hierarchy...",
+                "[INFO] Fetching site-level KPI references...",
+                "[INFO] Performing data normalization...",
+                "[INFO] Mapping KPI relationships...",
+                "[INFO] Indexing employee identifiers...",
+                "[INFO] Building strategic KPI alignment...",
+                "[INFO] Parsing historical KPI snapshots...",
+                "[INFO] Checking cross-functional dependencies...",
+                "[INFO] Syncing performance review datasets...",
+                "[INFO] Updating KPI scoring algorithm...",
+                "[INFO] Loading dashboard widgets...",
+                "[INFO] Loading plant & maintenance metrics...",
+                "[INFO] Running compliance checks...",
+                "[INFO] Validating user interface components...",
+                "[INFO] Initializing cache memory...",
+                "[INFO] Fetching chart rendering assets...",
+                "[INFO] Consolidating analytical layers...",
+                "[INFO] Loading advanced filtering engine...",
+                "[INFO] Compiling page layout structure...",
+                "[INFO] Preparing final data bindings...",
+                "[INFO] Applying responsive layout rules...",
+                "[INFO] Running interface stability tests...",
+                "[INFO] Registering system events...",
+                "[INFO] Compressing dashboard payload...",
+                "[INFO] Applying security hardening...",
+                "[INFO] Loading finishing assets...",
+                "[INFO] Optimizing rendering pipeline...",
+                "[INFO] Preparing environment for display...",
+                "[DONE] KPIHCLA Dashboard loaded successfully!"
+            ];
+
+            var lastStepIndex = -1;
+            var start = Date.now();
+
+            // Interval log terminal
+            var stepIntervalMs = Math.min(duration / steps.length, Math.random() * 2000);
+
+            function updateTerminal(stepIndex) {
+                // Jika sudah mencapai step terakhir → lanjut step berikutnya pakai stepIndex = 0, 1, 2, dst
+                if (stepIndex <= lastStepIndex && !(lastStepIndex === steps.length - 1 && stepIndex === 0)) {
+                    return;
+                }
+
+                lastStepIndex = stepIndex;
+
+                // ⬇️ ⬇️ TAMBAHKAN LOG BARU, BUKAN MENGGANTI LIST
+                var currentText = $terminal.text().trim();
+                var newLine = steps[stepIndex];
+                var logs = currentText + "\n" + newLine;
+
+                $terminal.text(logs);
+
+                var el = $terminal.get(0);
+                el.scrollTop = el.scrollHeight;
+            }
+
+            $overlay.removeClass('d-none').hide().fadeIn(200);
+
+            function animateProgress() {
+                var now = Date.now();
+                var elapsed = now - start;
+                var progress = Math.min(1, elapsed / duration);
+                var percent = Math.round(progress * 100);
+
+                // Progress bar tetap ngikut duration besar
+                $bar.css('width', percent + '%');
+
+                // ✅ STEP BERULANG: begitu mentok terakhir, balik lagi ke 0
+                var totalSteps = steps.length;
+                var stepByTime = Math.floor(elapsed / stepIntervalMs);
+                var stepIndex = stepByTime % steps.length; // looping
+
+                updateTerminal(stepIndex);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateProgress);
+                } else {
+                    setTimeout(function() {
+                        $overlay.fadeOut(300, function() {
+                            $bar.css('width', '0%');
+                            $overlay.addClass('d-none');
+                            $terminal.text('[BOOT] Starting KPIHCLA Loader v2.1');
+                            lastStepIndex = -1; // reset buat next overlay
+                        });
+
+                        if (window.history.replaceState) {
+                            params.delete('overlay');
+                            params.delete('duration');
+                            var newQuery = params.toString();
+                            var newUrl = window.location.pathname +
+                                (newQuery ? '?' + newQuery : '') +
+                                window.location.hash;
+                            window.history.replaceState(null, '', newUrl);
+                        }
+                    }, 250);
+                }
+            }
+
+            requestAnimationFrame(animateProgress);
+        }
+    });
+</script>
 
 </html>

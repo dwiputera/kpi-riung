@@ -161,7 +161,7 @@
                 <?php endforeach; ?>
             ];
 
-            const node = table.row.add(rowArray).draw(false).node();
+            const node = table.row.add(rowArray).node();
             $(node).attr('data-id', newId).addClass('table-success');
 
             // Set contenteditable untuk kolom-kolom tertentu (pakai index td)

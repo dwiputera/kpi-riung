@@ -36,6 +36,18 @@ class M_atmp_user extends CI_Model
         return $query;
     }
 
+    public function get_user_atmp($where = '', $many = true)
+    {
+        $query = $this->db->query("
+            SELECT *
+            FROM trn_atmp_user tau
+            LEFT JOIN trn_atmp ta ON ta.id = tau.atmp_id
+            $where
+        ");
+        if ($many == true) return $query->result_array();
+        return $query->row_array();
+    }
+
     public function add($atmp_id)
     {
         $success = false;

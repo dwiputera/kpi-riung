@@ -545,7 +545,7 @@ foreach ($years as $y) {
             return '#dc3545';
         }
 
-        new Chart(ctxIPA, {
+        const ipaChart = new Chart(ctxIPA, {
             type: 'bar',
             data: {
                 labels: labelsIPA,
@@ -567,15 +567,19 @@ foreach ($years as $y) {
                     display: false
                 },
 
+                // ✅ MATIKAN SEMUA EVENT (hover gak akan trigger redraw)
+                events: [],
+
                 tooltips: {
-                    displayColors: false,
-                    callbacks: {
-                        label: function(ctx) {
-                            var val = ctx.yLabel;
-                            if (val == null) return 'No data';
-                            return 'IPA: ' + val;
-                        }
-                    }
+                    enabled: false
+                },
+                hover: {
+                    mode: null
+                },
+
+                // (optional) biar gak animasi saat load
+                animation: {
+                    duration: 0
                 },
 
                 scales: {
@@ -600,7 +604,44 @@ foreach ($years as $y) {
                         }
                     }]
                 }
-            }
+            },
+
+            // ✅ Label digambar SETIAP chart render, jadi gak hilang saat redraw
+            plugins: [{
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const dataset = chart.data.datasets[0];
+                    const meta = chart.getDatasetMeta(0);
+                    const chartAreaTop = chart.chartArea.top;
+
+                    ctx.save();
+                    ctx.font = 'bold 16px Calibri, Arial, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+
+                    dataset.data.forEach(function(value, index) {
+                        if (value == null) return;
+
+                        const bar = meta.data[index];
+                        const x = bar._model.x;
+
+                        // default: di atas bar
+                        let y = bar._model.y - 4;
+
+                        // ✅ anti kepotong saat value mentok atas (mis. 100)
+                        y = Math.max(y, chartAreaTop + 18);
+
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+                        ctx.strokeText(value, x, y);
+
+                        ctx.fillStyle = '#111';
+                        ctx.fillText(value, x, y);
+                    });
+
+                    ctx.restore();
+                }
+            }]
         });
 
         // Legend kustom rentang nilai

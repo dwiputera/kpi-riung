@@ -397,4 +397,15 @@ class M_position extends CI_Model
 
         return $this->db->query($query)->result_array();
     }
+
+    public function get_matrix_point($where = '', $many = true)
+    {
+        $query = $this->db->query("
+            SELECT * FROM org_area_lvl_pstn oalp
+            WHERE type = 'matrix_point'
+            $where
+        ");
+        if ($many == false) return $query->row_array();
+        return $query->result_array();
+    }
 }

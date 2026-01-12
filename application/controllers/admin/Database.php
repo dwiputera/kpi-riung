@@ -124,7 +124,9 @@ class Database extends MY_Controller
 
             $createData = [];
             foreach ($creates as $row) {
-                if (isset($row['id']) && strpos($row['id'], 'new_') === 0) {
+                // jika id tidak ada / kosong / bukan numeric / diawali new_
+                $isNew = !isset($row['id']) || $row['id'] === '' || $row['id'] === null || (is_string($row['id']) && strpos($row['id'], 'new_') === 0) || !is_numeric($row['id']);
+                if ($isNew) {
                     unset($row['id']);
                     $createData[] = $row;
                 }

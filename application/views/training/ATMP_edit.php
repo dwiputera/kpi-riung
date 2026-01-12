@@ -226,13 +226,13 @@ $months = [
                             </button>
                         </div>
                         <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-danger" onclick="deleteSelectedRows()">
+                            <button type="button" class="w-100 btn btn-danger" id="btn-delete-selected">
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
                         <div class="col-lg-3 d-flex">
                             <input type="number" class="form-control w-50" id="row_number_add" name="row_number_add" value="1">
-                            <button type="button" class="w-50 btn btn-success" onclick="createRow()">
+                            <button type="button" class="w-50 btn btn-success" id="btn-new-row">
                                 <i class="fas fa-plus"></i> New
                             </button>
                         </div>
@@ -314,263 +314,185 @@ $months = [
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 
 <script>
-    let deletedRows = [];
+    window.IS_ADVANCED = <?= $advanced ? 'true' : 'false' ?>;
 
-    $(document).ready(function() {
-        setupFilterableDatatable($('.datatable-filter-column'));
-
-        // Select all
-        $('#select-all').on('click', function() {
-            $('.row-checkbox').prop('checked', this.checked);
-        });
-
-        // Submit handler
-        $('#data-form').on('submit', function() {
-            let allRows = collectTableData();
-            let payload = {
-                updates: allRows.filter(r => !String(r.id).startsWith('new_') && !deletedRows.includes(r.id)),
-                deletes: deletedRows,
-                creates: allRows.filter(r => String(r.id).startsWith('new_') && !deletedRows.includes(r.id))
-            };
-            $('#json_data').val(JSON.stringify(payload));
-        });
-    });
-
+    // Cancel tetap seperti sebelumnya
     function cancelForm() {
         if (confirm('Yakin batal?')) {
             location.href = '<?= base_url('training/ATMP/' . ($year ? '?year=' . $year : '')) ?>';
         }
     }
 
-    function markRowDeleted(btn) {
-        let row = $(btn).closest('tr');
-        let id = row.data('id');
-        let checkbox = row.find('.row-checkbox');
+    // Options untuk select (month & departemen_pengampu) diproduksi dari PHP (mode non-advanced)
+    window.OPT_MONTHS = [{
+            value: "",
+            label: ""
+        },
+        <?php foreach ($months as $k => $v) : ?> {
+                value: "<?= $k ?>",
+                label: "<?= addslashes($v) ?>"
+            },
+        <?php endforeach; ?>
+    ];
 
-        if (deletedRows.includes(id)) {
-            // ✅ Restore if already marked deleted
-            deletedRows = deletedRows.filter(x => x !== id);
-            row.removeClass('table-danger').css('opacity', '1');
-            checkbox.prop('checked', false); // uncheck when restored
-        } else {
-            // ✅ Mark as deleted
-            deletedRows.push(id);
-            row.addClass('table-danger').css('opacity', '0.7');
-            checkbox.prop('checked', true); // auto-check when deleted
+    window.OPT_DEPARTEMEN_PENGAMPU = [{
+            value: "",
+            label: ""
+        },
+        <?php foreach ($matrix_points as $mp) : ?> {
+                value: "<?= $mp['id'] ?>",
+                label: "<?= addslashes($mp['name']) ?>"
+            },
+        <?php endforeach; ?>
+    ];
+
+    const E = (arr) => arr.map(name => ({
+        name,
+        type: 'editable'
+    }));
+    const N = (arr, step = 1) => arr.map(name => ({
+        name,
+        type: 'number',
+        step
+    }));
+    const D = (arr) => arr.map(name => ({
+        name,
+        type: 'date'
+    }));
+
+    const NON_ADV_COLUMNS = [
+        // 1️⃣ MONTH
+        {
+            name: 'month',
+            type: 'select',
+            options: () => window.OPT_MONTHS
+        },
+
+        // 2️⃣ DEPARTEMEN
+        {
+            name: 'departemen_pengampu',
+            type: 'select',
+            options: () => window.OPT_DEPARTEMEN_PENGAMPU
+        },
+
+        // 3️⃣ NAMA PROGRAM
+        {
+            name: 'nama_program',
+            type: 'editable'
+        },
+
+        // 4️⃣ BATCH  ✅ PINDAHKAN KE SINI
+        {
+            name: 'batch',
+            type: 'number',
+            step: 1
+        },
+
+        // 5️⃣ TEKS LANJUTAN
+        ...E([
+            'jenis_kompetensi',
+            'sasaran_kompetensi',
+            'level_kompetensi',
+            'target_peserta',
+            'staff_nonstaff',
+            'kategori_program',
+            'fasilitator',
+            'nama_penyelenggara_fasilitator',
+            'tempat',
+            'online_offline'
+        ]),
+
+        // 6️⃣ DATE
+        ...D(['start_date', 'end_date']),
+
+        // 7️⃣ NUMBER
+        ...N([
+            'days',
+            'rmho', 'rmip', 'rebh', 'rmtu', 'rmts', 'rmgm', 'rhml',
+            'total_jobsite', 'total_participants',
+            'biaya_pelatihan_per_orang', 'biaya_pelatihan',
+            'training_kit_per_orang', 'training_kit',
+            'biaya_penginapan_per_orang', 'biaya_penginapan',
+            'meeting_package_per_orang', 'meeting_package',
+            'makan_per_orang', 'makan',
+            'snack_per_orang', 'snack',
+            'tiket_per_orang', 'tiket',
+            'grand_total'
+        ]),
+
+        // 8️⃣ DECIMAL
+        ...N(['hours', 'total_hours', 'grand_total_hours'], 0.01),
+
+        // 9️⃣ TERAKHIR
+        {
+            name: 'nama_hotel',
+            type: 'editable'
+        },
+        {
+            name: 'keterangan',
+            type: 'editable'
         }
-    }
+    ];
 
-    function deleteSelectedRows() {
-        let table = $('#datatable').DataTable();
+    const ADV_COLUMNS = [
+        'month', 'departemen_pengampu', 'nama_program', 'batch',
+        'jenis_kompetensi', 'sasaran_kompetensi', 'level_kompetensi',
+        'target_peserta', 'staff_nonstaff', 'kategori_program',
+        'fasilitator', 'nama_penyelenggara_fasilitator', 'tempat',
+        'online_offline', 'start_date', 'end_date', 'days', 'hours',
+        'total_hours', 'rmho', 'rmip', 'rebh', 'rmtu', 'rmts', 'rmgm', 'rhml',
+        'total_jobsite', 'total_participants', 'grand_total_hours',
+        'biaya_pelatihan_per_orang', 'biaya_pelatihan',
+        'training_kit_per_orang', 'training_kit', 'nama_hotel',
+        'biaya_penginapan_per_orang', 'biaya_penginapan',
+        'meeting_package_per_orang', 'meeting_package',
+        'makan_per_orang', 'makan', 'snack_per_orang', 'snack',
+        'tiket_per_orang', 'tiket', 'grand_total', 'keterangan'
+    ].map(name => ({
+        name,
+        type: 'editable'
+    }));
 
-        // Loop melalui semua baris di DataTable, termasuk yang ada di halaman lain
-        table.rows().every(function() {
-            let row = $(this.node());
-            let id = row.data('id');
-            let isChecked = row.find('.row-checkbox').prop('checked');
+    const columns = window.IS_ADVANCED ? ADV_COLUMNS : NON_ADV_COLUMNS;
 
-            if (isChecked) {
-                // Tandai baris yang dipilih untuk dihapus
-                if (!deletedRows.includes(id)) {
-                    deletedRows.push(id);
-                }
-                row.addClass('table-danger').css('opacity', '0.7');
-            } else {
-                // Jika baris tidak dipilih, pastikan untuk menghapus status 'deleted'
-                if (deletedRows.includes(id)) {
-                    deletedRows = deletedRows.filter(x => x !== id);
-                    row.removeClass('table-danger').css('opacity', '1');
-                }
-            }
-        });
+    // ====== CONFIG CRUD (columns-driven) ======
+    window.DT_CRUD_CONFIG = {
+        tableSelector: '#datatable',
+        formSelector: '#data-form',
+        jsonFieldSelector: '#json_data',
 
-        // Pastikan DataTable diupdate setelah penghapusan
-        table.draw(false); // Redraw the table to ensure changes are applied across pages
-    }
+        btnNewSelector: '#btn-new-row',
+        btnDeleteSelectedSelector: '#btn-delete-selected',
+        rowAddCountSelector: '#row_number_add',
+        selectAllSelector: '#select-all',
+        rowCheckboxSelector: '.row-checkbox',
 
-    // Create a new row dynamically
-    function createRow() {
-        showOverlayFull();
-        const table = $('#datatable').DataTable();
-        const newId = 'new_' + Date.now();
-        const row_number_add = $('#row_number_add').val();
-
-        // Construct the new row
-        let row = `<tr data-id="${newId}" class="table-success">
+        rowPrefixHtml: () => `
             <td><input type="checkbox" class="row-checkbox"></td>
             <td>New</td>
-            <?php if (!$advanced) : ?>
-                <td>
-                    <select data-name="month">
-                        <option value=""></option>
-                        <?php foreach ($months as $i_m => $m_i) : ?>
-                            <option value="<?= $i_m ?>"><?= $m_i ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </td>
-                <td>
-                    <select data-name="departemen_pengampu">
-                        <option value=""></option>
-                        <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
-                            <option value="<?= $mp_i['id'] ?>"><?= $mp_i['name'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </td>
-                <td contenteditable="true" data-name="nama_program"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
-                <td contenteditable="true" data-name="jenis_kompetensi"></td>
-                <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-                <td contenteditable="true" data-name="level_kompetensi"></td>
-                <td contenteditable="true" data-name="target_peserta"></td>
-                <td contenteditable="true" data-name="staff_nonstaff"></td>
-                <td contenteditable="true" data-name="kategori_program"></td>
-                <td contenteditable="true" data-name="fasilitator"></td>
-                <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
-                <td contenteditable="true" data-name="tempat"></td>
-                <td contenteditable="true" data-name="online_offline"></td>
-                <td><input type="date" class="form-control form-control-sm" data-name="start_date"></td>
-                <td><input type="date" class="form-control form-control-sm" data-name="end_date"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="days"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="hours"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="total_hours"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmho"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmip"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rebh"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmtu"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmts"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rmgm"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="rhml"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="total_jobsite"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="total_participants"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="grand_total_hours"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="training_kit_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" data-name="training_kit"></td>
-                <td contenteditable="true" data-name="nama_hotel"></td>
-                <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan_per_orang"  data-name="biaya_penginapan_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan"  data-name="biaya_penginapan"></td>
-                <td><input type="number" class="form-control form-control-sm" name="meeting_package_per_orang"  data-name="meeting_package_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="meeting_package"  data-name="meeting_package"></td>
-                <td><input type="number" class="form-control form-control-sm" name="makan_per_orang"  data-name="makan_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="makan"  data-name="makan"></td>
-                <td><input type="number" class="form-control form-control-sm" name="snack_per_orang"  data-name="snack_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="snack"  data-name="snack"></td>
-                <td><input type="number" class="form-control form-control-sm" name="tiket_per_orang"  data-name="tiket_per_orang"></td>
-                <td><input type="number" class="form-control form-control-sm" name="tiket"  data-name="tiket"></td>
-                <td><input type="number" class="form-control form-control-sm" name="grand_total"  data-name="grand_total"></td>
-                <td contenteditable="true" data-name="keterangan"></td>
-            <?php else : ?>
-                <td contenteditable="true" data-name="month"></td>
-                <td contenteditable="true" data-name="departemen_pengampu"></td>
-                <td contenteditable="true" data-name="nama_program"></td>
-                <td contenteditable="true" data-name="batch"></td>
-                <td contenteditable="true" data-name="jenis_kompetensi"></td>
-                <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-                <td contenteditable="true" data-name="level_kompetensi"></td>
-                <td contenteditable="true" data-name="target_peserta"></td>
-                <td contenteditable="true" data-name="staff_nonstaff"></td>
-                <td contenteditable="true" data-name="kategori_program"></td>
-                <td contenteditable="true" data-name="fasilitator"></td>
-                <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
-                <td contenteditable="true" data-name="tempat"></td>
-                <td contenteditable="true" data-name="online_offline"></td>
-                <td contenteditable="true" data-name="start_date"></td>
-                <td contenteditable="true" data-name="end_date"></td>
-                <td contenteditable="true" data-name="days"></td>
-                <td contenteditable="true" data-name="hours"></td>
-                <td contenteditable="true" data-name="total_hours"></td>
-                <td contenteditable="true" data-name="rmho"></td>
-                <td contenteditable="true" data-name="rmip"></td>
-                <td contenteditable="true" data-name="rebh"></td>
-                <td contenteditable="true" data-name="rmtu"></td>
-                <td contenteditable="true" data-name="rmts"></td>
-                <td contenteditable="true" data-name="rmgm"></td>
-                <td contenteditable="true" data-name="rhml"></td>
-                <td contenteditable="true" data-name="total_jobsite"></td>
-                <td contenteditable="true" data-name="total_participants"></td>
-                <td contenteditable="true" data-name="grand_total_hours"></td>
-                <td contenteditable="true" data-name="biaya_pelatihan_per_orang"></td>
-                <td contenteditable="true" data-name="biaya_pelatihan"></td>
-                <td contenteditable="true" data-name="training_kit_per_orang"></td>
-                <td contenteditable="true" data-name="training_kit"></td>
-                <td contenteditable="true" data-name="nama_hotel"></td>
-                <td contenteditable="true" data-name="biaya_penginapan_per_orang"></td>
-                <td contenteditable="true" data-name="biaya_penginapan"></td>
-                <td contenteditable="true" data-name="meeting_package_per_orang"></td>
-                <td contenteditable="true" data-name="meeting_package"></td>
-                <td contenteditable="true" data-name="makan_per_orang"></td>
-                <td contenteditable="true" data-name="makan"></td>
-                <td contenteditable="true" data-name="snack_per_orang"></td>
-                <td contenteditable="true" data-name="snack"></td>
-                <td contenteditable="true" data-name="tiket_per_orang"></td>
-                <td contenteditable="true" data-name="tiket"></td>
-                <td contenteditable="true" data-name="grand_total"></td>
-                <td contenteditable="true" data-name="keterangan"></td>
-            <?php endif; ?>
-            
-        </tr>`;
+        `,
 
-        for (let index = 0; index < row_number_add; index++) {
-            // Add the row to the table using DataTables API
-            const node = table.row.add($(row)).draw(false).node();
+        deletedRowClass: 'table-danger',
+        deletedOpacity: 0.7,
+        newRowClass: 'table-success',
 
-            // Set the custom data-id attribute and class after row is added
-            $(node).attr('data-id', newId).addClass('table-success');
-        }
+        // ✅ INI WAJIB
+        columns: columns,
 
-        // Ensure columns are adjusted after the new row is added
-        table.columns.adjust().draw(false);
-
-        // First, go to the last page
-        table.page('last').draw('page');
-        hideOverlayFull();
-    }
-
-    // Collect table data (existing + new)
-    function collectTableData() {
-        let data = [];
-        let table = $('#datatable').DataTable();
-
-        // Existing DataTable rows
-        table.rows().every(function() {
-            data.push(collectRow($(this.node())));
-        });
-
-        // Newly appended rows
-        $('#datatable tbody tr').each(function() {
-            let id = $(this).data('id');
-            if (!data.find(r => r.id === id)) data.push(collectRow($(this)));
-        });
-
-        return data;
-    }
-
-
-    // Extract data from a row
-    function collectRow(row) {
-        let id = row.data('id');
-        let rowData = {
-            id: id
-        };
-
-        // Loop through all td elements that are contenteditable, input, or select
-        row.find('td[contenteditable], input, select').each(function() {
-            let name = $(this).data('name');
-            if (name) {
-                if ($(this).is('input')) {
-                    // Handle input elements
-                    rowData[name] = $(this).val();
-                } else if ($(this).is('select')) {
-                    // Handle select elements
-                    rowData[name] = $(this).val();
-                } else {
-                    // Handle contenteditable cells
-                    rowData[name] = $(this).text();
+        onAfterRowAdded: ($row) => {
+            $row.find('.select2').each(function() {
+                if (window.FuzzySelect2 && typeof window.FuzzySelect2.apply === 'function') {
+                    window.FuzzySelect2.apply($(this));
                 }
-            }
-        });
+            });
+        }
+    };
 
-        return rowData;
-    }
+    $(function() {
+        // init DataTables + filter column (fungsi existing)
+        setupFilterableDatatable($('.datatable-filter-column'));
+
+        // init CRUD engine baru
+        setupDatatableCrud($('#datatable'), window.DT_CRUD_CONFIG);
+    });
 </script>

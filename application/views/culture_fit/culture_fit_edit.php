@@ -17,7 +17,6 @@
             <div class="card-header">
                 <h3 class="card-title">Year Change</h3>
             </div>
-            <!-- /.card-header -->
             <!-- form start -->
             <form action="<?= base_url() ?>culture_fit/edit" method="get">
                 <div class="card-body">
@@ -48,9 +47,10 @@
             <div class="card-header">
                 <h3 class="card-title">Behavior Questionnaire</h3>
             </div>
+
             <form action="<?= base_url() ?>culture_fit/submit?year=<?= $year ?>" method="post" id="data-form">
                 <input type="hidden" name="json_data" id="json_data">
-                <!-- /.card-header -->
+
                 <div class="card-body">
                     <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
                         <thead>
@@ -83,30 +83,34 @@
                                 <tr data-id="<?= $cf_i['id'] ?>">
                                     <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i++ ?></td>
+
+                                    <!-- display-only columns (tetap dipertahankan) -->
                                     <td><?= $cf_i['NRP'] ?></td>
                                     <td><?= $cf_i['FullName'] ?></td>
                                     <td><?= $cf_i['matrix_point_name'] ?></td>
                                     <td><?= $cf_i['oa_name'] ?></td>
                                     <td><?= $cf_i['oal_name'] ?></td>
                                     <td><?= $cf_i['oalp_name'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="performance_review_reference"><?= $cf_i['performance_review_reference'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="employee_id"><?= $cf_i['employee_id'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="employee"><?= $cf_i['employee'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="NRP"><?= $cf_i['NRP'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="level"><?= $cf_i['level'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="jabatan"><?= $cf_i['jabatan'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="layer"><?= $cf_i['layer'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="manager"><?= $cf_i['manager'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="NRP_manager"><?= $cf_i['NRP_manager'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="division"><?= $cf_i['division'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="work_location"><?= $cf_i['work_location'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $cf_i['id'] ?>" data-column="nilai_behaviour"><?= $cf_i['nilai_behaviour'] ?></td>
+
+                                    <!-- editable columns: ganti data-column -> data-name -->
+                                    <td contenteditable="true" data-name="performance_review_reference"><?= $cf_i['performance_review_reference'] ?></td>
+                                    <td contenteditable="true" data-name="employee_id"><?= $cf_i['employee_id'] ?></td>
+                                    <td contenteditable="true" data-name="employee"><?= $cf_i['employee'] ?></td>
+                                    <td contenteditable="true" data-name="NRP"><?= $cf_i['NRP'] ?></td>
+                                    <td contenteditable="true" data-name="level"><?= $cf_i['level'] ?></td>
+                                    <td contenteditable="true" data-name="jabatan"><?= $cf_i['jabatan'] ?></td>
+                                    <td contenteditable="true" data-name="layer"><?= $cf_i['layer'] ?></td>
+                                    <td contenteditable="true" data-name="manager"><?= $cf_i['manager'] ?></td>
+                                    <td contenteditable="true" data-name="NRP_manager"><?= $cf_i['NRP_manager'] ?></td>
+                                    <td contenteditable="true" data-name="division"><?= $cf_i['division'] ?></td>
+                                    <td contenteditable="true" data-name="work_location"><?= $cf_i['work_location'] ?></td>
+                                    <td contenteditable="true" data-name="nilai_behaviour"><?= $cf_i['nilai_behaviour'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-                <!-- /.card-body -->
+
                 <div class="card-footer">
                     <div class="row">
                         <div class="col-lg-3">
@@ -115,13 +119,13 @@
                             </button>
                         </div>
                         <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-danger" onclick="deleteSelectedRows()">
+                            <button type="button" class="w-100 btn btn-danger" id="btn-delete-selected">
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
                         <div class="col-lg-3 d-flex">
                             <input type="number" class="form-control w-50" id="row_number_add" name="row_number_add" value="1">
-                            <button type="button" class="w-50 btn btn-success" onclick="createRow()">
+                            <button type="button" class="w-50 btn btn-success" id="btn-new-row">
                                 <i class="fas fa-plus"></i> New
                             </button>
                         </div>
@@ -143,9 +147,9 @@
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 
 <script>
-    //Date picker
+    // Date picker
     $('#year').datetimepicker({
-        format: 'YYYY', // Only year
+        format: 'YYYY',
         viewMode: 'years',
     });
 
@@ -154,176 +158,107 @@
         $(this).find('input').closest('form').submit();
     });
 
-    let deletedRows = [];
-
-    $(function() {
-        setupFilterableDatatable($('.datatable-filter-column'));
-
-        $('#select-all').on('click', function() {
-            $('.row-checkbox').prop('checked', this.checked);
-        });
-
-        $('#data-form').on('submit', function() {
-            let allRows = collectTableData();
-            let payload = {
-                year: <?= $year ?>,
-                updates: allRows.filter(r => !String(r.id).startsWith('new_')),
-                deletes: deletedRows,
-                creates: allRows.filter(r => String(r.id).startsWith('new_'))
-            };
-            $('#json_data').val(JSON.stringify(payload));
-        });
-    });
-
     function cancelForm() {
         if (confirm('Yakin batal?')) {
             location.href = '<?= base_url('culture_fit' . ($year ? '?year=' . $year : '')) ?>';
         }
     }
 
-    function markRowDeleted(btn) {
-        let row = $(btn).closest('tr');
-        let id = row.data('id');
-        let checkbox = row.find('.row-checkbox');
+    // ===== CRUD CONFIG (datatable-filter-column.js) =====
+    // table punya 2 kolom fixed di depan: checkbox + NO
+    // engine hanya membangun cell untuk "kolom data" setelah prefix.
+    // Di halaman ini, kita hanya CRUD-kan kolom editable (mulai PERF REVIEW REF sampai NILAI BEHAVIOUR).
+    // Kolom display-only tidak diikutkan ke payload karena tidak ada data-name input/td untuk dibaca.
 
-        if (deletedRows.includes(id)) {
-            // ✅ Restore if already marked deleted
-            deletedRows = deletedRows.filter(x => x !== id);
-            row.removeClass('table-danger').css('opacity', '1');
-            checkbox.prop('checked', false); // uncheck when restored
-        } else {
-            // ✅ Mark as deleted
-            deletedRows.push(id);
-            row.addClass('table-danger').css('opacity', '0.7');
-            checkbox.prop('checked', true); // auto-check when deleted
+    window.DT_CRUD_CONFIG = {
+        tableSelector: '#datatable',
+        formSelector: '#data-form',
+        jsonFieldSelector: '#json_data',
+
+        btnNewSelector: '#btn-new-row',
+        btnDeleteSelectedSelector: '#btn-delete-selected',
+        rowAddCountSelector: '#row_number_add',
+        selectAllSelector: '#select-all',
+        rowCheckboxSelector: '.row-checkbox',
+
+        rowPrefixHtml: () => `
+            <td><input type="checkbox" class="row-checkbox"></td>
+            <td>New</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        `,
+
+        deletedRowClass: 'table-danger',
+        deletedOpacity: 0.7,
+        newRowClass: 'table-success',
+
+        // ✅ urutan harus sama dengan kolom editable yang ada di thead setelah 8 kolom pertama
+        columns: [{
+                name: 'performance_review_reference',
+                type: 'editable'
+            },
+            {
+                name: 'employee_id',
+                type: 'editable'
+            },
+            {
+                name: 'employee',
+                type: 'editable'
+            },
+            {
+                name: 'NRP',
+                type: 'editable'
+            },
+            {
+                name: 'level',
+                type: 'editable'
+            },
+            {
+                name: 'jabatan',
+                type: 'editable'
+            },
+            {
+                name: 'layer',
+                type: 'editable'
+            },
+            {
+                name: 'manager',
+                type: 'editable'
+            },
+            {
+                name: 'NRP_manager',
+                type: 'editable'
+            },
+            {
+                name: 'division',
+                type: 'editable'
+            },
+            {
+                name: 'work_location',
+                type: 'editable'
+            },
+            {
+                name: 'nilai_behaviour',
+                type: 'editable'
+            }
+        ],
+
+        // Inject year (biar sama kayak payload lama)
+        beforeSubmit: (payload) => {
+            payload.year = <?= (int)$year ?>;
+            return payload;
         }
-    }
+    };
 
-    function deleteSelectedRows() {
-        let table = $('#datatable').DataTable();
+    $(function() {
+        // init DataTables + filter column
+        setupFilterableDatatable($('.datatable-filter-column'));
 
-        // Loop melalui semua baris di DataTable, termasuk yang ada di halaman lain
-        table.rows().every(function() {
-            let row = $(this.node());
-            let id = row.data('id');
-            let isChecked = row.find('.row-checkbox').prop('checked');
-
-            if (isChecked) {
-                // Tandai baris yang dipilih untuk dihapus
-                if (!deletedRows.includes(id)) {
-                    deletedRows.push(id);
-                }
-                row.addClass('table-danger').css('opacity', '0.7');
-            } else {
-                // Jika baris tidak dipilih, pastikan untuk menghapus status 'deleted'
-                if (deletedRows.includes(id)) {
-                    deletedRows = deletedRows.filter(x => x !== id);
-                    row.removeClass('table-danger').css('opacity', '1');
-                }
-            }
-        });
-
-        // Pastikan DataTable diupdate setelah penghapusan
-        table.draw(false); // Redraw the table to ensure changes are applied across pages
-    }
-
-    // Create a new row dynamically
-    function createRow() {
-        showOverlayFull();
-        const table = $('#datatable').DataTable();
-        const newId = 'new_' + Date.now();
-        const row_number_add = $('#row_number_add').val();
-
-        // Construct the new row
-        for (let index = 0; index < row_number_add; index++) {
-            const rowArray = [
-                '<input type="checkbox" class="row-checkbox">', // kol-1
-                'New', // kol-2
-                '', '', '', '', '', '', // kol-3..7
-                '', // performance_review_reference (kol-8)
-                '', // employee_id
-                '', // employee
-                '', // NRP
-                '', // level
-                '', // jabatan
-                '', // layer
-                '', // manager
-                '', // NRP_manager
-                '', // division
-                '', // work_location
-                '' // nilai_behaviour (kol terakhir)
-            ];
-
-            const node = table.row.add(rowArray).draw(false).node();
-            $(node).attr('data-id', newId).addClass('table-success');
-
-            // Set contenteditable untuk kolom-kolom tertentu (pakai index td)
-            const editableIdx = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]; // sesuaikan
-            $(node).find('td').each(function(i) {
-                if (editableIdx.includes(i)) {
-                    const map = {
-                        8: 'performance_review_reference',
-                        9: 'employee_id',
-                        10: 'employee',
-                        11: 'NRP',
-                        12: 'level',
-                        13: 'jabatan',
-                        14: 'layer',
-                        15: 'manager',
-                        16: 'NRP_manager',
-                        17: 'division',
-                        18: 'work_location',
-                        19: 'nilai_behaviour'
-                    };
-                    $(this).attr('contenteditable', 'true').attr('data-column', map[i] || '');
-                }
-            });
-        }
-
-        table.columns.adjust().draw(false);
-
-        // First, go to the last page
-        table.page('last').draw('page');
-        hideOverlayFull();
-    }
-
-    function collectTableData() {
-        let data = [];
-        let table = $('#datatable').DataTable();
-
-        table.rows().every(function() {
-            let row = $(this.node());
-            data.push(collectRow(row));
-        });
-
-        $('#datatable tbody tr').each(function() {
-            let row = $(this);
-            let id = row.data('id');
-            if (!data.find(r => r.id === id)) {
-                data.push(collectRow(row));
-            }
-        });
-
-        return data;
-    }
-
-    function collectRow(row) {
-        let id = row.data('id');
-        let rowData = {
-            id: id
-        };
-
-        row.find('td[contenteditable], input, select').each(function() {
-            let column = $(this).data('column');
-            if (column) {
-                if ($(this).is('input') || $(this).is('select')) {
-                    rowData[column] = $(this).val();
-                } else {
-                    rowData[column] = $(this).text();
-                }
-            }
-        });
-
-        return rowData;
-    }
+        // init CRUD engine
+        setupDatatableCrud($('#datatable'), window.DT_CRUD_CONFIG);
+    });
 </script>

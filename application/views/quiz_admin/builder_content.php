@@ -13,7 +13,7 @@
                             </h4>
                             <div class="d-flex align-items-center">
                                 <div class="mr-2">
-                                    <span class="badge badge-success">PIN: <?= $quiz['pin'] ? htmlspecialchars($quiz['pin']) : '-' ?></span>
+                                    <span class="badge badge-success">PIN: <?= $quiz['pin'] ? htmlspecialchars($quiz['pin'], ENT_QUOTES, 'UTF-8') : '-' ?></span>
                                 </div>
                                 <input type="text"
                                     id="quizTitle"
@@ -44,7 +44,7 @@
                                         <th style="width:46px">
                                             <input type="checkbox" id="select-all">
                                         </th>
-                                        <th style="width:70px">ID</th>
+                                        <th style="width:70px">No.</th>
                                         <th style="min-width:240px">Question</th>
                                         <th>Option A</th>
                                         <th>Option B</th>
@@ -99,10 +99,12 @@
 <script>
     (function() {
         const quizId = <?= (int)$quiz['id'] ?>;
+        const $table = $('#tblQ');
         const $tbody = $('#tbodyQ');
-        let deletedRows = [];
 
-        /* ===== helpers ===== */
+        /* =========================
+         * Helpers
+         * ========================= */
         function escapeHtml(str) {
             if (str === null || str === undefined) return '';
             return String(str)
@@ -111,209 +113,87 @@
                 .replace(/'/g, '&#039;');
         }
 
-        function cell(content, cls = '') {
-            return `<td contenteditable="true" class="${cls}">${content ?? ''}</td>`;
+        // contenteditable cell with data-name (dipakai untuk ambil data konsisten)
+        function cell(name, content, cls = '') {
+            return `<td contenteditable="true" data-name="${name}" class="${cls}">${content ?? ''}</td>`;
         }
 
         function rowTpl(r) {
-            const id = r.id || '';
+            const id = (r && r.id != null) ? r.id : '';
             return `
-            <tr data-id="${id}" data-deleted="0">
+                <tr data-id="${escapeHtml(id)}">
                 <td class="text-center align-middle not-editable">
-                <input type="checkbox" class="row-checkbox">
+                    <input type="checkbox" class="row-checkbox">
                 </td>
-                <td class="text-center align-middle not-editable">${id || '-'}</td>
-                ${cell(escapeHtml(r.question),'c-question')}
-                ${cell(escapeHtml(r.option_a),'c-a')}
-                ${cell(escapeHtml(r.option_b),'c-b')}
-                ${cell(escapeHtml(r.option_c),'c-c')}
-                ${cell(escapeHtml(r.option_d),'c-d')}
-                ${cell(escapeHtml(r.answer || ''),'c-answer text-center')}
-                ${cell(r.time_limit ?? 15,'c-time text-center')}
-            </tr>`;
+                <td class="text-center align-middle not-editable c-no">-</td>
+
+                ${cell('question',   escapeHtml(r.question), 'c-question')}
+                ${cell('option_a',   escapeHtml(r.option_a), 'c-a')}
+                ${cell('option_b',   escapeHtml(r.option_b), 'c-b')}
+                ${cell('option_c',   escapeHtml(r.option_c), 'c-c')}
+                ${cell('option_d',   escapeHtml(r.option_d), 'c-d')}
+                ${cell('answer',     escapeHtml(r.answer || 'A'), 'c-answer text-center')}
+                ${cell('time_limit', escapeHtml((r.time_limit != null ? r.time_limit : 15)), 'c-time text-center')}
+                </tr>`;
         }
 
-        function addRow() {
-            const tempId = 'new_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-            const r = {
-                id: tempId,
-                question: '',
-                option_a: '',
-                option_b: '',
-                option_c: '',
-                option_d: '',
-                answer: 'A',
-                time_limit: 15
-            };
-            const $node = $(rowTpl(r)).attr('data-id', tempId);
-            if ($.fn.DataTable.isDataTable('#tblQ')) {
-                $('#tblQ').DataTable().row.add($node).draw(false);
-            } else {
-                $tbody.append($node);
-            }
-        }
-
-        /* ===== payload collector ===== */
-        function collect() {
-            const items = [];
-            $('#tblQ tbody tr').each(function() {
-                const $tr = $(this);
-                const rawId = $tr.data('id');
-                const id = rawId ? (isNaN(rawId) ? String(rawId) : parseInt(rawId, 10)) : 0;
-                const deletedFlag = String($tr.attr('data-deleted')) === '1' || deletedRows.includes(String(id));
-                const get = (sel) => $tr.find(sel).text().trim();
-                const item = {
-                    id,
-                    question: get('.c-question'),
-                    option_a: get('.c-a'),
-                    option_b: get('.c-b'),
-                    option_c: get('.c-c'),
-                    option_d: get('.c-d'),
-                    answer: get('.c-answer').toUpperCase(),
-                    time_limit: parseInt(get('.c-time'), 10) || 15
-                };
-                if (deletedFlag) item._delete = true;
-                items.push(item);
-            });
-            return {
-                quiz_id: quizId,
-                items
+        function getCrudState() {
+            // datatable-filter-column.js menyimpan state per tableId (id table)
+            return window.tableCrudState?.['tblQ'] || {
+                deletedIds: new Set()
             };
         }
 
-        /* ===== load rows & init datatable ===== */
-        function loadRows() {
-            $.get('<?= site_url('quiz_admin/api_questions_list/'); ?>' + quizId, function(res) {
-                if (!res.ok) {
-                    alert(res.msg || 'Gagal load');
-                    return;
-                }
-
-                // destroy DT lama agar bersih
-                if ($.fn.DataTable.isDataTable('#tblQ')) {
-                    $('#tblQ').DataTable().destroy();
-                }
-
-                // Hapus baris filter lama (kalau ada)
-                const $thead = $('#tblQ thead');
-                if ($thead.find('.filter-btn').length) {
-                    $thead.find('tr').last().remove();
-                }
-
-                $tbody.empty();
-                if (!res.rows.length) {
-                    addRow();
-                    addRow();
-                } else {
-                    res.rows.forEach(r => $tbody.append(rowTpl(r)));
-                }
-
-                // init DataTable + filter per kolom
-                setupFilterableDatatable($('#tblQ'));
-            }, 'json');
+        function getCellText($tr, name) {
+            return $tr.find(`td[data-name="${name}"]`).text().trim();
         }
 
-        /* ===== actions ===== */
-        // Select-All (header)
-        $(document).on('click', '#select-all', function() {
-            const checked = this.checked;
-            $('#tblQ tbody .row-checkbox').prop('checked', checked);
-        });
+        function buildPayloadFromTable() {
+            const dt = $table.DataTable();
+            const state = getCrudState();
+            const deletedIds = state.deletedIds || new Set();
 
-        // Delete Selected → tandai baris (bukan hapus DOM)
-        $('#btnDeleteSelected').on('click', function() {
-            const dt = $.fn.DataTable.isDataTable('#tblQ') ? $('#tblQ').DataTable() : null;
+            const creates = [];
+            const updates = [];
+            const deletes = [];
 
-            function mark($tr, yes) {
-                const id = String($tr.data('id') || '');
-                $tr.attr('data-deleted', yes ? '1' : '0')
-                    .toggleClass('table-danger', !!yes)
-                    .css('opacity', yes ? .7 : 1);
-                if (id) {
-                    if (yes && !deletedRows.includes(id)) deletedRows.push(id);
-                    if (!yes) deletedRows = deletedRows.filter(x => x !== id);
-                }
-            }
+            dt.rows().every(function() {
+                const $tr = $(this.node());
+                const rawId = String($tr.attr('data-id') || '');
 
-            if (dt) {
-                dt.rows().every(function() {
-                    const $tr = $(this.node());
-                    const checked = $tr.find('.row-checkbox').prop('checked');
-                    mark($tr, checked);
-                });
-                dt.draw(false);
-            } else {
-                $('#tblQ tbody tr').each(function() {
-                    const $tr = $(this);
-                    const checked = $tr.find('.row-checkbox').prop('checked');
-                    mark($tr, checked);
-                });
-            }
-        });
+                if (!rawId) return;
 
-        // Cancel → balik ke index
-        $('#btnCancel').on('click', function() {
-            if (confirm('Yakin batal? Perubahan yang belum disimpan akan hilang.')) {
-                window.location.href = '<?= site_url('quiz_admin'); ?>';
-            }
-        });
+                const isNew = rawId.startsWith('new_');
+                const isNumeric = rawId !== '' && !isNaN(rawId);
+                const isDeleted = deletedIds.has(rawId);
 
-        // New rows
-        $('#btnNewRows').on('click', function() {
-            const n = Math.max(1, parseInt($('#row_number_add').val(), 10) || 1);
-            for (let i = 0; i < n; i++) addRow();
-            if ($.fn.DataTable.isDataTable('#tblQ')) {
-                const dt = $('#tblQ').DataTable();
-                dt.columns.adjust().draw(false);
-                dt.page('last').draw('page');
-            }
-        });
-
-        function buildPayload() {
-            const updates = [],
-                creates = [],
-                deletes = [];
-            const dt = $.fn.DataTable.isDataTable('#tblQ') ? $('#tblQ').DataTable() : null;
-
-            const readRow = ($tr) => {
-                const rawId = $tr.data('id');
-                const isDeleted = String($tr.attr('data-deleted')) === '1';
-                const get = (sel) => $tr.find(sel).text().trim();
                 const row = {
-                    question: get('.c-question'),
-                    option_a: get('.c-a'),
-                    option_b: get('.c-b'),
-                    option_c: get('.c-c'),
-                    option_d: get('.c-d'),
-                    answer: (get('.c-answer') || '').toUpperCase(),
-                    time_limit: parseInt(get('.c-time'), 10) || 15
+                    question: getCellText($tr, 'question'),
+                    option_a: getCellText($tr, 'option_a'),
+                    option_b: getCellText($tr, 'option_b'),
+                    option_c: getCellText($tr, 'option_c'),
+                    option_d: getCellText($tr, 'option_d'),
+                    answer: (getCellText($tr, 'answer') || '').toUpperCase(),
+                    time_limit: parseInt(getCellText($tr, 'time_limit'), 10) || 15
                 };
-                const isNumericId = rawId && !isNaN(rawId);
 
                 if (isDeleted) {
-                    if (isNumericId) deletes.push(parseInt(rawId, 10));
+                    if (isNumeric) deletes.push(parseInt(rawId, 10));
                     return;
                 }
-                if (isNumericId) {
-                    row.id = parseInt(rawId, 10);
-                    updates.push(row);
-                } else {
-                    creates.push(row);
-                }
-            };
 
-            if (dt) {
-                dt.rows().every(function() {
-                    readRow($(this.node()));
-                });
-            } else {
-                $('#tblQ tbody tr').each(function() {
-                    readRow($(this));
-                });
-            }
+                if (isNew) {
+                    creates.push(row);
+                } else {
+                    // update butuh id
+                    if (isNumeric) row.id = parseInt(rawId, 10);
+                    else row.id = rawId;
+                    updates.push(row);
+                }
+            });
 
             return {
-                quiz_id: <?= (int)$quiz['id'] ?>,
+                quiz_id: quizId,
                 updates,
                 creates,
                 deletes
@@ -321,20 +201,20 @@
         }
 
         function sendSave() {
-            const payload = buildPayload();
+            const payload = buildPayloadFromTable();
+
             $.ajax({
                 url: '<?= site_url('quiz_admin/api_questions_save'); ?>',
                 method: 'POST',
                 data: JSON.stringify(payload),
                 contentType: 'application/json',
                 success: function(res) {
-                    if (res.ok) {
+                    if (res && res.ok) {
                         alert('Tersimpan. (' + (res.affected || 0) + ' perubahan)');
-                        // reset UI
                         $('#select-all').prop('checked', false);
                         loadRows();
                     } else {
-                        alert(res.msg || 'Gagal menyimpan');
+                        alert(res?.msg || 'Gagal menyimpan');
                     }
                 },
                 error: function(xhr) {
@@ -342,7 +222,141 @@
                 }
             });
         }
+
+        /* =========================
+         * Load rows & init DT + CRUD engine
+         * ========================= */
+        function loadRows() {
+            $.get('<?= site_url('quiz_admin/api_questions_list/'); ?>' + quizId, function(res) {
+                if (!res || !res.ok) {
+                    alert(res?.msg || 'Gagal load');
+                    return;
+                }
+
+                // destroy DT lama
+                if ($.fn.DataTable.isDataTable($table)) {
+                    $table.DataTable().destroy();
+                }
+
+                // bersihkan filter row lama (yang dibuat setupFilterableDatatable)
+                const $thead = $table.find('thead');
+                if ($thead.find('.filter-btn').length) {
+                    $thead.find('tr').last().remove();
+                }
+
+                $tbody.empty();
+
+                const rows = res.rows || [];
+                if (!rows.length) {
+                    // kasih 2 baris awal kosong
+                    $tbody.append(rowTpl({
+                        id: 'new_' + Date.now() + '_a',
+                        question: '',
+                        option_a: '',
+                        option_b: '',
+                        option_c: '',
+                        option_d: '',
+                        answer: 'A',
+                        time_limit: 15
+                    }));
+                    $tbody.append(rowTpl({
+                        id: 'new_' + Date.now() + '_b',
+                        question: '',
+                        option_a: '',
+                        option_b: '',
+                        option_c: '',
+                        option_d: '',
+                        answer: 'A',
+                        time_limit: 15
+                    }));
+                } else {
+                    rows.forEach(r => $tbody.append(rowTpl(r)));
+                }
+
+                // init DataTable + filter column (datatable-filter-column.js)
+                setupFilterableDatatable($table);
+
+                // aktifkan CRUD engine (datatable-filter-column.js)
+                setupDatatableCrud($table, {
+                    rowIdAttr: 'data-id',
+                    newIdPrefix: 'new_',
+
+                    rowCheckboxSelector: '.row-checkbox',
+                    selectAllSelector: '#select-all',
+                    btnNewSelector: '#btnNewRows',
+                    rowAddCountSelector: '#row_number_add',
+                    btnDeleteSelectedSelector: '#btnDeleteSelected',
+
+                    // engine pakai ini untuk generate row baru saat klik "New"
+                    columns: [{
+                            name: 'question',
+                            type: 'contenteditable',
+                            default: ''
+                        },
+                        {
+                            name: 'option_a',
+                            type: 'contenteditable',
+                            default: ''
+                        },
+                        {
+                            name: 'option_b',
+                            type: 'contenteditable',
+                            default: ''
+                        },
+                        {
+                            name: 'option_c',
+                            type: 'contenteditable',
+                            default: ''
+                        },
+                        {
+                            name: 'option_d',
+                            type: 'contenteditable',
+                            default: ''
+                        },
+                        {
+                            name: 'answer',
+                            type: 'contenteditable',
+                            default: 'A'
+                        },
+                        {
+                            name: 'time_limit',
+                            type: 'contenteditable',
+                            default: 15
+                        }
+                    ],
+
+                    // prefix untuk 2 kolom awal: checkbox + ID
+                    rowPrefixHtml: ({
+                        rowId,
+                        initialData
+                    }) => {
+                        return `
+                            <td class="text-center align-middle not-editable">
+                            <input type="checkbox" class="row-checkbox">
+                            </td>
+                            <td class="text-center align-middle not-editable c-no">-</td>
+                        `;
+                    }
+                });
+
+                renumberRows();
+                $table.off('draw.renumber').on('draw.renumber', renumberRows);
+
+            }, 'json').fail(function() {
+                alert('Gagal load (network/server error)');
+            });
+        }
+
+        /* =========================
+         * UI Actions
+         * ========================= */
         $('#btnSubmitFooter').on('click', sendSave);
+
+        $('#btnCancel').on('click', function() {
+            if (confirm('Yakin batal? Perubahan yang belum disimpan akan hilang.')) {
+                window.location.href = '<?= site_url('quiz_admin'); ?>';
+            }
+        });
 
         // === Update Judul ===
         $('#btnSaveTitle').on('click', function() {
@@ -353,17 +367,15 @@
             }
 
             $.post('<?= site_url('quiz_admin/api_quiz_update_title'); ?>', {
-                    quiz_id: <?= (int)$quiz['id'] ?>,
-                    title
-                },
-                function(res) {
-                    if (res && res.ok) {
-                        alert('Judul tersimpan.');
-                    } else {
-                        alert(res?.msg || 'Gagal update judul');
-                    }
-                }, 'json'
-            ).fail(function(xhr) {
+                quiz_id: quizId,
+                title: title
+            }, function(res) {
+                if (res && res.ok) {
+                    alert('Judul tersimpan.');
+                } else {
+                    alert(res?.msg || 'Gagal update judul');
+                }
+            }, 'json').fail(function(xhr) {
                 alert(xhr.responseJSON?.msg || 'Error');
             });
         });
@@ -373,38 +385,60 @@
             if (!confirm('Yakin ingin menghapus seluruh quiz ini beserta pertanyaan & jawaban?')) return;
 
             $.post('<?= site_url('quiz_admin/api_quiz_delete'); ?>', {
-                    quiz_id: <?= (int)$quiz['id'] ?>
-                },
-                function(res) {
-                    if (res && res.ok) {
-                        alert('Quiz sudah dihapus.');
-                        window.location.href = '<?= site_url('quiz_admin'); ?>';
-                    } else {
-                        alert(res?.msg || 'Gagal menghapus quiz');
-                    }
-                }, 'json'
-            ).fail(function(xhr) {
+                quiz_id: quizId
+            }, function(res) {
+                if (res && res.ok) {
+                    alert('Quiz sudah dihapus.');
+                    window.location.href = '<?= site_url('quiz_admin'); ?>';
+                } else {
+                    alert(res?.msg || 'Gagal menghapus quiz');
+                }
+            }, 'json').fail(function(xhr) {
                 alert(xhr.responseJSON?.msg || 'Error');
             });
         });
 
         // init pertama
         loadRows();
-    })();
 
-    // Validasi Answer & Time saat selesai edit
-    $(document).on('blur', '#tblQ .c-answer', function() {
+        function renumberRows() {
+            if (!$.fn.DataTable.isDataTable($table)) return;
+            const dt = $table.DataTable();
+
+            // nomor urut mengikuti urutan yang tampil (search + order)
+            dt.rows({
+                search: 'applied',
+                order: 'applied'
+            }).every(function(rowIdx) {
+                const node = this.node();
+                if (!node) return;
+                $(node).find('td.c-no').text(rowIdx + 1);
+            });
+        }
+    })();
+</script>
+
+<script>
+    /* =========================
+     * Validasi Answer & Time
+     * ========================= */
+    $(document).on('blur', '#tblQ td[data-name="answer"]', function() {
         const v = $(this).text().trim().toUpperCase();
         if (!['A', 'B', 'C', 'D'].includes(v)) {
             alert('Answer harus A/B/C/D');
             $(this).text('A');
+        } else {
+            $(this).text(v); // normalize
         }
     });
-    $(document).on('blur', '#tblQ .c-time', function() {
+
+    $(document).on('blur', '#tblQ td[data-name="time_limit"]', function() {
         let n = parseInt($(this).text().trim(), 10);
         if (!n || n < 1) n = 15;
         $(this).text(n);
     });
+
+    // stop Enter di cell contenteditable (biar gak bikin baris baru)
     $(document).on('keydown', '#tblQ td[contenteditable="true"]', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();

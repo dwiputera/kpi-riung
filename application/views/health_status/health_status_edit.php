@@ -4,21 +4,19 @@
         <div class="row mb-2">
             <div class="col-sm-6">
                 <h1 class="m-0">Health Status <?= $year ?></h1>
-            </div><!-- /.col -->
-        </div><!-- /.row -->
-    </div><!-- /.container-fluid -->
+            </div>
+        </div>
+    </div>
 </div>
-<!-- /.content-header -->
 
-<!-- Main content -->
 <section class="content">
     <div class="container-fluid">
+
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title">Year Change</h3>
             </div>
-            <!-- /.card-header -->
-            <!-- form start -->
+
             <form action="<?= base_url() ?>health_status/edit" method="get">
                 <div class="card-body">
                     <div class="form-group">
@@ -39,18 +37,17 @@
                         </div>
                     </div>
                 </div>
-                <!-- /.card-body -->
             </form>
         </div>
-        <!-- /.card -->
 
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title">Behavior Questionnaire</h3>
             </div>
+
             <form action="<?= base_url() ?>health_status/submit?year=<?= $year ?>" method="post" id="data-form">
                 <input type="hidden" name="json_data" id="json_data">
-                <!-- /.card-header -->
+
                 <div class="card-body">
                     <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
                         <thead>
@@ -74,21 +71,25 @@
                                 <tr data-id="<?= $hs_i['id'] ?>">
                                     <td><input type="checkbox" class="row-checkbox"></td>
                                     <td><?= $i++ ?></td>
+
+                                    <!-- display-only -->
                                     <td><?= $hs_i['NRP'] ?></td>
                                     <td><?= $hs_i['FullName'] ?></td>
                                     <td><?= $hs_i['matrix_point_name'] ?></td>
                                     <td><?= $hs_i['oa_name'] ?></td>
                                     <td><?= $hs_i['oal_name'] ?></td>
                                     <td><?= $hs_i['oalp_name'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="NRP"><?= $hs_i['NRP'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="status_id"><?= $hs_i['status_id'] ?></td>
-                                    <td contenteditable="true" data-id="<?= $hs_i['id'] ?>" data-column="status_string"><?= $hs_i['status_string'] ?></td>
+
+                                    <!-- editable (pakai data-name, bukan data-column) -->
+                                    <td contenteditable="true" data-name="NRP"><?= $hs_i['NRP'] ?></td>
+                                    <td contenteditable="true" data-name="status_id"><?= $hs_i['status_id'] ?></td>
+                                    <td contenteditable="true" data-name="status_string"><?= $hs_i['status_string'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-                <!-- /.card-body -->
+
                 <div class="card-footer">
                     <div class="row">
                         <div class="col-lg-3">
@@ -96,17 +97,20 @@
                                 <i class="fas fa-times"></i> Cancel
                             </button>
                         </div>
+
                         <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-danger" onclick="deleteSelectedRows()">
+                            <button type="button" class="w-100 btn btn-danger" id="btn-delete-selected">
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
+
                         <div class="col-lg-3 d-flex">
                             <input type="number" class="form-control w-50" id="row_number_add" name="row_number_add" value="1">
-                            <button type="button" class="w-50 btn btn-success" onclick="createRow()">
+                            <button type="button" class="w-50 btn btn-success" id="btn-new-row">
                                 <i class="fas fa-plus"></i> New
                             </button>
                         </div>
+
                         <div class="col-lg-3">
                             <button type="submit" class="w-100 btn btn-info">
                                 <i class="fas fa-paper-plane"></i> Submit
@@ -116,18 +120,17 @@
                 </div>
             </form>
         </div>
-        <!-- /.card -->
-    </div><!-- /.container-fluid -->
+
+    </div>
 </section>
-<!-- /.content -->
 
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 
 <script>
-    //Date picker
+    // Date picker
     $('#year').datetimepicker({
-        format: 'YYYY', // Only year
+        format: 'YYYY',
         viewMode: 'years',
     });
 
@@ -136,163 +139,67 @@
         $(this).find('input').closest('form').submit();
     });
 
-    let deletedRows = [];
-
-    $(function() {
-        setupFilterableDatatable($('.datatable-filter-column'));
-
-        $('#select-all').on('click', function() {
-            $('.row-checkbox').prop('checked', this.checked);
-        });
-
-        $('#data-form').on('submit', function() {
-            let allRows = collectTableData();
-            let payload = {
-                year: <?= $year ?>,
-                updates: allRows.filter(r => !String(r.id).startsWith('new_')),
-                deletes: deletedRows,
-                creates: allRows.filter(r => String(r.id).startsWith('new_'))
-            };
-            $('#json_data').val(JSON.stringify(payload));
-        });
-    });
-
     function cancelForm() {
         if (confirm('Yakin batal?')) {
             location.href = '<?= base_url('health_status' . ($year ? '?year=' . $year : '')) ?>';
         }
     }
 
-    function markRowDeleted(btn) {
-        let row = $(btn).closest('tr');
-        let id = row.data('id');
-        let checkbox = row.find('.row-checkbox');
+    // ===== CRUD CONFIG (datatable-filter-column.js) =====
+    window.DT_CRUD_CONFIG = {
+        tableSelector: '#datatable',
+        formSelector: '#data-form',
+        jsonFieldSelector: '#json_data',
 
-        if (deletedRows.includes(id)) {
-            // ✅ Restore if already marked deleted
-            deletedRows = deletedRows.filter(x => x !== id);
-            row.removeClass('table-danger').css('opacity', '1');
-            checkbox.prop('checked', false); // uncheck when restored
-        } else {
-            // ✅ Mark as deleted
-            deletedRows.push(id);
-            row.addClass('table-danger').css('opacity', '0.7');
-            checkbox.prop('checked', true); // auto-check when deleted
+        btnNewSelector: '#btn-new-row',
+        btnDeleteSelectedSelector: '#btn-delete-selected',
+        rowAddCountSelector: '#row_number_add',
+        selectAllSelector: '#select-all',
+        rowCheckboxSelector: '.row-checkbox',
+
+        // 8 kolom prefix: checkbox + NO + 6 kolom display-only (NRP..JABATAN)
+        rowPrefixHtml: () => `
+            <td><input type="checkbox" class="row-checkbox"></td>
+            <td>New</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        `,
+
+        deletedRowClass: 'table-danger',
+        deletedOpacity: 0.7,
+        newRowClass: 'table-success',
+
+        // ✅ kolom editable setelah prefix (urut harus sama dengan thead)
+        columns: [{
+                name: 'NRP',
+                type: 'editable'
+            },
+            {
+                name: 'status_id',
+                type: 'editable'
+            },
+            {
+                name: 'status_string',
+                type: 'editable'
+            }
+        ],
+
+        // supaya payload tetap bawa year seperti versi lama
+        beforeSubmit: (payload) => {
+            payload.year = <?= (int)$year ?>;
+            return payload;
         }
-    }
+    };
 
-    function deleteSelectedRows() {
-        let table = $('#datatable').DataTable();
+    $(function() {
+        // init DataTables + filter column
+        setupFilterableDatatable($('.datatable-filter-column'));
 
-        // Loop melalui semua baris di DataTable, termasuk yang ada di halaman lain
-        table.rows().every(function() {
-            let row = $(this.node());
-            let id = row.data('id');
-            let isChecked = row.find('.row-checkbox').prop('checked');
-
-            if (isChecked) {
-                // Tandai baris yang dipilih untuk dihapus
-                if (!deletedRows.includes(id)) {
-                    deletedRows.push(id);
-                }
-                row.addClass('table-danger').css('opacity', '0.7');
-            } else {
-                // Jika baris tidak dipilih, pastikan untuk menghapus status 'deleted'
-                if (deletedRows.includes(id)) {
-                    deletedRows = deletedRows.filter(x => x !== id);
-                    row.removeClass('table-danger').css('opacity', '1');
-                }
-            }
-        });
-
-        // Pastikan DataTable diupdate setelah penghapusan
-        table.draw(false); // Redraw the table to ensure changes are applied across pages
-    }
-
-    // Create a new row dynamically
-    function createRow() {
-        showOverlayFull();
-        const table = $('#datatable').DataTable();
-        const newId = 'new_' + Date.now();
-        const row_number_add = parseInt($('#row_number_add').val(), 10) || 1;
-
-        const editableIdx = [8, 9, 10];
-        const map = {
-            8: 'NRP',
-            9: 'status_id',
-            10: 'status_string',
-        };
-
-        for (let index = 0; index < row_number_add; index++) {
-            const rowArray = [
-                '<input type="checkbox" class="row-checkbox">', // kol-1
-                'New', // kol-2
-                '', '', '', '', '', '', // kol-3..7
-                '', // NRP (kol-8)
-                '', // status_id
-                '', // status_string
-            ];
-
-            // 👉 JANGAN .draw(false) di sini
-            const node = table.row.add(rowArray).node();
-
-            $(node).attr('data-id', newId).addClass('table-success');
-
-            $(node).find('td').each(function(i) {
-                if (editableIdx.includes(i)) {
-                    $(this)
-                        .attr('contenteditable', 'true')
-                        .attr('data-column', map[i] || '');
-                }
-            });
-        }
-
-        // 👉 Draw SEKALI saja di akhir
-        table.columns.adjust().draw(false);
-
-        // Pindah ke halaman terakhir
-        table.page('last').draw('page');
-
-        hideOverlayFull();
-    }
-
-    function collectTableData() {
-        let data = [];
-        let table = $('#datatable').DataTable();
-
-        table.rows().every(function() {
-            let row = $(this.node());
-            data.push(collectRow(row));
-        });
-
-        $('#datatable tbody tr').each(function() {
-            let row = $(this);
-            let id = row.data('id');
-            if (!data.find(r => r.id === id)) {
-                data.push(collectRow(row));
-            }
-        });
-
-        return data;
-    }
-
-    function collectRow(row) {
-        let id = row.data('id');
-        let rowData = {
-            id: id
-        };
-
-        row.find('td[contenteditable], input, select').each(function() {
-            let column = $(this).data('column');
-            if (column) {
-                if ($(this).is('input') || $(this).is('select')) {
-                    rowData[column] = $(this).val();
-                } else {
-                    rowData[column] = $(this).text();
-                }
-            }
-        });
-
-        return rowData;
-    }
+        // init CRUD engine
+        setupDatatableCrud($('#datatable'), window.DT_CRUD_CONFIG);
+    });
 </script>

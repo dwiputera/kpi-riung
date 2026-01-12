@@ -127,7 +127,7 @@ $months = [
                                             </select>
                                         </td>
                                         <td>
-                                            <select data-name="month">
+                                            <select class="form-control form-control-sm" data-name="month">
                                                 <option value=""></option>
                                                 <?php foreach ($months as $i_m => $m_i) : ?>
                                                     <option value="<?= $i_m ?>" <?= $training['month'] == $i_m ? 'selected' : '' ?>><?= $m_i ?></option>
@@ -135,7 +135,7 @@ $months = [
                                             </select>
                                         </td>
                                         <td>
-                                            <select data-name="departemen_pengampu">
+                                            <select class="form-control form-control-sm" data-name="departemen_pengampu">
                                                 <option value=""></option>
                                                 <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
                                                     <option value="<?= $mp_i['id'] ?>" <?= $training['departemen_pengampu'] == $mp_i['id'] ? 'selected' : '' ?>><?= $mp_i['name'] ?></option>
@@ -249,13 +249,13 @@ $months = [
                             </button>
                         </div>
                         <div class="col-lg-3">
-                            <button type="button" class="w-100 btn btn-danger" onclick="deleteSelectedRows()">
+                            <button type="button" class="w-100 btn btn-danger" id="btn-delete-selected">
                                 <i class="fas fa-trash"></i> Delete Selected
                             </button>
                         </div>
                         <div class="col-lg-3 d-flex">
                             <input type="number" class="form-control w-50" id="row_number_add" name="row_number_add" value="1">
-                            <button type="button" class="w-50 btn btn-success" onclick="createRow()">
+                            <button type="button" class="w-50 btn btn-success" id="btn-new-row">
                                 <i class="fas fa-plus"></i> New
                             </button>
                         </div>
@@ -374,326 +374,268 @@ $months = [
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
 
 <script>
-    let deletedRows = [];
+    window.IS_ADVANCED = <?= $advanced ? 'true' : 'false' ?>;
 
-    $(document).ready(function() {
+    // ===== OPTIONS (dari PHP) =====
+    window.OPT_MONTHS = [{
+            value: "",
+            label: ""
+        },
+        <?php foreach ($months as $k => $v) : ?> {
+                value: "<?= $k ?>",
+                label: "<?= addslashes($v) ?>"
+            },
+        <?php endforeach; ?>
+    ];
+
+    window.OPT_DEPARTEMEN_PENGAMPU = [{
+            value: "",
+            label: ""
+        },
+        <?php foreach ($matrix_points as $mp) : ?> {
+                value: "<?= $mp['id'] ?>",
+                label: "<?= addslashes($mp['name']) ?>"
+            },
+        <?php endforeach; ?>
+    ];
+
+    window.OPT_STATUS = [{
+            value: "P",
+            label: "Pending"
+        },
+        {
+            value: "Y",
+            label: "Done"
+        },
+        {
+            value: "N",
+            label: "Cancelled"
+        },
+        {
+            value: "R",
+            label: "Reschedule"
+        }
+    ];
+
+    <?php
+    $optMonths = array_map(fn($k, $v) => ["value" => (string)$k, "label" => (string)$v], array_keys($months), $months);
+
+    $optDept = array_map(fn($mp) => [
+        "value" => (string)$mp["id"],
+        "label" => (string)$mp["name"],
+    ], $matrix_points);
+
+    $optAtmp = array_map(fn($a) => [
+        "value" => (string)$a["id"],
+        "label" => (string)($a["month"] . " | " . $a["nama_program"]),
+    ], $atmps);
+
+    // prepend blank
+    array_unshift($optMonths, ["value" => "", "label" => ""]);
+    array_unshift($optDept,   ["value" => "", "label" => ""]);
+    array_unshift($optAtmp,   ["value" => "", "label" => ""]);
+    ?>
+
+    window.OPT_MONTHS = <?= json_encode($optMonths, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    window.OPT_DEPARTEMEN_PENGAMPU = <?= json_encode($optDept, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    window.OPT_ATMP = <?= json_encode($optAtmp, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+    window.OPT_STATUS = [{
+            value: "P",
+            label: "Pending"
+        },
+        {
+            value: "Y",
+            label: "Done"
+        },
+        {
+            value: "N",
+            label: "Cancelled"
+        },
+        {
+            value: "R",
+            label: "Reschedule"
+        }
+    ];
+
+    const E = (arr) => arr.map(name => ({
+        name,
+        type: 'editable'
+    }));
+    const N = (arr, step = 1) => arr.map(name => ({
+        name,
+        type: 'number',
+        step
+    }));
+    const D = (arr) => arr.map(name => ({
+        name,
+        type: 'date'
+    }));
+
+    // ✅ IMPORTANT: urutan columns HARUS sama dengan urutan <thead> setelah kolom fixed (checkbox, No)
+    // THEAD MTS: ATMP, STATUS, MONTH, DEPARTEMEN, NAMA PROGRAM, BATCH, ... dst
+
+    const NON_ADV_COLUMNS = [
+        // 1 ATMP (select2)
+        {
+            name: 'atmp_id',
+            type: 'select',
+            className: 'form-control form-control-sm select2',
+            options: () => window.OPT_ATMP
+        },
+
+        // 2 STATUS (select + warna)
+        {
+            name: 'status',
+            type: 'select',
+            className: 'form-control form-control-sm status-select',
+            options: () => window.OPT_STATUS
+        },
+
+        // 3 MONTH
+        {
+            name: 'month',
+            type: 'select',
+            options: () => window.OPT_MONTHS
+        },
+
+        // 4 DEPARTEMEN
+        {
+            name: 'departemen_pengampu',
+            type: 'select',
+            options: () => window.OPT_DEPARTEMEN_PENGAMPU
+        },
+
+        // 5 NAMA PROGRAM
+        ...E(['nama_program']),
+
+        // 6 BATCH
+        ...N(['batch']),
+
+        // 7.. dst (urutan sama dengan tabel)
+        ...E([
+            'jenis_kompetensi', 'sasaran_kompetensi', 'level_kompetensi', 'target_peserta',
+            'staff_nonstaff', 'kategori_program', 'fasilitator', 'nama_penyelenggara_fasilitator',
+            'tempat', 'online_offline'
+        ]),
+        ...D(['start_date', 'end_date']),
+        ...N([
+            'days',
+            'rmho', 'rmip', 'rebh', 'rmtu', 'rmts', 'rmgm', 'rhml',
+            'total_jobsite', 'total_participants',
+            'biaya_pelatihan_per_orang', 'biaya_pelatihan',
+            'training_kit_per_orang', 'training_kit'
+        ]),
+        ...E(['nama_hotel']),
+        ...N([
+            'biaya_penginapan_per_orang', 'biaya_penginapan',
+            'meeting_package_per_orang', 'meeting_package',
+            'makan_per_orang', 'makan',
+            'snack_per_orang', 'snack',
+            'tiket_per_orang', 'tiket',
+            'grand_total'
+        ]),
+        ...N(['hours', 'total_hours', 'grand_total_hours'], 0.01),
+        ...E(['keterangan'])
+    ];
+
+    const ADV_COLUMNS = [
+        'atmp_id', 'status', 'month', 'departemen_pengampu', 'nama_program', 'batch',
+        'jenis_kompetensi', 'sasaran_kompetensi', 'level_kompetensi', 'target_peserta',
+        'staff_nonstaff', 'kategori_program', 'fasilitator', 'nama_penyelenggara_fasilitator',
+        'tempat', 'online_offline', 'start_date', 'end_date', 'days', 'hours', 'total_hours',
+        'rmho', 'rmip', 'rebh', 'rmtu', 'rmts', 'rmgm', 'rhml',
+        'total_jobsite', 'total_participants', 'grand_total_hours',
+        'biaya_pelatihan_per_orang', 'biaya_pelatihan',
+        'training_kit_per_orang', 'training_kit', 'nama_hotel',
+        'biaya_penginapan_per_orang', 'biaya_penginapan',
+        'meeting_package_per_orang', 'meeting_package',
+        'makan_per_orang', 'makan', 'snack_per_orang', 'snack',
+        'tiket_per_orang', 'tiket', 'grand_total', 'keterangan'
+    ].map(name => ({
+        name,
+        type: 'editable'
+    }));
+
+    const columns = window.IS_ADVANCED ? ADV_COLUMNS : NON_ADV_COLUMNS;
+
+    // ===== Status color helper (dipakai juga saat draw + change) =====
+    function applyStatusColor($select) {
+        const val = $select.val();
+        $select.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
+        if (val === 'Y') $select.addClass('bg-success text-white');
+        else if (val === 'P') $select.addClass('bg-secondary text-white');
+        else if (val === 'N') $select.addClass('bg-danger text-white');
+        else if (val === 'R') $select.addClass('bg-warning text-dark');
+    }
+
+    // ===== CRUD CONFIG (engine dari datatable-filter-column.js) =====
+    window.DT_CRUD_CONFIG = {
+        tableSelector: '#datatable',
+        formSelector: '#data-form',
+        jsonFieldSelector: '#json_data',
+
+        btnNewSelector: '#btn-new-row',
+        btnDeleteSelectedSelector: '#btn-delete-selected',
+        rowAddCountSelector: '#row_number_add',
+        selectAllSelector: '#select-all',
+        rowCheckboxSelector: '.row-checkbox',
+
+        rowPrefixHtml: () => `
+    <td><input type="checkbox" class="row-checkbox"></td>
+    <td>New</td>
+    `,
+
+        deletedRowClass: 'table-danger',
+        deletedOpacity: 0.7,
+        newRowClass: 'table-success',
+
+        columns: columns,
+
+        onAfterRowAdded: ($rows) => {
+            // select2 untuk ATMP
+            if (window.FuzzySelect2 && typeof window.FuzzySelect2.apply === 'function') {
+                $rows.find('.select2').each(function() {
+                    window.FuzzySelect2.apply($(this));
+                });
+            }
+            // warna status untuk row baru
+            $rows.find('.status-select').each(function() {
+                applyStatusColor($(this));
+            });
+        }
+    };
+
+    $(function() {
         setupFilterableDatatable($('.datatable-filter-column'));
+        setupDatatableCrud($('#datatable'), window.DT_CRUD_CONFIG);
 
-        FuzzySelect2.apply('.select2');
+        // init select2 & status color untuk row existing
+        if (window.FuzzySelect2 && typeof window.FuzzySelect2.apply === 'function') {
+            window.FuzzySelect2.apply($('.select2'));
+        }
 
-        // Terapkan warna awal setelah halaman selesai load
         $('.status-select').each(function() {
-            applyStatusColor($(this)); // Warna td & select langsung diterapkan
+            applyStatusColor($(this));
         });
 
-        // Panggil applyStatusColor saat DataTable selesai digambar ulang
+        // re-apply warna saat redraw (paging/filter)
         $('#datatable').on('draw.dt', function() {
             $('.status-select').each(function() {
                 applyStatusColor($(this));
             });
         });
 
-        // Select all
-        $('#select-all').on('click', function() {
-            $('.row-checkbox').prop('checked', this.checked);
-        });
-
-        // Submit handler
-        $('#data-form').on('submit', function() {
-            let allRows = collectTableData();
-            let payload = {
-                updates: allRows.filter(r => !String(r.id).startsWith('new_') && !deletedRows.includes(r.id)),
-                deletes: deletedRows,
-                creates: allRows.filter(r => String(r.id).startsWith('new_') && !deletedRows.includes(r.id))
-            };
-            $('#json_data').val(JSON.stringify(payload));
+        // re-apply warna saat change
+        $(document).on('change', '.status-select', function() {
+            applyStatusColor($(this));
         });
     });
 
-    // Fungsi reusable untuk set warna td & select
-    function applyStatusColor($select) {
-        let val = $select.val();
-        let td = $select.closest('td');
-
-        // Hapus semua warna dulu
-        // td.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
-        $select.removeClass('bg-success bg-secondary bg-danger bg-warning text-white text-dark');
-
-        // Tambahkan warna sesuai status
-        if (val === 'Y') {
-            // td.addClass('bg-success text-white');
-            $select.addClass('bg-success text-white');
-        } else if (val === 'P') {
-            // td.addClass('bg-secondary text-white');
-            $select.addClass('bg-secondary text-white');
-        } else if (val === 'N') {
-            // td.addClass('bg-danger text-white');
-            $select.addClass('bg-danger text-white');
-        } else if (val === 'R') {
-            // td.addClass('bg-warning text-dark');
-            $select.addClass('bg-warning text-dark');
-        }
-    }
-
-    $(document).on('change', '.status-select', function() {
-        applyStatusColor($(this));
-    });
-
+    // cancel tetap boleh dipakai seperti sebelumnya
     function cancelForm() {
         if (confirm('Yakin batal?')) {
             location.href = '<?= base_url('training/MTS/' . ($year ? '?year=' . $year : '')) ?>';
         }
-    }
-
-    function markRowDeleted(btn) {
-        let row = $(btn).closest('tr');
-        let id = row.data('id');
-        let checkbox = row.find('.row-checkbox');
-
-        if (deletedRows.includes(id)) {
-            // ✅ Restore if already marked deleted
-            deletedRows = deletedRows.filter(x => x !== id);
-            row.removeClass('table-danger').css('opacity', '1');
-            checkbox.prop('checked', false); // uncheck when restored
-        } else {
-            // ✅ Mark as deleted
-            deletedRows.push(id);
-            row.addClass('table-danger').css('opacity', '0.7');
-            checkbox.prop('checked', true); // auto-check when deleted
-        }
-    }
-
-    function deleteSelectedRows() {
-        let table = $('#datatable').DataTable();
-
-        // Loop melalui semua baris di DataTable, termasuk yang ada di halaman lain
-        table.rows().every(function() {
-            let row = $(this.node());
-            let id = row.data('id');
-            let isChecked = row.find('.row-checkbox').prop('checked');
-
-            if (isChecked) {
-                // Tandai baris yang dipilih untuk dihapus
-                if (!deletedRows.includes(id)) {
-                    deletedRows.push(id);
-                }
-                row.addClass('table-danger').css('opacity', '0.7');
-            } else {
-                // Jika baris tidak dipilih, pastikan untuk menghapus status 'deleted'
-                if (deletedRows.includes(id)) {
-                    deletedRows = deletedRows.filter(x => x !== id);
-                    row.removeClass('table-danger').css('opacity', '1');
-                }
-            }
-        });
-
-        // Pastikan DataTable diupdate setelah penghapusan
-        table.draw(false); // Redraw the table to ensure changes are applied across pages
-    }
-
-    // Create a new row dynamically
-    function createRow() {
-        showOverlayFull();
-        const table = $('#datatable').DataTable();
-        const newId = 'new_' + Date.now();
-        const row_number_add = $('#row_number_add').val();
-
-        // Construct the new row
-        for (let index = 0; index < row_number_add; index++) {
-            let row = `<tr data-id="${newId}" class="table-success">
-                <td><input type="checkbox" class="row-checkbox"></td>
-                <td>New</td>
-                <td>
-                    <select class="form-control form-control-sm select2"
-                        data-name="atmp_id">
-                        <option value=""></option>
-                        <?php foreach ($atmps as $i_atmp => $atmp_i) : ?>
-                            <option value=<?= $atmp_i['id'] ?> <?= $atmp_i['id'] == $training['atmp_id'] ? 'selected' : '' ?>><?= $atmp_i['month'] ?> | <?= $atmp_i['nama_program'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </td>
-                <?php if (!$advanced) : ?>
-                    <td>
-                        <select class="form-control form-control-sm status-select"
-                            data-name="status"">
-                            <option value="P">Pending</option>
-                            <option value="Y">Done</option>
-                            <option value="N">Cancelled</option>
-                            <option value="R">Reschedule</option>
-                        </select>
-                    </td>
-                    <td>
-                        <select data-name="month">
-                            <option value=""></option>
-                            <?php foreach ($months as $i_m => $m_i) : ?>
-                                <option value="<?= $i_m ?>"><?= $m_i ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </td>
-                    <td>
-                        <select data-name="departemen_pengampu">
-                            <option value=""></option>
-                            <?php foreach ($matrix_points as $i_mp => $mp_i) : ?>
-                                <option value="<?= $mp_i['id'] ?>"><?= $mp_i['name'] ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </td>
-                    <td contenteditable="true" data-name="nama_program"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="batch"></td>
-                    <td contenteditable="true" data-name="jenis_kompetensi"></td>
-                    <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-                    <td contenteditable="true" data-name="level_kompetensi"></td>
-                    <td contenteditable="true" data-name="target_peserta"></td>
-                    <td contenteditable="true" data-name="staff_nonstaff"></td>
-                    <td contenteditable="true" data-name="kategori_program"></td>
-                    <td contenteditable="true" data-name="fasilitator"></td>
-                    <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
-                    <td contenteditable="true" data-name="tempat"></td>
-                    <td contenteditable="true" data-name="online_offline"></td>
-                    <td><input type="date" class="form-control form-control-sm" data-name="start_date"></td>
-                    <td><input type="date" class="form-control form-control-sm" data-name="end_date"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="days"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="hours"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="total_hours"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="rmho"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="rmip"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="rebh"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="rmtu"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="rmts"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="rmgm"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="rhml"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="total_jobsite"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="total_participants"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="grand_total_hours"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan_per_orang"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="biaya_pelatihan"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="training_kit_per_orang"></td>
-                    <td><input type="number" class="form-control form-control-sm" data-name="training_kit"></td>
-                    <td contenteditable="true" data-name="nama_hotel"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan_per_orang"  data-name="biaya_penginapan_per_orang"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="biaya_penginapan"  data-name="biaya_penginapan"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="meeting_package_per_orang"  data-name="meeting_package_per_orang"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="meeting_package"  data-name="meeting_package"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="makan_per_orang"  data-name="makan_per_orang"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="makan"  data-name="makan"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="snack_per_orang"  data-name="snack_per_orang"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="snack"  data-name="snack"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="tiket_per_orang"  data-name="tiket_per_orang"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="tiket"  data-name="tiket"></td>
-                    <td><input type="number" class="form-control form-control-sm" name="grand_total"  data-name="grand_total"></td>
-                    <td contenteditable="true" data-name="keterangan"></td>
-                <?php else : ?>
-                    <td contenteditable="true" data-name="atmp_id"></td>
-                    <td contenteditable="true" data-name="status"></td>
-                    <td contenteditable="true" data-name="month"></td>
-                    <td contenteditable="true" data-name="departemen_pengampu"></td>
-                    <td contenteditable="true" data-name="nama_program"></td>
-                    <td contenteditable="true" data-name="batch"></td>
-                    <td contenteditable="true" data-name="jenis_kompetensi"></td>
-                    <td contenteditable="true" data-name="sasaran_kompetensi"></td>
-                    <td contenteditable="true" data-name="level_kompetensi"></td>
-                    <td contenteditable="true" data-name="target_peserta"></td>
-                    <td contenteditable="true" data-name="staff_nonstaff"></td>
-                    <td contenteditable="true" data-name="kategori_program"></td>
-                    <td contenteditable="true" data-name="fasilitator"></td>
-                    <td contenteditable="true" data-name="nama_penyelenggara_fasilitator"></td>
-                    <td contenteditable="true" data-name="tempat"></td>
-                    <td contenteditable="true" data-name="online_offline"></td>
-                    <td contenteditable="true" data-name="start_date"></td>
-                    <td contenteditable="true" data-name="end_date"></td>
-                    <td contenteditable="true" data-name="days"></td>
-                    <td contenteditable="true" data-name="hours"></td>
-                    <td contenteditable="true" data-name="total_hours"></td>
-                    <td contenteditable="true" data-name="rmho"></td>
-                    <td contenteditable="true" data-name="rmip"></td>
-                    <td contenteditable="true" data-name="rebh"></td>
-                    <td contenteditable="true" data-name="rmtu"></td>
-                    <td contenteditable="true" data-name="rmts"></td>
-                    <td contenteditable="true" data-name="rmgm"></td>
-                    <td contenteditable="true" data-name="rhml"></td>
-                    <td contenteditable="true" data-name="total_jobsite"></td>
-                    <td contenteditable="true" data-name="total_participants"></td>
-                    <td contenteditable="true" data-name="grand_total_hours"></td>
-                    <td contenteditable="true" data-name="biaya_pelatihan_per_orang"></td>
-                    <td contenteditable="true" data-name="biaya_pelatihan"></td>
-                    <td contenteditable="true" data-name="training_kit_per_orang"></td>
-                    <td contenteditable="true" data-name="training_kit"></td>
-                    <td contenteditable="true" data-name="nama_hotel"></td>
-                    <td contenteditable="true" data-name="biaya_penginapan_per_orang"></td>
-                    <td contenteditable="true" data-name="biaya_penginapan"></td>
-                    <td contenteditable="true" data-name="meeting_package_per_orang"></td>
-                    <td contenteditable="true" data-name="meeting_package"></td>
-                    <td contenteditable="true" data-name="makan_per_orang"></td>
-                    <td contenteditable="true" data-name="makan"></td>
-                    <td contenteditable="true" data-name="snack_per_orang"></td>
-                    <td contenteditable="true" data-name="snack"></td>
-                    <td contenteditable="true" data-name="tiket_per_orang"></td>
-                    <td contenteditable="true" data-name="tiket"></td>
-                    <td contenteditable="true" data-name="grand_total"></td>
-                    <td contenteditable="true" data-name="keterangan"></td>
-                <?php endif; ?>
-                
-            </tr>`;
-
-            // Add the row to the table using DataTables API
-            const node = table.row.add($(row)).draw(false).node();
-
-            // Set the custom data-id attribute and class after row is added
-            $(node).attr('data-id', newId).addClass('table-success');
-            hideOverlayFull();
-        }
-
-        // Ensure columns are adjusted after the new row is added
-        table.columns.adjust().draw(false);
-
-        // First, go to the last page
-        table.page('last').draw('page');
-    }
-
-    // Collect table data (existing + new)
-    function collectTableData() {
-        let data = [];
-        let table = $('#datatable').DataTable();
-
-        // Existing DataTable rows
-        table.rows().every(function() {
-            data.push(collectRow($(this.node())));
-        });
-
-        // Newly appended rows
-        $('#datatable tbody tr').each(function() {
-            let id = $(this).data('id');
-            if (!data.find(r => r.id === id)) data.push(collectRow($(this)));
-        });
-
-        return data;
-    }
-
-
-    // Extract data from a row
-    function collectRow(row) {
-        let id = row.data('id');
-        let rowData = {
-            id: id
-        };
-
-        // Loop through all td elements that are contenteditable, input, or select
-        row.find('td[contenteditable], input, select').each(function() {
-            let name = $(this).data('name');
-            if (name) {
-                if ($(this).is('input')) {
-                    // Handle input elements
-                    rowData[name] = $(this).val();
-                } else if ($(this).is('select')) {
-                    // Handle select elements
-                    rowData[name] = $(this).val();
-                } else {
-                    // Handle contenteditable cells
-                    rowData[name] = $(this).text();
-                }
-            }
-        });
-
-        return rowData;
     }
 </script>

@@ -185,8 +185,6 @@ class M_health_status extends CI_Model
         return $data === '' ? null : $data;
     }
 
-
-
     public function submit($payload, $year)
     {
         $updates = $this->emptyStringToNull($payload['updates']) ?? [];

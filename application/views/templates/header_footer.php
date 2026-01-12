@@ -75,6 +75,121 @@
             transition: width 0.1s linear;
         }
     </style>
+
+    <style>
+        /* =========================================================
+   DataTables Excel-like Enhancements Styles
+   - Filter popup + draggable state
+   - Overlay helper
+   - Cell selection (Excel-like)
+   - Contenteditable UX
+   ========================================================= */
+
+        /* Prevent text selection when dragging popup */
+        body.unselectable,
+        body.unselectable * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
+        /* Overlay (JS already injects inline styles; these are fallback/consistency) */
+        .dataTables_wrapper {
+            position: relative;
+        }
+
+        .dataTables_wrapper .dt-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.75);
+            z-index: 1050;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Filter button row */
+        table.dataTable thead .filter-btn {
+            border-radius: 0;
+        }
+
+        table.dataTable thead .filter-btn.btn-warning {
+            font-weight: 700;
+        }
+
+        /* Excel filter popup */
+        .excel-filter-popup {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .excel-filter-popup .popup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            user-select: none;
+            /* biar enak di-drag */
+            -webkit-user-select: none;
+        }
+
+        .excel-filter-popup .popup-header .close {
+            font-size: 22px;
+            line-height: 1;
+            background: transparent;
+            border: 0;
+            opacity: 0.6;
+        }
+
+        .excel-filter-popup .popup-header .close:hover {
+            opacity: 1;
+        }
+
+        .excel-filter-popup .options label {
+            cursor: pointer;
+        }
+
+        .excel-filter-popup .options input[type="checkbox"] {
+            margin-right: 6px;
+        }
+
+        /* Contenteditable cells UX */
+        table.dataTable td[contenteditable="true"] {
+            cursor: text;
+            outline: none;
+        }
+
+        table.dataTable td[contenteditable="true"]:focus {
+            /* focus ring */
+            box-shadow: inset 0 0 0 2px rgba(13, 81, 180, 0.65);
+        }
+
+        /* Excel-like multi-cell selection highlight */
+        table.dataTable td.dt-cell-selected {
+            outline: 2px solid rgba(13, 81, 180, 0.45);
+            outline-offset: -2px;
+            background: rgba(13, 81, 180, 0.07);
+        }
+
+        table.dataTable td.dt-cell-anchor {
+            outline: 2px solid rgba(13, 81, 180, 0.85);
+            outline-offset: -2px;
+        }
+
+        /* Make selected text inside selected cells not messy */
+        table.dataTable td.dt-cell-selected ::selection {
+            background: rgba(13, 81, 180, 0.20);
+        }
+
+        /* Optional: nicer spacing for DataTables buttons area */
+        .dataTables_wrapper .dt-buttons .btn {
+            margin-right: 4px;
+        }
+    </style>
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">

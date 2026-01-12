@@ -107,4 +107,149 @@ class M_tour_of_duty extends CI_Model
 
         return $durations;
     }
+
+    function emptyStringToNull($data)
+    {
+        if (is_array($data)) {
+            return array_map([$this, 'emptyStringToNull'], $data);
+        }
+        if (is_object($data)) {
+            foreach ($data as $k => $v) {
+                $data->$k = $this->emptyStringToNull($v);
+            }
+            return $data;
+        }
+        return $data === '' ? null : $data;
+    }
+
+    public function submit($payload)
+    {
+        $updates = $this->emptyStringToNull($payload['updates']) ?? [];
+        $deletes = $payload['deletes'] ?? [];
+        $creates = $this->emptyStringToNull($payload['creates']) ?? [];
+
+        $success = false;
+
+        // helper: parse "1,2,3" => [1,2,3]
+        $parseMatrixPoints = function ($val) {
+            if ($val === null) return [];
+            if (is_array($val)) return array_values(array_unique(array_filter(array_map('intval', $val))));
+            $parts = preg_split('/\s*,\s*/', trim((string)$val));
+            $ints  = array_map('intval', array_filter($parts, fn($x) => $x !== ''));
+            $ints  = array_values(array_unique(array_filter($ints, fn($x) => $x > 0)));
+            return $ints;
+        };
+
+        // helper: sync mp rows for 1 emp_tour_of_duty_id
+        $syncMp = function ($todId, array $mpIds) {
+            // delete existing
+            $this->db->where('emp_tour_of_duty_id', $todId)->delete('emp_tour_of_duty_mp');
+
+            // insert new if any
+            if (!empty($mpIds)) {
+                $rows = [];
+                foreach ($mpIds as $mpId) {
+                    $rows[] = [
+                        'emp_tour_of_duty_id' => (int)$todId,
+                        'matrix_point_id'     => (int)$mpId,
+                    ];
+                }
+                $this->db->insert_batch('emp_tour_of_duty_mp', $rows);
+            }
+        };
+
+        $this->db->trans_start();
+
+        /**
+         * 1) DELETES (hapus child dulu baru parent)
+         */
+        if (!empty($deletes)) {
+            $this->db->where_in('emp_tour_of_duty_id', $deletes)->delete('emp_tour_of_duty_mp');
+            $this->db->where_in('id', $deletes)->delete('emp_tour_of_duty');
+            $success = true;
+        }
+
+        /**
+         * 2) UPDATES
+         * - update kolom di emp_tour_of_duty (kecuali matrix_points)
+         * - sync matrix points ke table mp
+         */
+        if (!empty($updates)) {
+            // valid ids
+            $ids = array_column(
+                $this->db->select('id')->get('emp_tour_of_duty')->result_array(),
+                'id'
+            );
+
+            $updateData = [];
+            $mpToSync   = []; // [todId => [mpIds]]
+
+            foreach ($updates as $row) {
+                if (!isset($row['id']) || !is_numeric($row['id'])) continue;
+                $id = (int)$row['id'];
+                if (!in_array($id, $ids)) continue;
+
+                // ambil & parse mp
+                $mpIds = $parseMatrixPoints($row['matrix_points'] ?? null);
+                $mpToSync[$id] = $mpIds;
+
+                // buang matrix_points supaya tidak ikut update ke tabel utama
+                unset($row['matrix_points']);
+
+                $updateData[] = $row;
+            }
+
+            if (!empty($updateData)) {
+                $this->db->update_batch('emp_tour_of_duty', $updateData, 'id');
+                $success = true;
+            }
+
+            // sync mp per row
+            foreach ($mpToSync as $todId => $mpIds) {
+                $syncMp($todId, $mpIds);
+                $success = true;
+            }
+        }
+
+        /**
+         * 3) CREATES
+         * - insert per row supaya dapat insert_id()
+         * - lalu insert ke emp_tour_of_duty_mp
+         */
+        if (!empty($creates)) {
+            // remove rows marked deleted
+            $creates = array_filter($creates, function ($row) use ($deletes) {
+                return !(isset($row['id']) && in_array($row['id'], $deletes));
+            });
+
+            foreach ($creates as $row) {
+                if (!isset($row['id']) || strpos($row['id'], 'new_') !== 0) continue;
+
+                // parse mp, lalu buang dari row parent
+                $mpIds = $parseMatrixPoints($row['matrix_points'] ?? null);
+                unset($row['matrix_points']);
+
+                unset($row['id']);
+
+                // insert parent
+                $this->db->insert('emp_tour_of_duty', $row);
+                $newId = $this->db->insert_id();
+
+                // insert child mp
+                if ($newId) {
+                    $syncMp($newId, $mpIds);
+                    $success = true;
+                }
+            }
+        }
+
+        $this->db->trans_complete();
+
+        // kalau ada error transaction, anggap gagal
+        if ($this->db->trans_status() === false) {
+            return false;
+        }
+
+        return $success;
+    }
 }

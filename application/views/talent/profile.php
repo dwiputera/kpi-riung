@@ -275,9 +275,9 @@ if (!empty($comp_lvl_targets) && !empty($comp_lvl)) {
                     <div class="col-sm-4 border-right">
                         <div class="text-center">
                             <?php if ($employee['NRP'] == '10122195') : ?>
-                                <img src="<?= base_url() ?>drive/employee_image/AULIANSYAH%20AFRIANTHONI" onerror="this.onerror=null; this.src='<?= base_url('drive/employee_image/default.jpg') ?>';" style="width:100%; height:auto; object-fit:cover;">
+                                <img src="<?= base_url() ?>employee/image/show/AULIANSYAH%20AFRIANTHONI" onerror="this.onerror=null; this.src='<?= base_url('employee/image/show/default.jpg') ?>';" style="width:100%; height:auto; object-fit:cover;">
                             <?php else: ?>
-                                <img src="<?= base_url() ?>drive/employee_image/<?= $employee['NRP'] ?>" onerror="this.onerror=null; this.src='<?= base_url('drive/employee_image/default.jpg') ?>';" style="width:100%; height:auto; object-fit:cover;">
+                                <img src="<?= base_url() ?>employee/image/show/<?= $employee['NRP'] ?>" onerror="this.onerror=null; this.src='<?= base_url('employee/image/show/default.jpg') ?>';" style="width:100%; height:auto; object-fit:cover;">
                             <?php endif; ?>
                             <h3 style="color: rgb(44,44,44); font-family: Calibri;" class="m-0"><strong><?= $employee['FullName'] ?></strong></h3>
                             <h4 style="color: rgb(100,100,100); font-family: Calibri;" class="m-0"><?= $employee['NRP'] ?></h4>

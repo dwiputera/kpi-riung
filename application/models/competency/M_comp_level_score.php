@@ -161,68 +161,137 @@ class M_comp_level_score extends CI_Model
 
     public function submit()
     {
-        $nrps = (array) json_decode($this->input->post('json_data'));
+        $json = $this->input->post('json_data', true);
+        $nrps = (array) json_decode($json, true); // assoc array
+
         $nrps = $this->emptyStringToNull($nrps);
+
+        $method_id = $this->input->post('method_id');
+        $year      = $this->input->post('year');
+
         $success = true;
-        $cla_columns = ['vendor', 'recommendation', 'remarks', 'score'];
-        $filled = array_filter($nrps, function ($obj) {
-            return count(array_filter((array) $obj)) > 0;
+
+        // kolom yang disimpan di comp_lvl_assess (bukan table score)
+        $cla_columns = [
+            'vendor',
+            'recommendation',
+            'remarks',
+            'score',
+            'assessment_insight_strength',
+            'assessment_insight_development',
+            'talent_insight',
+        ];
+
+        // filter nrp yang punya minimal 1 value terisi
+        $filled = array_filter($nrps, function ($row) {
+            $row = (array) $row;
+            return count(array_filter($row, function ($v) {
+                return !($v === null || $v === '');
+            })) > 0;
         });
+
         $empty = array_diff_key($nrps, $filled);
 
-        foreach ($empty as $i_nrp => $nrp_i) {
-            $cla = $this->db
-                ->get_where('comp_lvl_assess', array('NRP' => $i_nrp, 'method_id' => $this->input->post('method_id'), 'tahun' => $this->input->post('year')))
-                ->row_array();
-            if ($cla) {
-                $success = $this->db->where('comp_lvl_assess_id', $cla['id'])->delete('comp_lvl_assess_score');
-                $success = $this->db->where('id', $cla['id'])->delete('comp_lvl_assess');
-            }
-        }
+        $this->db->trans_begin();
 
-        foreach ($filled as $i_nrp => $nrp_i) {
-            $cla = $this->db
-                ->get_where('comp_lvl_assess', array('NRP' => $i_nrp, 'method_id' => $this->input->post('method_id'), 'tahun' => $this->input->post('year')))
-                ->row_array();
-            if (!$cla) {
-                $data = [
-                    'NRP' => $i_nrp,
-                    'method_id' => $this->input->post('method_id'),
-                    'tahun' => $this->input->post('year'),
-                ];
-                $success = $this->db->insert('comp_lvl_assess', $data);
-                $cla_id = $this->db->insert_id();
-            } else {
-                $cla_id = $cla['id'];
-            }
+        try {
+            // 1) hapus data yang benar2 kosong
+            foreach ($empty as $nrp => $row) {
+                $cla = $this->db->get_where('comp_lvl_assess', [
+                    'NRP'       => $nrp,
+                    'method_id' => $method_id,
+                    'tahun'     => $year,
+                ])->row_array();
 
-            $cla_cols = [];
-            $cl_ids   = [];
-
-            foreach ($nrp_i as $key => $val) {
-                if (in_array($key, $cla_columns, true)) {
-                    $cla_cols[$key] = $val;
-                } else {
-                    $cl_ids[$key] = $val;
+                if ($cla) {
+                    $this->db->where('comp_lvl_assess_id', $cla['id'])->delete('comp_lvl_assess_score');
+                    $this->db->where('id', $cla['id'])->delete('comp_lvl_assess');
                 }
             }
 
-            $this->db->where('id', $cla_id)->update('comp_lvl_assess', $cla_cols);
+            // 2) upsert data yang terisi
+            foreach ($filled as $nrp => $row) {
+                $row = (array) $row;
 
-            foreach ($cl_ids as $i_cl => $cl_i) {
-                $clas = $this->db->get_where('comp_lvl_assess_score clas', array('comp_lvl_assess_id' => $cla['id'], 'comp_lvl_id' => $i_cl))->row_array();
-                if ($cl_i || $cl_i === 0) {
-                    if ($clas) {
-                        $success = $this->db->where('id', $clas['id'])->update('comp_lvl_assess_score', array('score' => $cl_i));
+                $cla = $this->db->get_where('comp_lvl_assess', [
+                    'NRP'       => $nrp,
+                    'method_id' => $method_id,
+                    'tahun'     => $year,
+                ])->row_array();
+
+                if (!$cla) {
+                    $this->db->insert('comp_lvl_assess', [
+                        'NRP'       => $nrp,
+                        'method_id' => $method_id,
+                        'tahun'     => $year,
+                    ]);
+                    $cla_id = $this->db->insert_id();
+                } else {
+                    $cla_id = (int) $cla['id'];
+                }
+
+                // pisahkan kolom header vs score per comp_lvl_id
+                $cla_cols = [];
+                $cl_ids   = [];
+
+                foreach ($row as $key => $val) {
+                    // normalisasi key numeric dari JSON (kadang jadi string "12")
+                    if (in_array($key, $cla_columns, true)) {
+                        $cla_cols[$key] = $val;
                     } else {
-                        $success = $this->db->insert('comp_lvl_assess_score', array('comp_lvl_assess_id' => $cla_id, 'score' => $cl_i, 'comp_lvl_id' => $i_cl));
+                        // hanya terima comp_lvl_id yang numeric
+                        if (is_numeric($key)) {
+                            $cl_ids[(int)$key] = $val;
+                        }
                     }
-                } else {
-                    if ($clas) {
-                        $success = $this->db->where('id', $clas['id'])->delete('comp_lvl_assess_score');
+                }
+
+                // update kolom comp_lvl_assess kalau ada
+                if (!empty($cla_cols)) {
+                    $this->db->where('id', $cla_id)->update('comp_lvl_assess', $cla_cols);
+                }
+
+                // upsert comp_lvl_assess_score
+                foreach ($cl_ids as $comp_lvl_id => $scoreVal) {
+
+                    $clas = $this->db->get_where('comp_lvl_assess_score', [
+                        'comp_lvl_assess_id' => $cla_id,
+                        'comp_lvl_id'        => $comp_lvl_id,
+                    ])->row_array();
+
+                    // kalau ada value (termasuk 0) => insert/update
+                    if ($scoreVal !== null && $scoreVal !== '') {
+                        if ($clas) {
+                            $this->db->where('id', $clas['id'])->update('comp_lvl_assess_score', [
+                                'score' => $scoreVal
+                            ]);
+                        } else {
+                            $this->db->insert('comp_lvl_assess_score', [
+                                'comp_lvl_assess_id' => $cla_id,
+                                'comp_lvl_id'        => $comp_lvl_id,
+                                'score'              => $scoreVal,
+                            ]);
+                        }
+                    } else {
+                        // kalau kosong => delete kalau sebelumnya ada
+                        if ($clas) {
+                            $this->db->where('id', $clas['id'])->delete('comp_lvl_assess_score');
+                        }
                     }
                 }
             }
+
+            if ($this->db->trans_status() === false) {
+                $this->db->trans_rollback();
+                $success = false;
+            } else {
+                $this->db->trans_commit();
+                $success = true;
+            }
+        } catch (\Throwable $e) {
+            $this->db->trans_rollback();
+            $success = false;
+            // optional: log_message('error', 'Submit comp lvl assess error: ' . $e->getMessage());
         }
 
         return $success;

@@ -64,6 +64,9 @@
                             <th>Recommendation</th>
                             <th>Remarks</th>
                             <th>Score</th>
+                            <th>Assessment Insight (Strength)</th>
+                            <th>Assessment Insight (Development)</th>
+                            <th>Talent Insight</th>
                         </tr>
                         <tr>
                             <th></th>
@@ -77,6 +80,9 @@
                                 <th>Actual</th>
                                 <th>Gap</th>
                             <?php endforeach; ?>
+                            <th></th>
+                            <th></th>
+                            <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
@@ -108,6 +114,21 @@
                                 <td><?= $e_i['recommendation'] ?></td>
                                 <td><?= $e_i['remarks'] ?></td>
                                 <td><?= $e_i['score'] ?></td>
+                                <td>
+                                    <div class="wysiwyg-preview-scroll">
+                                        <?= $e_i['assessment_insight_strength'] ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wysiwyg-preview-scroll">
+                                        <?= $e_i['assessment_insight_development'] ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wysiwyg-preview-scroll">
+                                        <?= $e_i['talent_insight'] ?>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -122,6 +143,25 @@
 
 <script src="<?= base_url('assets/js/select2-fuzzy.js') ?>"></script>
 <script src="<?= base_url('assets/js/datatable-filter-column.js') ?>"></script>
+
+<style>
+    .wysiwyg-preview-scroll {
+        max-height: 90px;
+        /* bisa kamu adjust 70–120 */
+        overflow: auto;
+        padding: 6px 8px;
+        border: 1px dashed #ddd;
+        border-radius: 4px;
+        background: #fafafa;
+        font-size: 0.875rem;
+    }
+
+    .wysiwyg-preview-scroll p:last-child,
+    .wysiwyg-preview-scroll ul:last-child,
+    .wysiwyg-preview-scroll ol:last-child {
+        margin-bottom: 0;
+    }
+</style>
 
 <script>
     //Date picker

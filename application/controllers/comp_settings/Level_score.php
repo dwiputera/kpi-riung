@@ -144,6 +144,9 @@ class Level_score extends MY_Controller
                 'recommendation' => $a['recommendation'] ?? null,
                 'remarks'        => $a['remarks'] ?? null,
                 'score'          => isset($a['score']) ? (float)$a['score'] : null,
+                'assessment_insight_strength'        => $a['assessment_insight_strength'] ?? null,
+                'assessment_insight_development'        => $a['assessment_insight_development'] ?? null,
+                'talent_insight'        => $a['talent_insight'] ?? null,
             ];
         }
 
@@ -173,8 +176,11 @@ class Level_score extends MY_Controller
                 $e['recommendation'] = $assessMap[$nrp]['recommendation'];
                 $e['remarks'] = $assessMap[$nrp]['remarks'];
                 $e['score']          = $assessMap[$nrp]['score'];
+                $e['assessment_insight_strength']          = $assessMap[$nrp]['assessment_insight_strength'];
+                $e['assessment_insight_development']          = $assessMap[$nrp]['assessment_insight_development'];
+                $e['talent_insight']          = $assessMap[$nrp]['talent_insight'];
             } else {
-                $e['cla_id'] = $e['vendor'] = $e['recommendation'] = $e['remarks'] = null;
+                $e['cla_id'] = $e['vendor'] = $e['recommendation'] = $e['remarks'] = $e['assessment_insight_strength'] = $e['assessment_insight_development'] = $e['talent_insight'] = null;
                 $e['score']  = null;
             }
         }

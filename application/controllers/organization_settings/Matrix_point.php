@@ -43,9 +43,12 @@ class Matrix_point extends MY_Controller
 
         // Daftar tabel/kolom yang mengacu ke org_area_lvl_pstn.id
         // Tambahkan sesuai kebutuhan.
+        // Daftar tabel/kolom yang mengacu ke matrix_point lama (source_id) -> matrix_point baru (target_id)
         $fkRefs = [
-            ['table' => 'comp_position',        'column' => 'area_lvl_pstn_id'],
-            // ['table' => 'tabel_lain',       'column' => 'area_lvl_pstn_id'],
+            ['table' => 'comp_position',        'column' => 'area_lvl_pstn_id',     'dedup' => true],
+            ['table' => 'emp_tour_of_duty_mp',  'column' => 'matrix_point_id',      'dedup' => false],
+            ['table' => 'trn_atmp',             'column' => 'departemen_pengampu',  'dedup' => false],
+            ['table' => 'trn_mts',              'column' => 'departemen_pengampu',  'dedup' => false],
         ];
 
         $this->db->trans_start();
@@ -79,7 +82,7 @@ class Matrix_point extends MY_Controller
             // 3) Pindahkan semua referensi FK dari source -> target
             //    Set $dedup = true kalau ingin aman dari duplikasi (disarankan)
             $dedup = true;
-            $this->_move_fk_refs($source_id, $target_id, $fkRefs, $dedup);
+            $this->_move_fk_refs($source_id, $target_id, $fkRefs);
         }
         // mode 'unassign': FK tidak diubah; hanya source type = NULL.
 
@@ -103,18 +106,19 @@ class Matrix_point extends MY_Controller
      * Jika $dedup = true, lakukan deduplikasi baris “kembar” setelah update (berdasarkan seluruh kolom selain id & FK).
      * $fkRefs: array seperti [ ['table'=>'comp_pstn', 'column'=>'area_lvl_pstn_id'], ... ]
      */
-    private function _move_fk_refs(int $source_id, int $target_id, array $fkRefs, bool $dedup = true): void
+    private function _move_fk_refs(int $source_id, int $target_id, array $fkRefs): void
     {
         foreach ($fkRefs as $ref) {
             $table = $ref['table'];
             $col   = $ref['column'];
+            $dedup = isset($ref['dedup']) ? (bool)$ref['dedup'] : false;
 
-            // 3a) UPDATE langsung: ganti source -> target
+            // UPDATE FK: source -> target
             $this->db->where($col, $source_id)
                 ->set($col, $target_id)
                 ->update($table);
 
-            // 3b) DEDUP (opsional): hilangkan baris kembar di target
+            // DEDUP (opsional, per table)
             if ($dedup) {
                 $this->_dedup_table_by_all_columns($table, $col, $target_id);
             }

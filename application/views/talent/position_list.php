@@ -31,7 +31,7 @@
                     <tbody>
                         <?php $i = 1; ?>
                         <?php foreach ($positions as $pstn) : ?>
-                            <?php if (!$pstn['mp_id']) continue; ?>
+                            <?php if ($pstn['id'] == 1) continue; ?>
                             <tr>
                                 <td class="row">
                                     <a href="<?= base_url() ?>talent/candidate_list/<?= md5($pstn['id']) ?>?method=AC" class="btn btn-xs btn-primary col-lg-6"><strong>Assessment Center</strong></a>

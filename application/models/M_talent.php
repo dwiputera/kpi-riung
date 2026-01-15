@@ -152,11 +152,41 @@ class M_talent extends CI_Model
             ")->result_array();
 
             foreach ($employees as &$e) {
-                $e['correlation_matrix'] = $correlation_matrix[$e['mp_id']]['correlations'][$position['mp_id']];
-                $tour_of_duty = $this->m_tod->get_tod_with_mp("WHERE NRP = '$e[NRP]' ORDER BY date DESC");
+                // === Guard mp_id employee dan position ===
+                $empMpId = isset($e['mp_id']) ? $e['mp_id'] : null;
+                $posMpId = isset($position['mp_id']) ? $position['mp_id'] : null;
+
+                // === correlation_matrix aman ===
+                $e['correlation_matrix'] = 0; // default
+                if ($empMpId !== null && $posMpId !== null) {
+                    $e['correlation_matrix'] =
+                        $correlation_matrix[$empMpId]['correlations'][$posMpId]
+                        ?? 0; // default kalau tidak ada
+                }
+
+                // === NRP guard ===
+                $nrp = $e['NRP'] ?? null;
+
+                // kalau NRP kosong, skip TOD (hindari query error)
+                if (!$nrp) {
+                    $e['tour_of_duty'] = 0; // atau null
+                    continue;
+                }
+
+                // === Query binding (lebih aman) ===
+                $tour_of_duty = $this->m_tod->get_tod_with_mp(
+                    "WHERE NRP = " . $this->db->escape($nrp) . " ORDER BY date DESC"
+                );
+
+                // pastikan array
+                if (!is_array($tour_of_duty)) $tour_of_duty = [];
+
                 $durations = $this->m_tod->calculate_duration_per_matrix_point($tour_of_duty);
+                if (!is_array($durations)) $durations = [];
+
                 $e['tour_of_duty'] = $this->get_score_tour_of_duty($durations);
             }
+            unset($e);
 
             $this->load->model('competency/M_comp_level_target', 'm_c_l_t');
             $comp_lvl_target = $this->m_c_l_t->get_comp_level_target($position['id'], 'area_lvl_pstn_id');
@@ -209,12 +239,35 @@ class M_talent extends CI_Model
 
             $emp['job_fit_score'] = null;
             $comp_lvl_assess = $this->db->get_where('comp_lvl_assess', array('NRP' => $emp['NRP'], 'method_id' => $method_id))->row_array();
-            if ($comp_lvl_assess) {
-                $comp_lvl_assess_score = $this->db->get_where('comp_lvl_assess_score', array('comp_lvl_assess_id' => $comp_lvl_assess['id']))->result_array();
-                $comp_lvl_target_ids = array_column($comp_lvl_target, 'comp_lvl_id');
-                $comp_lvl_assess_score = array_filter($comp_lvl_assess_score, fn($clas_i, $i_clas) => in_array($clas_i['comp_lvl_id'], $comp_lvl_target_ids), ARRAY_FILTER_USE_BOTH);
-                $job_fit_score = array_sum(array_column($comp_lvl_assess_score, 'score')) * 100 / array_sum(array_column($comp_lvl_target, 'target'));
-                $emp['job_fit_score'] = number_format($job_fit_score, 2);
+            if (!empty($comp_lvl_assess) && !empty($comp_lvl_target) && is_array($comp_lvl_target)) {
+                $comp_lvl_assess_score = $this->db
+                    ->get_where('comp_lvl_assess_score', ['comp_lvl_assess_id' => $comp_lvl_assess['id']])
+                    ->result_array();
+
+                // Ambil comp_lvl_id yang ditargetkan
+                $comp_lvl_target_ids = array_filter(array_map('intval', array_column($comp_lvl_target, 'comp_lvl_id')));
+
+                // Filter score agar hanya untuk comp_lvl_id yang ada di target
+                if (!empty($comp_lvl_target_ids) && !empty($comp_lvl_assess_score)) {
+                    $comp_lvl_assess_score = array_values(array_filter($comp_lvl_assess_score, function ($row) use ($comp_lvl_target_ids) {
+                        return isset($row['comp_lvl_id']) && in_array((int)$row['comp_lvl_id'], $comp_lvl_target_ids, true);
+                    }));
+                } else {
+                    $comp_lvl_assess_score = [];
+                }
+
+                $sumScore  = (float) array_sum(array_map('floatval', array_column($comp_lvl_assess_score, 'score')));
+                $sumTarget = (float) array_sum(array_map('floatval', array_column($comp_lvl_target, 'target')));
+
+                // Hindari division by zero
+                if ($sumTarget > 0) {
+                    $job_fit_score = ($sumScore * 100) / $sumTarget;
+                    $emp['job_fit_score'] = number_format($job_fit_score, 2);
+                } else {
+                    $emp['job_fit_score'] = number_format(0, 2); // atau null, terserah kebutuhan
+                }
+            } else {
+                $emp['job_fit_score'] = number_format(0, 2); // fallback kalau tidak ada data
             }
 
             $emp['score_kompetensi_teknis'] = $this->get_score_kompetensi_teknis($emp['kompetensi_teknis']);

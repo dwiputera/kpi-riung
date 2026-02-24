@@ -22,10 +22,10 @@ class M_monitoring extends CI_Model
     public function get_training($year, $month, $atmp, $mts, $type = 'ytd')
     {
         if ($type == 'mtd') {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
 
@@ -44,10 +44,10 @@ class M_monitoring extends CI_Model
     public function get_chart_status($year, $month, $atmp, $mts, $type = 'ytd')
     {
         if ($type == 'mtd') {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
 
@@ -58,6 +58,7 @@ class M_monitoring extends CI_Model
         $atmp_mts = array_filter($mts, fn($mts_i) => !empty($mts_i['atmp_id']));
 
         $total = count($atmp) + count($mts) - count($atmp_mts);
+
         $data = [
             'total' => $total,
             'done' => ['value' => 0, 'percentage' => number_format(0, 2)],
@@ -69,7 +70,8 @@ class M_monitoring extends CI_Model
         $data['done']['value']       = count(array_filter($mts, fn($v) => ($v['status'] ?? null) === 'Y'));
         $data['pending']['value']    = count(array_filter($mts, fn($v) => ($v['status'] ?? null) === 'P'));
         $data['reschedule']['value'] = count(array_filter($mts, fn($v) => ($v['status'] ?? null) === 'R'));
-        $data['cancel']['value']     = count(array_filter($mts, fn($v) => ($v['status'] ?? null) === 'N')) + count($atmp) - count($atmp_mts);
+        // $data['cancel']['value']     = count(array_filter($mts, fn($v) => ($v['status'] ?? null) === 'N')) + count($atmp) - count($atmp_mts);
+        $data['cancel']['value']     = count(array_filter($mts, fn($v) => ($v['status'] ?? null) === 'N'));
 
         // Persentase aman
         $data['done']['percentage']       = $this->safe_percent($data['done']['value'], $total);
@@ -83,10 +85,10 @@ class M_monitoring extends CI_Model
     public function get_chart_budget($year, $month, $atmp, $mts, $type = 'ytd')
     {
         if ($type == 'mtd') {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
 
@@ -116,10 +118,10 @@ class M_monitoring extends CI_Model
     public function get_chart_participants($year, $month, $atmp, $mts, $type = 'ytd')
     {
         if ($type == 'mtd') {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
-            $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
+            // $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
             $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
 

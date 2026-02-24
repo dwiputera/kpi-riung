@@ -75,14 +75,23 @@ class M_mts extends CI_Model
 
         $success = false;
 
-        // 1. Handle UPDATES (existing rows)
+        // 1. Handle UPDATES
         if (!empty($updates)) {
-            $ids = array_column($this->db->select('id')->get('trn_mts')->result_array(), 'id');
+            $ids = array_column(
+                $this->db->select('id')->get('trn_mts')->result_array(),
+                'id'
+            );
 
             $updateData = [];
             foreach ($updates as $row) {
                 if (isset($row['id']) && is_numeric($row['id']) && in_array($row['id'], $ids)) {
-                    $row['status'] = $row['status'] != '' ? $row['status'] : 'P';
+
+                    // 🔥 NORMALIZE DATE
+                    $row['start_date'] = !empty($row['start_date']) ? $row['start_date'] : NULL;
+                    $row['end_date']   = !empty($row['end_date']) ? $row['end_date'] : NULL;
+
+                    $row['status'] = !empty($row['status']) ? $row['status'] : 'P';
+
                     $updateData[] = $row;
                 }
             }
@@ -100,9 +109,9 @@ class M_mts extends CI_Model
             $success = true;
         }
 
-        // 3. Handle CREATES (new rows)
+        // 3. Handle CREATES
         if (!empty($creates)) {
-            // Remove any rows marked as deleted
+
             $creates = array_filter($creates, function ($row) use ($deletes) {
                 return !(isset($row['id']) && in_array($row['id'], $deletes));
             });
@@ -110,9 +119,17 @@ class M_mts extends CI_Model
             $createData = [];
             foreach ($creates as $row) {
                 if (isset($row['id']) && strpos($row['id'], 'new_') === 0) {
+
                     unset($row['id']);
+
                     $row['year'] = $year;
-                    $row['status'] = $row['status'] && $row['status'] != '' ?? 'P';
+
+                    // 🔥 NORMALIZE DATE
+                    $row['start_date'] = !empty($row['start_date']) ? $row['start_date'] : NULL;
+                    $row['end_date']   = !empty($row['end_date']) ? $row['end_date'] : NULL;
+
+                    $row['status'] = !empty($row['status']) ? $row['status'] : 'P';
+
                     $createData[] = $row;
                 }
             }

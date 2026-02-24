@@ -35,40 +35,4 @@ class Monitoring extends MY_Controller
         $data['content'] = "training/monitoring";
         $this->load->view('templates/header_footer', $data);
     }
-
-    // function edit($month)
-    // {
-    //     $data['month'] = $month;
-    //     $data['trainings'] = $this->m_monitoring->get_training($month);
-    //     $data['content'] = "training/monitoring_edit";
-    //     $this->load->view('templates/header_footer', $data);
-    // }
-
-    // function submit()
-    // {
-    //     if ($this->input->post('proceed') == 'N') {
-    //         redirect('training/monitoring?month=' . $this->input->post('month'));
-    //     }
-    //     $success = $this->m_monitoring->submit();
-
-    //     $this->session->set_flashdata('swal', [
-    //         'type' => 'success',
-    //         'message' => "monitoring edited succesfully"
-    //     ]);
-    //     redirect('training/monitoring/edit/' . $this->input->post('month'));
-    // }
-
-    // function test($function, $param)
-    // {
-    //     $this->load->model('m_access');
-    //     switch ($function) {
-    //         case 'get_menus_by_role':
-    //             $data = $this->m_access->get_menus_by_role($param);
-    //             echo '<pre>', var_dump($data);
-    //             die;
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    // }
 }

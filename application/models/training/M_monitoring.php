@@ -23,15 +23,21 @@ class M_monitoring extends CI_Model
     {
         if ($type == 'mtd') {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] == $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
-        $mts_atmp           = array_filter($mts, fn($mts_i) => $mts_i['atmp_id'] != null);
+
+        // Filter ATMP based on matching ID with MTS
+        $atmp_ids_in_mts = array_column($mts, 'atmp_id');  // Extract all atmp_ids from mts
+        $atmp = array_filter($atmp, fn($atmp_i) => in_array($atmp_i['id'], $atmp_ids_in_mts));  // Keep only matching atmp
+
+        $mts_atmp = array_filter($mts, fn($mts_i) => !empty($mts_i['atmp_id']));
         $mts_atmp_atmp_ids  = array_column($mts_atmp, 'atmp_id');
-        $atmp_not_mts       = array_filter($atmp, fn($atmp_i) => !in_array($atmp_i['id'], $mts_atmp_atmp_ids));
-        $trainings          = array_merge($mts, $atmp_not_mts);
+        $atmp_not_mts = array_filter($atmp, fn($atmp_i) => !in_array($atmp_i['id'], $mts_atmp_atmp_ids));
+
+        $trainings = array_merge($mts, $atmp_not_mts);
         return $trainings;
     }
 
@@ -39,11 +45,16 @@ class M_monitoring extends CI_Model
     {
         if ($type == 'mtd') {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] == $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
+
+        // Filter ATMP based on matching ID with MTS
+        $atmp_ids_in_mts = array_column($mts, 'atmp_id');  // Extract all atmp_ids from mts
+        $atmp = array_filter($atmp, fn($atmp_i) => in_array($atmp_i['id'], $atmp_ids_in_mts));  // Keep only matching atmp
+
         $atmp_mts = array_filter($mts, fn($mts_i) => !empty($mts_i['atmp_id']));
 
         $total = count($atmp) + count($mts) - count($atmp_mts);
@@ -73,11 +84,16 @@ class M_monitoring extends CI_Model
     {
         if ($type == 'mtd') {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] == $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
+
+        // Filter ATMP based on matching ID with MTS
+        $atmp_ids_in_mts = array_column($mts, 'atmp_id');  // Extract all atmp_ids from mts
+        $atmp = array_filter($atmp, fn($atmp_i) => in_array($atmp_i['id'], $atmp_ids_in_mts));  // Keep only matching atmp
+
         $total_atmp = array_sum(array_column($atmp, 'grand_total'));
         $total_mts  = array_sum(array_column($mts,  'grand_total'));
 
@@ -101,11 +117,15 @@ class M_monitoring extends CI_Model
     {
         if ($type == 'mtd') {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] == $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] == $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] == $month);
         } else {
             $atmp = array_filter($atmp, fn($atmp_i) => $atmp_i['month'] && $atmp_i['month'] <= $month);
-            $mts  = array_filter($mts,  fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
+            $mts  = array_filter($mts, fn($mts_i)  => $mts_i['month'] && $mts_i['month'] <= $month);
         }
+
+        // Filter ATMP based on matching ID with MTS
+        $atmp_ids_in_mts = array_column($mts, 'atmp_id');  // Extract all atmp_ids from mts
+        $atmp = array_filter($atmp, fn($atmp_i) => in_array($atmp_i['id'], $atmp_ids_in_mts));  // Keep only matching atmp
 
         $total_atmp_part = array_sum(array_column($atmp, 'total_participants'));
         $total_mts_part  = array_sum(array_column($mts,  'total_participants'));
@@ -125,21 +145,4 @@ class M_monitoring extends CI_Model
 
         return $data;
     }
-
-    // public function submit()
-    // {
-    //     $ids = $this->db->query("SELECT id FROM trn")->result_array();
-    //     $ids = array_keys(array_column($ids, null, 'id'));
-    //     $submitted_data = json_decode($this->input->post('json_data'), true);
-    //     foreach ($submitted_data['table_data'] as $key => $training) {
-    //         foreach ($ids as $id) {
-    //             if ($key == md5($id)) {
-    //                 $data[$key] = $training;
-    //                 $data[$key]['id'] = $id;
-    //             }
-    //         }
-    //     }
-    //     $query = $this->db->update_batch('trn', $data, 'id');
-    //     return $query;
-    // }
 }

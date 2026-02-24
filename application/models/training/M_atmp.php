@@ -84,11 +84,18 @@ class M_atmp extends CI_Model
         if (!empty($updates)) {
             $ids = array_column($this->db->select('id')->get('trn_atmp')->result_array(), 'id');
             $updateData = [];
+
             foreach ($updates as $row) {
                 if (isset($row['id']) && is_numeric($row['id']) && in_array($row['id'], $ids)) {
+
+                    // ✅ normalize date fields
+                    $row['start_date'] = !empty($row['start_date']) ? $row['start_date'] : NULL;
+                    $row['end_date']   = !empty($row['end_date']) ? $row['end_date'] : NULL;
+
                     $updateData[] = $row;
                 }
             }
+
             if (!empty($updateData)) {
                 $this->db->update_batch('trn_atmp', $updateData, 'id');
                 $success = true;
@@ -102,7 +109,7 @@ class M_atmp extends CI_Model
             $success = true;
         }
 
-        // 3. Handle CREATES (new rows)
+        // CREATES
         if (!empty($creates)) {
             // Remove any rows marked as deleted
             $creates = array_filter($creates, function ($row) use ($deletes) {
@@ -114,6 +121,11 @@ class M_atmp extends CI_Model
                 if (isset($row['id']) && strpos($row['id'], 'new_') === 0) {
                     unset($row['id']);
                     $row['year'] = $year;
+
+                    // ✅ normalize date fields
+                    $row['start_date'] = !empty($row['start_date']) ? $row['start_date'] : NULL;
+                    $row['end_date']   = !empty($row['end_date']) ? $row['end_date'] : NULL;
+
                     $createData[] = $row;
                 }
             }

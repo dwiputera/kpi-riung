@@ -9,207 +9,140 @@ class Import_tna_2026 extends CI_Controller
         $this->load->model('employee/M_employee', 'm_emp');
     }
 
-    function json()
+    function import()
     {
-        $year = 2026;
-        $mp_lnas = json_decode(file_get_contents(__DIR__ . '/import_tna_2026.json'), true);
-
-        $mp_ids = [
-            'eng' => 45,
-            'opr' => 9,
+        $names = [
+            'Edi Pranoto' => '10118040',
+            'SITI FADHILAH BAIZA' => '10122316',
+            'Achmad Rizqi' => '10119003',
+            'Heri Susanto' => '10111423',
+            'Totok Murdianto' => '10411450',
+            'Vanya Cesaria Evelina' => '10124129',
+            'Reki Patlianor' => '11522137',
+            'Fadhli Muhammad' => '11522122',
+            'Faisal Majid' => '11522133',
+            'SOLIKHIN' => '11111103',
+            'KARTIKO WIBOWO' => '10121135',
+            'ANGGIA PUTRA N' => '10121093',
+            'ADITYA CIPTA UTAMA' => '10111410',
+            'FANI DWI CAHYONO' => '10121201',
+            'EKO WIJAYA' => '11222197',
+            'GOLDY PUTRA S.' => '10121197',
+            'EKO SUDANTOKO' => '11110061',
+            'JHON FADLI' => '11410030',
+            'AGUS SUBAGYO' => '11109085',
+            'SARYONO' => '10124266',
+            'M MUHTAR NUGROHO' => '11110073',
+            'NUR MUHADI' => '11112013',
+            'HENDRY SETYAWAN' => '11112024',
+            'Edi Dia Ghozali marselo' => '11112039',
+            'WIYOGO' => '11110051',
         ];
 
-        foreach ($mp_lnas as $mp => $mp_lna) {
-            // if (in_array($mp, array('eng'))) continue;
-            if ($mp != 'opr') continue;
+        $nrp_not_found = [];
 
-            echo '<pre>', print_r($mp, true);
-            $nrp_scores = [];
-            $mp_id = $mp_ids[$mp];
-            $comp_pstn = $this->db->get_where('comp_position', array('area_lvl_pstn_id' => $mp_id))->result_array();
-            foreach ($mp_lna as $i_row => $row_i) {
-                if (!isset($row_i['NRP'])) continue;
+        $year = 2026;
+        $lnas = json_decode(file_get_contents(__DIR__ . '/import_tna_2026.json'), true);
 
-                $nrp_raw = trim((string)$row_i['NRP']);
-                $nrp = $nrp_raw;
-                if (strlen($nrp_raw) == 6) $nrp = '10' . $nrp_raw;
-                if (strlen($nrp_raw) == 7) $nrp = '1' . $nrp_raw;
-                $result = array_filter($comp_pstn, function ($item) use ($row_i) {
-                    return strcasecmp($item['name'], $row_i['Nama Kompetensi']) === 0;
-                });
+        $lnas_grouped = [];
 
-                if (!$result) {
-                    echo '<pre>', print_r($row_i, true);
-                    die;
-                } else {
-                    $result = reset($result);
-                    $row_i['comp_pstn_id'] = $result['id'];
-                }
-                $nrp_scores[$nrp][] = array(
-                    'NRP' => $nrp,
-                    'year' => $year,
-                    'comp_pstn_id' => $row_i['comp_pstn_id'],
-                    'score' => $row_i['Actual'],
-                );
+        foreach ($lnas as $row) {
+            $nrp  = $row['NRP'];
+            $comp = $row['Nama Kompetensi'];
+
+            if (!isset($lnas_grouped[$nrp])) {
+                $lnas_grouped[$nrp] = [
+                    'Nama'             => $row['Nama'],
+                    'NRP'              => $row['NRP'],
+                    'Jabatan'          => $row['Jabatan'],
+                    'Kelompok Jabatan' => $row['Kelompok Jabatan'],
+                    'Departemen'       => $row['Departemen'],
+                    'Site'             => $row['Site'],
+                    'Kompetensi'       => []
+                ];
             }
 
-            foreach ($nrp_scores as $i_nrp_score => $nrp_score_i) {
-                $emp = $this->m_emp->get_employee($i_nrp_score, 'users.NRP', false);
-                if ($emp['mp_id'] != $mp_id) {
-                    echo '<pre>', print_r($emp, true);
-                    die;
-                }
-                $scores = $this->db->get_where('comp_pstn_score', array('NRP' => $i_nrp_score, 'year' => $year))->result_array();
+            $lnas_grouped[$nrp]['Kompetensi'][$comp] = [
+                'plan'   => $row['Plan']   !== '' ? (int)$row['Plan']   : null,
+                'actual' => $row['Actual'] !== '' ? (int)$row['Actual'] : null,
+                'gap'    => $row['GAP']    !== '' ? (int)$row['GAP']    : null,
+            ];
+        }
 
-                $missing = array_filter(
-                    $scores,
-                    fn($score) =>
-                    !in_array($score['comp_pstn_id'], array_column($nrp_score_i, 'comp_pstn_id'))
-                );
-
-                if ($missing) {
-                    // code to delete here
-                    echo '<pre>', print_r($missing, true);
-                    echo '<pre>', print_r($scores, true);
-                    echo '<pre>', print_r($nrp_score_i, true);
-                    die;
-                }
-                foreach ($nrp_score_i as $i_score => $score_i) {
-                    $comp_pstn_score = $this->db->get_where('comp_pstn_score', array('NRP' => $i_nrp_score, 'comp_pstn_id' => $score_i['comp_pstn_id'], 'year' => $year))->row_array();
-                    if (!$comp_pstn_score) {
-                        echo '<pre>', print_r('insert', true);
-                        echo '<pre>', print_r($score_i, true);
-                        // $this->db->insert('comp_pstn_score', $score_i);
+        foreach ($lnas_grouped as $i_lnag => $lnag_i) {
+            if (in_array($lnag_i['Nama'], ['Webi Febrian', 'Alexander Rendra Pratama', 'SIGIT PREBIANTO'])) continue;
+            $user = $this->db->get_where('rml_sso_la.users', ['NRP' => $lnag_i['NRP']])->row_array();
+            if (!$user) {
+                $user = $this->db->get_where('rml_sso_la.users', ['NRP' => '10' . $lnag_i['NRP']])->row_array();
+                if ($user) {
+                    $lnas_grouped[$i_lnag]['NRP'] = '10' . $lnag_i['NRP'];
+                } else {
+                    $nrp_not_found[] = $lnag_i['Nama'];
+                    $user = $this->db->get_where('rml_sso_la.users', ['NRP' => $names[$lnag_i['Nama']]])->row_array();
+                    if ($user) {
+                        $lnas_grouped[$i_lnag]['NRP'] = $names[$lnag_i['Nama']];
                     } else {
-                        echo '<pre>', print_r('update', true);
-                        echo '<pre>', print_r($score_i, true);
-                        // $this->db->where('id', $comp_pstn_score['id'])->update('comp_pstn_score', $score_i);
+                        echo '<pre>', print_r($lnag_i, true);
+                        die;
                     }
                 }
             }
         }
-        die;
-    }
 
-    function import($sheet)
-    {
-        // $this->load->helper(['conversion', 'extract_spreadsheet']);
-        // $sheets = extract_spreadsheet("./uploads/imports_admin/LNA 2026 import.xlsx") ?? [];
-        // $data['sheets'] = $sheets;
-        // $this->session->set_userdata($data);
-        // // echo '<pre>', print_r($this->session->userdata['sheets'], true);
-        // die;
-
-        $sheets = $this->session->userdata('sheets');
-        $rows = array_filter($sheets[$sheet], fn($r_i, $i_r) => $i_r >= 2, ARRAY_FILTER_USE_BOTH);
-        $comp_pstns = $this->db->get('comp_position')->result_array();
-
-        $nrps = array_unique(array_column($rows, 2));
-        // echo '<pre>', print_r($nrps, true);
-        // die;
-        foreach ($nrps as $i_nrp => $nrp_i) {
-            if ($sheet == 0) {
-                if (in_array($nrp_i, array('10122092', '10122091', '10124138', '10125091', '10124094'))) continue;
+        foreach ($lnas_grouped as $i_lnag => $lnag_i) {
+            if (in_array($lnag_i['Nama'], ['Webi Febrian', 'Alexander Rendra Pratama', 'SIGIT PREBIANTO'])) continue;
+            $pstn = $this->db->get_where('org_area_lvl_pstn_user', ['NRP' => $lnag_i['NRP']])->row_array();
+            if (!$pstn) {
+                echo '<pre>', print_r($lnag_i, true);
             }
-            $nrp_search = "'$nrp_i', '10$nrp_i'";
-            $position = $this->db->query("
-                WITH RECURSIVE matrix_point_resolve AS (
-                    SELECT 
-                        oalp.id AS start_id,
-                        oalp.id AS current_id,
-                        oalp.parent,
-                        oalp.matrix_point,
-                        oalp.name,
-                        oalp.type,
-                        CASE
-                            WHEN oalp.type = 'matrix_point' THEN oalp.name
-                            ELSE NULL
-                        END AS matrix_point_name,
-                        0 AS depth
-                    FROM org_area_lvl_pstn oalp
+        }
 
-                    UNION ALL
+        $this->load->model('organization/m_user');
+        $this->load->model('organization/m_position');
+        foreach ($lnas_grouped as $i_lnag => $lnag_i) {
+            if (in_array($lnag_i['Nama'], ['Webi Febrian', 'Alexander Rendra Pratama', 'SIGIT PREBIANTO'])) continue;
+            $user = $this->m_user->get_area_lvl_pstn_user($lnag_i['NRP'], 'NRP', false);
+            $mp_id = $lnag_i['Departemen'];
+            if (!$mp_id) {
+                $matrix_point = $this->m_position->get_area_lvl_pstn($user['oalp_id'], 'oalp.id', false);
+                $mp_id = $matrix_point['mp_id'];
+            }
+            $comp_positions = $this->db->get_where('comp_position', ['area_lvl_pstn_id' => $mp_id])->result_array();
+            foreach ($lnag_i['Kompetensi'] as $i_komp => $komp_i) {
+                if ($mp_id == 50 && $i_komp == 'Risk Management') continue;
+                if ($mp_id == 50 && $i_komp == 'Corporate Finance') continue;
+                if ($mp_id == 50 && $i_komp == 'Project Cost & Evaluation') continue;
+                if ($mp_id == 50 && $i_komp == 'Operational Management') continue;
+                $found = null;
 
-                    SELECT 
-                        m.start_id,
-                        o.id,
-                        o.parent,
-                        o.matrix_point,
-                        o.name,
-                        o.type,
-                        CASE
-                            WHEN o.type = 'matrix_point' THEN o.name
-                            ELSE m.matrix_point_name
-                        END AS matrix_point_name,
-                        m.depth + 1
-                    FROM matrix_point_resolve m
-                    JOIN org_area_lvl_pstn o 
-                        ON o.id = m.parent OR o.id = m.matrix_point
-                    WHERE m.matrix_point_name IS NULL
-                ),
-
-                final_matrix_point AS (
-                    SELECT 
-                        start_id AS node_id,
-                        current_id AS mp_id,
-                        matrix_point_name
-                    FROM (
-                        SELECT 
-                            start_id, current_id,
-                            matrix_point_name,
-                            ROW_NUMBER() OVER (PARTITION BY start_id ORDER BY depth ASC) AS rn
-                        FROM matrix_point_resolve
-                        WHERE matrix_point_name IS NOT NULL
-                    ) ranked
-                    WHERE rn = 1
-                )
-
-                SELECT * FROM org_area_lvl_pstn_user oalpu
-                LEFT JOIN final_matrix_point fmp ON fmp.node_id = oalpu.area_lvl_pstn_id
-                WHERE oalpu.NRP IN ($nrp_search)
-            ")->row_array();
-            if (!$position) {
-                echo '<pre>', print_r('position not found', true);
-                echo '<pre>', print_r($nrp_search, true);
-            } else {
-                $scores = array_filter($rows, fn($r_i, $i_r) => $r_i[2] == $nrp_i, ARRAY_FILTER_USE_BOTH);
-                foreach ($scores as $i_score => $score_i) {
-                    if ($sheet == 1) {
-                        if (in_array($score_i[8], array('Risk Management', 'Corporate Finance', 'Project Cost & Evaluation', 'Operational Management'))) continue;
-                    }
-                    $comp_pstn = array_filter($comp_pstns, fn($cp_i, $i_cp) => strtolower($cp_i['name']) == strtolower($score_i[8]) && $cp_i['area_lvl_pstn_id'] == $position['mp_id'], ARRAY_FILTER_USE_BOTH);
-                    $comp_pstn = array_shift($comp_pstn);
-
-                    if (!$comp_pstn) {
-                        echo '<pre>', print_r('comp_pstn not found', true);
-                        echo '<pre>', print_r($position, true);
-                        echo '<pre>', print_r($score_i, true);
-                        die;
-                    } else {
+                foreach ($comp_positions as $row) {
+                    if (
+                        strtolower(trim($row['name'])) ===
+                        strtolower(trim($i_komp))
+                    ) {
+                        $found = $row;
+                        $comp_pstn_score = $this->db->get_where('comp_pstn_score', ['year' => $year, 'NRP' => $lnag_i['NRP'], 'comp_pstn_id' => $found['id']])->row_array();
                         $data = [
-                            'year' => 2026,
-                            'NRP' => $position['NRP'],
-                            'comp_pstn_id' => $comp_pstn['id'],
-                            'score' => $score_i[10],
+                            'year' => $year,
+                            'NRP' => $lnag_i['NRP'],
+                            'comp_pstn_id' => $found['id'],
+                            'score' => $komp_i['actual'],
                         ];
-                        echo '<pre>', print_r($data, true);
-
-                        $exist = $this->db->query("
-                            SELECT * FROM comp_pstn_score
-                            WHERE year = 2026
-                            AND comp_pstn_id = $comp_pstn[id]
-                            AND NRP = '$position[NRP]'
-                        ")->row_array();
-
-                        if ($exist) {
-                            echo '<pre>', print_r('exist', true);
-                            // $this->db->where('id', $exist['id']);
-                            // $success = $this->db->update('comp_pstn_score', $data);
+                        if ($comp_pstn_score) {
+                            $this->db->where('id', $comp_pstn_score['id'])->update('comp_pstn_score', $data);
                         } else {
-                            echo '<pre>', print_r('not', true);
-                            // $success = $this->db->insert('comp_pstn_score', $data);
+                            $this->db->insert('comp_pstn_score', $data);
                         }
+                        break;
                     }
+                }
+                if (!$found) {
+                    echo '<pre>', print_r($user, true);
+                    echo '<pre>', print_r($mp_id, true);
+                    echo '<pre>', print_r($lnag_i, true);
+                    echo '<pre>', print_r($comp_positions, true);
+                    echo '<pre>', print_r($i_komp, true);
+                    die;
                 }
             }
         }

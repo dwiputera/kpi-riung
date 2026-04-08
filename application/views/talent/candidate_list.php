@@ -29,7 +29,6 @@
                             <th colspan="3">Status Kesehatan</th>
                             <th colspan="3">Kategori HAV Mapping</th>
                             <th colspan="3">Score Hasil Asesmen</th>
-                            <th colspan="3">Korelasi Kompetensi</th>
                         </tr>
                         <!-- BARIS INI HARUS FULL 36 <th> -->
                         <tr>
@@ -42,9 +41,6 @@
                             <th>NRP</th>
                             <th>Nama</th>
                             <th>Total Score</th>
-                            <th>Info</th>
-                            <th>Nilai</th>
-                            <th>NxB</th>
                             <th>Info</th>
                             <th>Nilai</th>
                             <th>NxB</th>
@@ -118,9 +114,6 @@
                                 <td><?= $e['assess_score'] ?></td>
                                 <td><?= $e['score_assess_score'] ?></td>
                                 <td><?= $e['score_nxb_assess_score'] ?></td>
-                                <td><?= $e['correlation_matrix'] ?></td>
-                                <td><?= $e['score_correlation_matrix'] ?></td>
-                                <td><?= $e['score_nxb_correlation_matrix'] ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

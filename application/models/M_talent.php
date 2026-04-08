@@ -13,7 +13,6 @@ class M_talent extends CI_Model
     {
         if ($position) {
             $this->load->model('competency/m_comp_position', 'm_c_pstn');
-            $correlation_matrix = array_column($this->m_c_pstn->get_correlation_matrix(), null, 'id');
             $candidate_level = $position['oal_id'] + 1;
             $candidate_level = $this->db->where('id', $candidate_level)->or_where('equals', $candidate_level)->get('org_area_lvl')->result_array();
             $candidate_level_ids = array_column($candidate_level, 'id'); // ambil semua value kolom 'id'
@@ -156,14 +155,6 @@ class M_talent extends CI_Model
                 $empMpId = isset($e['mp_id']) ? $e['mp_id'] : null;
                 $posMpId = isset($position['mp_id']) ? $position['mp_id'] : null;
 
-                // === correlation_matrix aman ===
-                $e['correlation_matrix'] = 0; // default
-                if ($empMpId !== null && $posMpId !== null) {
-                    $e['correlation_matrix'] =
-                        $correlation_matrix[$empMpId]['correlations'][$posMpId]
-                        ?? 0; // default kalau tidak ada
-                }
-
                 // === NRP guard ===
                 $nrp = $e['NRP'] ?? null;
 
@@ -279,7 +270,6 @@ class M_talent extends CI_Model
             $emp['score_health_status'] = $this->get_score_health_status($emp['hsu_status_id']);
             $emp['score_kategori_hav_mapping'] = $this->get_score_kategori_hav_mapping($emp['status']);
             $emp['score_assess_score'] = $this->get_score_assess_score($emp['assess_score']);
-            $emp['score_correlation_matrix'] = $this->get_score_correlation_matrix($emp['correlation_matrix']);
 
             $emp['score_nxb_kompetensi_teknis'] = number_format($emp['score_kompetensi_teknis'] * $percentage['kompetensi_teknis'] / 100, 2);
             $emp['score_nxb_job_fit_score'] = number_format($emp['score_job_fit_score'] * $percentage['job_fit_score'] / 100, 2);
@@ -290,9 +280,8 @@ class M_talent extends CI_Model
             $emp['score_nxb_health_status'] = number_format($emp['score_health_status'] * $percentage['health_status'] / 100, 2);
             $emp['score_nxb_kategori_hav_mapping'] = number_format($emp['score_kategori_hav_mapping'] * $percentage['kategori_hav_mapping'] / 100, 2);
             $emp['score_nxb_assess_score'] = number_format($emp['score_assess_score'] * $percentage['assess_score'] / 100, 2);
-            $emp['score_nxb_correlation_matrix'] = number_format($emp['score_correlation_matrix'] * $percentage['correlation_matrix'] / 100, 2);
 
-            $score_to_sum = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'health_status', 'kategori_hav_mapping', 'assess_score', 'correlation_matrix');
+            $score_to_sum = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'health_status', 'kategori_hav_mapping', 'assess_score');
 
             $emp['total_score'] = 0;
             foreach ($score_to_sum as $sts) {
@@ -304,16 +293,16 @@ class M_talent extends CI_Model
 
     function get_percentage($level_id)
     {
-        $criteria = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'health_status', 'kategori_hav_mapping', 'assess_score', 'correlation_matrix');
+        $criteria = array('kompetensi_teknis', 'job_fit_score', 'avg_ipa_score', 'tour_of_duty', 'culture_fit', 'age', 'health_status', 'kategori_hav_mapping', 'assess_score');
         $percentage = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         if (in_array($level_id, array(2))) {
-            $percentage = [8, 32, 10, 10, 5, 5, 5, 10, 10, 5];
+            $percentage = [8, 32, 15, 10, 5, 5, 5, 10, 10];
         } elseif (in_array($level_id, array(3, 6, 7))) {
-            $percentage = [20, 20, 10, 10, 5, 5, 5, 10, 10, 5];
+            $percentage = [20, 20, 15, 10, 5, 5, 5, 10, 10];
         } elseif (in_array($level_id, array(4, 8))) {
-            $percentage = [24, 16, 10, 10, 5, 5, 5, 10, 10, 5];
+            $percentage = [24, 16, 15, 10, 5, 5, 5, 10, 10];
         } elseif (in_array($level_id, array(9))) {
-            $percentage = [32, 8, 10, 10, 5, 5, 5, 10, 10, 5];
+            $percentage = [32, 8, 15, 10, 5, 5, 5, 10, 10];
         }
 
         foreach ($criteria as $i_crit => $crit_i) {
@@ -410,15 +399,6 @@ class M_talent extends CI_Model
             if ($assess_score >= 60) return 3;
             return 1;
         }
-        return null;
-    }
-
-    function get_score_correlation_matrix($correlation)
-    {
-        if ($correlation > 60) return 5;
-        if ($correlation > 40) return 4;
-        if ($correlation > 20) return 3;
-        if ($correlation > 0) return 2;
         return null;
     }
 }

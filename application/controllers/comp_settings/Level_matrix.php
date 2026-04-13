@@ -18,71 +18,65 @@ class Level_matrix extends MY_Controller
 
     public function index()
     {
-        // --- Data dasar
         $positions     = $this->m_pstn->get_subordinates(md5(1));
         $competencies  = $this->m_c_lvl->get_comp_level();
         $targets       = $this->m_c_l_targ->get_comp_level_target();
 
         $data = [
             'admin'         => true,
-            'level_active'  => $this->input->get('level_active', true), // XSS sanitize
+            'level_active'  => $this->input->get('level_active', true),
             'comp_levels'   => $competencies,
             'area_pstns'    => [],
             'area_lvls'     => [],
             'content'       => 'competency/level_matrix',
         ];
 
-        // --- Rakit matriks target per posisi (FAST)
         $data['area_pstns'] = $this->create_matrix($positions, $competencies, $targets);
 
-        // --- Hitung area_lvls (yang menjadi TAB): ambil yang 'equals' kosong/tidak ada
-        //     & key-kan by 'oal_id' (unique), tanpa array_column/array_values berulang.
         $area_lvls_map = [];
         foreach ($data['area_pstns'] as $row) {
-            $equals_empty = empty($row['equals']); // aman untuk key yang tidak ada
+            $equals_empty = empty($row['equals']);
             if ($equals_empty) {
-                // sesuaikan kunci id level area (oal_id jika ada; fallback id)
                 $oal_key = isset($row['oal_id']) ? (int)$row['oal_id'] : (int)($row['id'] ?? 0);
                 if ($oal_key) {
-                    $area_lvls_map[$oal_key] = $row; // overwrite-safe, hasil tetap unik
+                    $area_lvls_map[$oal_key] = $row;
                 }
             }
         }
         $data['area_lvls'] = array_values($area_lvls_map);
 
-        // --- Render
         $this->load->view('templates/header_footer', $data);
     }
 
-    /**
-     * OPTIMIZED:
-     * - Buat index targetMap[oalp_id][comp_lvl_id] = target (O(T))
-     * - Pre-fill default 0 untuk semua competency id (sekali, O(C))
-     * - Assign ke setiap posisi (O(P + isi_target_posisi))
-     * Total: O(P + C + T), tanpa array_filter di inner-loop.
-     */
+    public function dictionary()
+    {
+        $data = [
+            'admin'        => true,
+            'dictionaries' => $this->m_c_lvl->get_comp_level(),
+            'content'      => 'competency/level_dictionary',
+        ];
+
+        $this->load->view('templates/header_footer', $data);
+    }
+
     public function create_matrix(array $positions, array $competencies, array $targets): array
     {
-        // 1) Index target
         $targetMap = [];
         foreach ($targets as $t) {
             $oalp = (int)$t['area_lvl_pstn_id'];
             $clid = (int)$t['comp_lvl_id'];
-            // target null -> anggap 0 sesuai perilaku lama
             $targetMap[$oalp][$clid] = is_null($t['target']) ? 0.0 : (float)$t['target'];
         }
 
-        // 2) Default target 0 untuk semua competency id
         $default = [];
         foreach ($competencies as $c) {
             $default[(int)$c['id']] = 0.0;
         }
 
-        // 3) Assign ke tiap posisi (hindari copy berlebihan)
         foreach ($positions as &$p) {
-            // Sesuaikan key id OALP posisi: biasanya 'id' (OALP id). Jika struktur beda, sesuaikan.
             $oalp_id = (int)($p['id'] ?? $p['oal_id'] ?? 0);
-            $p['target'] = $default; // salin default cepat
+            $p['target'] = $default;
+
             if ($oalp_id && isset($targetMap[$oalp_id])) {
                 foreach ($targetMap[$oalp_id] as $clid => $val) {
                     $p['target'][$clid] = $val;
@@ -96,7 +90,6 @@ class Level_matrix extends MY_Controller
 
     public function comp_lvl_target($action)
     {
-        // Pertahankan param level_active (GET) bila ada
         $level_active = $this->input->get('level_active', true);
         $suffix = $level_active ? ('?level_active=' . $level_active) : '';
 
@@ -117,42 +110,40 @@ class Level_matrix extends MY_Controller
         }
     }
 
-    public function comp_lvl($action, $hash_id = null, $hash_id2 = null)
+    public function comp_lvl($action, $hash_id = null)
     {
-        // jaga-jaga: pertahankan level_active dari GET/POST
-        $level_active = $this->input->get('level_active', true);
-
-        if (!$level_active && $this->input->post('hash_area_lvl_id')) {
-            $area_lvl = $this->m_lvl->get_area_lvl($this->input->post('hash_area_lvl_id'), 'md5(oal.id)', false);
-            if ($area_lvl && isset($area_lvl['id'])) {
-                $level_active = md5($area_lvl['id']);
-            }
-        }
-        $suffix = $level_active ? ('?level_active=' . $level_active) : '';
-
         switch ($action) {
             case 'add':
-                flash_swal('error', 'Target add Failed');
                 $ok = $this->m_c_lvl->add();
-                if ($ok) flash_swal('success', 'Target added Successfully');
+
+                $this->session->set_flashdata('swal', [
+                    'type'    => $ok ? 'success' : 'error',
+                    'message' => $ok ? 'Competency Added Successfully' : 'Competency Add Failed',
+                ]);
                 break;
 
             case 'edit':
-                flash_swal('error', 'Target edit Failed');
                 $ok = $this->m_c_lvl->edit();
-                if ($ok) flash_swal('success', 'Target edited Successfully');
+
+                $this->session->set_flashdata('swal', [
+                    'type'    => $ok ? 'success' : 'error',
+                    'message' => $ok ? 'Competency Edited Successfully' : 'Competency Edit Failed',
+                ]);
                 break;
 
             case 'delete':
-                flash_swal('error', 'Competency Delete Failed');
                 $ok = $this->m_c_lvl->delete($hash_id);
-                if ($ok) flash_swal('success', 'Competency Deleted Successfully');
+
+                $this->session->set_flashdata('swal', [
+                    'type'    => $ok ? 'success' : 'error',
+                    'message' => $ok ? 'Competency Deleted Successfully' : 'Competency Delete Failed',
+                ]);
                 break;
 
             default:
                 show_404();
         }
 
-        redirect('comp_settings/level_matrix' . $suffix);
+        redirect('comp_settings/level_matrix/dictionary');
     }
 }

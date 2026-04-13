@@ -182,6 +182,8 @@ class Position_matrix extends MY_Controller
 
     public function comp_pstn($action, $hash_id = null, $hash_id2 = null)
     {
+        $redirect_url = $this->input->post('redirect_url')
+            ?: $this->input->get('redirect');
         $mp_active = $this->input->get('matrix_position_active', true);
         if (!$mp_active) {
             if ($this->input->post('hash_area_lvl_pstn_id')) {
@@ -218,7 +220,11 @@ class Position_matrix extends MY_Controller
                 show_404();
         }
 
-        redirect('comp_settings/position_matrix' . $suffix);
+        if ($redirect_url) {
+            redirect($redirect_url);
+        } else {
+            redirect('comp_settings/position_matrix' . $suffix);
+        }
     }
 
     public function dictionary($hash_pstn_id)

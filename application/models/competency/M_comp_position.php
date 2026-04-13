@@ -31,20 +31,73 @@ class M_comp_position extends CI_Model
     public function add()
     {
         $area_lvl_pstn = $this->m_pstn->get_area_lvl_pstn($this->input->post('hash_area_lvl_pstn_id'), 'md5(oalp.id)', false);
+
         if ($area_lvl_pstn) {
-            $data['area_lvl_pstn_id'] = $area_lvl_pstn['id'];
-            $data['name'] = $this->input->post('comp_pstn_name');
-            return $this->db->insert('comp_position', $data);
+            $this->db->trans_start();
+
+            $data = [
+                'area_lvl_pstn_id' => $area_lvl_pstn['id'],
+                'name' => $this->input->post('comp_pstn_name', true),
+            ];
+            $this->db->insert('comp_position', $data);
+
+            $comp_pstn_id = $this->db->insert_id();
+
+            $dict = [
+                'comp_pstn_id' => $comp_pstn_id,
+                'definition'   => $this->input->post('definition'),
+                'level_1'      => $this->input->post('level_1'),
+                'level_2'      => $this->input->post('level_2'),
+                'level_3'      => $this->input->post('level_3'),
+                'level_4'      => $this->input->post('level_4'),
+                'level_5'      => $this->input->post('level_5'),
+            ];
+            $this->db->insert('comp_pstn_dict', $dict);
+
+            $this->db->trans_complete();
+            return $this->db->trans_status();
         }
+
         return false;
     }
 
     public function edit()
     {
-        $data['name'] = $this->input->post('comp_pstn_name');
-        $this->db->where('md5(id)', $this->input->post('hash_comp_pstn_id'));
-        $success = $this->db->update('comp_position', $data);
-        return $success;
+        $hash_comp_pstn_id = $this->input->post('hash_comp_pstn_id');
+
+        $this->db->trans_start();
+
+        $data = [
+            'name' => $this->input->post('comp_pstn_name', true),
+        ];
+        $this->db->where('md5(id)', $hash_comp_pstn_id);
+        $this->db->update('comp_position', $data);
+
+        $comp = $this->db->get_where('comp_position', ['md5(id)' => $hash_comp_pstn_id])->row_array();
+
+        if ($comp) {
+            $dict = [
+                'definition' => $this->input->post('definition'),
+                'level_1'    => $this->input->post('level_1'),
+                'level_2'    => $this->input->post('level_2'),
+                'level_3'    => $this->input->post('level_3'),
+                'level_4'    => $this->input->post('level_4'),
+                'level_5'    => $this->input->post('level_5'),
+            ];
+
+            $exist = $this->db->get_where('comp_pstn_dict', ['comp_pstn_id' => $comp['id']])->row_array();
+
+            if ($exist) {
+                $this->db->where('comp_pstn_id', $comp['id']);
+                $this->db->update('comp_pstn_dict', $dict);
+            } else {
+                $dict['comp_pstn_id'] = $comp['id'];
+                $this->db->insert('comp_pstn_dict', $dict);
+            }
+        }
+
+        $this->db->trans_complete();
+        return $this->db->trans_status();
     }
 
     public function delete($hash_id)

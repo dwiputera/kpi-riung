@@ -9,12 +9,15 @@ class M_role extends CI_Model
 
     public function get_user_roles($NRP)
     {
-        return $this->db->select('roles.*')
-            ->from('users_roles')
-            ->join('roles', 'roles.id = users_roles.role_id')
-            ->where('users_roles.NRP', $NRP)
-            ->or_where('roles.id', 0)
-            ->get()->result_array();
+        $this->db->select('roles.*')
+            ->from('roles')
+            ->join('users_roles', 'roles.id = users_roles.role_id AND users_roles.NRP = "' . $NRP . '"', 'left')
+            ->group_start()
+            ->where('roles.id', 0)
+            ->or_where('users_roles.NRP IS NOT NULL', null, false)
+            ->group_end();
+
+        return $this->db->get()->result_array();
     }
 
     public function get_role_permissions($role_id)

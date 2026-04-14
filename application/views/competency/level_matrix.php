@@ -9,6 +9,9 @@
         min-width: 70px;
         background: #fffbe6;
         cursor: text;
+        direction: ltr;
+        text-align: left;
+        unicode-bidi: plaintext;
     }
 
     .editable-target:focus {
@@ -40,7 +43,9 @@
                         <?php
                         $activeClass = '';
                         if ($level_active) {
-                            if ($level_active == md5($oal_i['oal_id'])) $activeClass = 'active';
+                            if ($level_active == md5($oal_i['oal_id'])) {
+                                $activeClass = 'active';
+                            }
                         } else {
                             $activeClass = $i_oal == 0 ? 'active' : '';
                         }
@@ -67,7 +72,9 @@
                         <?php
                         $activeClass = '';
                         if ($level_active) {
-                            if ($level_active == md5($oal_i['oal_id'])) $activeClass = 'show active';
+                            if ($level_active == md5($oal_i['oal_id'])) {
+                                $activeClass = 'show active';
+                            }
                         } else {
                             $activeClass = $i_oal == 0 ? 'show active' : '';
                         }
@@ -86,13 +93,18 @@
                             aria-labelledby="custom-tabs-<?= md5($oal_i['oal_id']) ?>-tab">
 
                             <div class="mb-3">
-                                <a href="<?= base_url() ?>comp_settings/level_matrix/dictionary" class="btn btn-primary w-100">Dictionary of Competency</a><br><br>
+                                <a href="<?= base_url('comp_settings/level_matrix/dictionary') ?>" class="btn btn-primary w-100">
+                                    Dictionary of Competency
+                                </a>
                             </div>
 
-                            <form method="post" action="<?= base_url('comp_settings/level_matrix/comp_lvl_target/submit') ?>" class="form-level-matrix">
+                            <form method="post"
+                                action="<?= base_url('comp_settings/level_matrix/comp_lvl_target/submit') ?>"
+                                class="form-level-matrix">
                                 <input type="hidden" name="level_active" value="<?= md5($oal_i['oal_id']) ?>">
 
-                                <table class="table table-bordered table-striped datatable-filter-column" data-filter-columns="1,2:multiple">
+                                <table class="table table-bordered table-striped datatable-filter-column"
+                                    data-filter-columns="1,2:multiple">
                                     <thead>
                                         <tr>
                                             <th>No</th>
@@ -107,7 +119,7 @@
                                     <tbody>
                                         <?php $i = 1; ?>
                                         <?php foreach ($positions as $pstn_i) : ?>
-                                            <?php $area_lvl_pstn_id = (int)($pstn_i['id'] ?? 0); ?>
+                                            <?php $area_lvl_pstn_id = (int) ($pstn_i['id'] ?? 0); ?>
                                             <tr>
                                                 <td><?= $i++ ?></td>
                                                 <td><?= $pstn_i['oa_name'] ?></td>
@@ -116,13 +128,18 @@
 
                                                 <?php foreach ($comp_levels as $cl_i) : ?>
                                                     <?php
-                                                    $comp_lvl_id = (int)$cl_i['id'];
+                                                    $comp_lvl_id = (int) $cl_i['id'];
                                                     $val = isset($pstn_i['target'][$comp_lvl_id]) ? $pstn_i['target'][$comp_lvl_id] : 0;
+                                                    $display_val = rtrim(rtrim((string) $val, '0'), '.');
+                                                    if ($display_val === '') {
+                                                        $display_val = '0';
+                                                    }
                                                     ?>
                                                     <td class="editable-target"
                                                         contenteditable="true"
+                                                        dir="ltr"
                                                         data-area-lvl-pstn-id="<?= $area_lvl_pstn_id ?>"
-                                                        data-comp-lvl-id="<?= $comp_lvl_id ?>"><?= rtrim(rtrim((string)$val, '0'), '.') ?></td>
+                                                        data-comp-lvl-id="<?= $comp_lvl_id ?>"><?= $display_val ?></td>
 
                                                     <input type="hidden"
                                                         name="targets[<?= $area_lvl_pstn_id ?>][<?= $comp_lvl_id ?>]"
@@ -136,11 +153,19 @@
 
                                 <div class="row">
                                     <div class="col-lg-4">
-                                        <button type="submit" name="proceed" value="N" class="btn btn-default w-100 show-overlay-full">Cancel</button>
+                                        <button type="submit"
+                                            name="proceed"
+                                            value="N"
+                                            class="btn btn-default w-100 show-overlay-full">
+                                            Cancel
+                                        </button>
                                     </div>
                                     <div class="col-lg-8">
-                                        <input type="hidden" name="target_json" id="target_json">
-                                        <button type="submit" id="submitBtn" class="btn btn-info w-100 show-overlay-full">Submit</button>
+                                        <input type="hidden" name="target_json" class="target_json">
+                                        <button type="submit"
+                                            class="btn btn-info w-100 show-overlay-full">
+                                            Submit
+                                        </button>
                                     </div>
                                 </div>
                             </form>
@@ -162,34 +187,129 @@
         });
 
         function normalizeTarget(val) {
-            val = (val || '').toString().trim();
-            val = val.replace(',', '.');
+            val = (val || '').toString();
+
+            // hapus karakter aneh / zero width / nbsp
+            val = val
+                .replace(/\u200B/g, '')
+                .replace(/\u200C/g, '')
+                .replace(/\u200D/g, '')
+                .replace(/\uFEFF/g, '')
+                .replace(/\u00A0/g, ' ')
+                .trim();
+
+            // ubah koma ke titik
+            val = val.replace(/,/g, '.');
+
+            // sisakan angka, titik, minus
             val = val.replace(/[^\d.\-]/g, '');
 
-            if (val === '') return '0';
-            if (isNaN(val)) return '0';
+            if (val === '' || val === '-' || val === '.' || val === '-.') {
+                return '0';
+            }
 
-            return val;
+            var num = parseFloat(val);
+            if (isNaN(num)) {
+                return '0';
+            }
+
+            return num.toString();
         }
 
-        $(document).on('input blur paste', '.editable-target', function() {
-            const $cell = $(this);
-            const areaLvlPstnId = $cell.data('area-lvl-pstn-id');
-            const compLvlId = $cell.data('comp-lvl-id');
-            const val = normalizeTarget($cell.text());
+        function syncHiddenInput($cell) {
+            var areaLvlPstnId = $cell.data('area-lvl-pstn-id');
+            var compLvlId = $cell.data('comp-lvl-id');
+            var rawText = $cell.text();
+            var normalized = normalizeTarget(rawText);
 
-            $cell.text(val);
+            $('.target-input-' + areaLvlPstnId + '-' + compLvlId).val(normalized);
+        }
 
-            $('.target-input-' + areaLvlPstnId + '-' + compLvlId).val(val);
+        function placeCaretAtEnd(el) {
+            el.focus();
+            if (typeof window.getSelection != "undefined" &&
+                typeof document.createRange != "undefined") {
+                var range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+
+        // Saat mengetik: jangan rewrite text di cell
+        $(document).on('input', '.editable-target', function() {
+            syncHiddenInput($(this));
         });
 
-        // simpan tab aktif saat pindah tab
+        // Saat paste: ambil plain text saja
+        $(document).on('paste', '.editable-target', function(e) {
+            e.preventDefault();
+
+            var text = '';
+            if (e.originalEvent.clipboardData && e.originalEvent.clipboardData.getData) {
+                text = e.originalEvent.clipboardData.getData('text/plain');
+            } else if (window.clipboardData && window.clipboardData.getData) {
+                text = window.clipboardData.getData('Text');
+            }
+
+            document.execCommand('insertText', false, text);
+        });
+
+        // Saat focus: pastikan arah text normal
+        $(document).on('focus', '.editable-target', function() {
+            this.style.direction = 'ltr';
+            this.style.textAlign = 'left';
+        });
+
+        // Saat blur: baru rapikan nilainya
+        $(document).on('blur', '.editable-target', function() {
+            var $cell = $(this);
+            var normalized = normalizeTarget($cell.text());
+
+            $cell.text(normalized);
+            syncHiddenInput($cell);
+        });
+
+        // Optional: enter jangan bikin baris baru
+        $(document).on('keydown', '.editable-target', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $(this).blur();
+            }
+        });
+
+        // Simpan tab aktif saat pindah tab
         $('a[data-toggle="pill"]').on('shown.bs.tab', function(e) {
-            const href = $(e.target).attr('href');
-            const id = href.replace('#custom-tabs-', '');
-            const url = new URL(window.location.href);
+            var href = $(e.target).attr('href');
+            var id = href.replace('#custom-tabs-', '');
+            var url = new URL(window.location.href);
             url.searchParams.set('level_active', id);
             window.history.replaceState({}, '', url);
+        });
+
+        // Saat submit, bentuk juga target_json
+        $(document).on('submit', '.form-level-matrix', function() {
+            var data = {};
+            var $form = $(this);
+
+            $form.find('.editable-target').each(function() {
+                var $cell = $(this);
+                var areaLvlPstnId = $cell.data('area-lvl-pstn-id');
+                var compLvlId = $cell.data('comp-lvl-id');
+                var value = normalizeTarget($cell.text());
+
+                if (!data[areaLvlPstnId]) {
+                    data[areaLvlPstnId] = {};
+                }
+
+                data[areaLvlPstnId][compLvlId] = value;
+
+                $('.target-input-' + areaLvlPstnId + '-' + compLvlId).val(value);
+            });
+
+            $form.find('.target_json').val(JSON.stringify(data));
         });
     });
 </script>

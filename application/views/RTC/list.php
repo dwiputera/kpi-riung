@@ -14,7 +14,7 @@
                 <h3 class="card-title">Health Status</h3>
             </div>
             <div class="card-body">
-                <a href="<?= base_url() ?>rtc/edit" class="btn btn-primary w-100">Edit</a><br><br>
+                <a href="<?= base_url() ?>RTC/edit" class="btn btn-primary w-100">Edit</a><br><br>
                 <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
                     <thead>
                         <tr>

@@ -1,64 +1,168 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class RTC extends MY_Controller
+class RTC extends CI_Controller
 {
     public function __construct()
     {
         parent::__construct();
-        $this->load->model('m_rtc', 'm_rtc');
-        $this->load->model('organization/m_position', 'm_p');
+        $this->load->model('M_rtc', 'm_rtc');
+        $this->load->model('organization/m_position');
     }
 
     public function index()
     {
-        $data['positions'] = $this->m_p->get_area_lvl_pstn_user();
-        $year1 = date("Y") + 1;
-        $year2 = date("Y") + 2;
-        $data['rtcs'] = $this->m_rtc->get("WHERE year IN($year1, $year2)");
-        $data['content'] = "RTC/list";
-        $this->load->view('templates/header_footer', $data);
-    }
-
-    public function edit()
-    {
-        // ambil year dari GET
         $year = (int) $this->input->get('year');
         if (!$year) {
-            $year = date('Y'); // default
+            $year = (int) date('Y');
         }
 
-        $data['year']  = $year;
-        $data['year1'] = $year + 1;
-        $data['year2'] = $year + 2;
+        $years = [];
+        for ($i = 0; $i < 5; $i++) {
+            $years[] = $year + $i;
+        }
 
-        $data['positions'] = $this->m_p->get_area_lvl_pstn_user();
-        $data['users'] = $this->db
-            ->get_where("rml_sso_la.users", ['EmployeeGroup' => 'Active'])
-            ->result_array();
+        $positions = $this->m_position->get_area_lvl_pstn(null, 'md5(oalp.id)', true);
+        $rows = $this->m_rtc->build_rtc_rows($positions, $years);
 
-        $data['rtcs'] = $this->m_rtc->get("WHERE year IN ({$data['year1']}, {$data['year2']})");
+        $data['title'] = 'Replacement Table Chart';
+        $data['year'] = $year;
+        $data['years'] = $years;
+        $data['rows'] = $rows;
+        $data['content'] = 'RTC/list';
 
-        $data['content'] = "RTC/edit";
         $this->load->view('templates/header_footer', $data);
     }
 
-    public function submit()
+    public function candidate_options()
     {
-        $raw = $this->input->post('json_data');
-        $payload = json_decode($raw, true);
+        $keyword = trim((string) $this->input->get('q'));
+        $result = $this->m_rtc->get_candidate_options($keyword);
 
-        if (!is_array($payload)) {
-            flash_swal('error', 'Payload invalid / kosong');
-            redirect('RTC/edit');
-            return;
+        $items = [];
+        foreach ($result as $r) {
+            $items[] = [
+                'id'   => $r['NRP'],
+                'text' => $r['NRP'] . ' - ' . $r['FullName'],
+                'nrp'  => $r['NRP'],
+                'name' => $r['FullName'],
+            ];
         }
 
-        $success = $this->m_rtc->submit($payload);
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'results' => $items
+            ]));
+    }
 
-        flash_swal($success ? 'success' : 'error', $success ? "RTC Updated Successfully" : "Failed to Update RTC");
+    public function get_year_assignment()
+    {
+        $oalp_id = (int) $this->input->get('oalp_id');
+        $year    = (int) $this->input->get('year');
 
-        $baseYear = $this->input->post('year') ?: ($payload['year1'] - 1); // base = year1-1
-        redirect('RTC/edit?year=' . (int)$baseYear);
+        if (!$oalp_id || !$year) {
+            return $this->json_response([
+                'status'  => false,
+                'message' => 'Parameter tidak lengkap.'
+            ], 400);
+        }
+
+        $assigned = $this->m_rtc->get_assignment_with_name($oalp_id, $year);
+
+        $selected = [];
+        foreach ($assigned as $a) {
+            $selected[] = [
+                'id'   => $a['NRP'],
+                'text' => $a['NRP'] . ' - ' . $a['FullName'],
+                'nrp'  => $a['NRP'],
+                'name' => $a['FullName'],
+            ];
+        }
+
+        return $this->json_response([
+            'status'   => true,
+            'selected' => $selected
+        ]);
+    }
+
+    public function save()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        $year = (int) $this->input->post('base_year');
+        $rows = $this->input->post('rows');
+
+        if (!$year) {
+            $year = (int) date('Y');
+        }
+
+        if (is_string($rows)) {
+            $rows = json_decode($rows, true);
+        }
+
+        if (!is_array($rows)) {
+            return $this->json_response([
+                'status'  => false,
+                'message' => 'Payload rows tidak valid.'
+            ], 400);
+        }
+
+        $this->db->trans_begin();
+
+        try {
+            foreach ($rows as $row) {
+                $oalp_id = isset($row['oalp_id']) ? (int) $row['oalp_id'] : 0;
+                if (!$oalp_id || empty($row['years']) || !is_array($row['years'])) {
+                    continue;
+                }
+
+                foreach ($row['years'] as $yearKey => $nrps) {
+                    $yearValue = (int) $yearKey;
+
+                    if (!is_array($nrps)) {
+                        $nrps = [];
+                    }
+
+                    $cleanNrps = [];
+                    foreach ($nrps as $nrp) {
+                        $nrp = trim((string) $nrp);
+                        if ($nrp !== '') {
+                            $cleanNrps[] = $nrp;
+                        }
+                    }
+
+                    $this->m_rtc->replace_assignment($oalp_id, $yearValue, $cleanNrps);
+                }
+            }
+
+            if ($this->db->trans_status() === false) {
+                throw new Exception('Transaksi gagal.');
+            }
+
+            $this->db->trans_commit();
+
+            return $this->json_response([
+                'status'  => true,
+                'message' => 'RTC berhasil disimpan.'
+            ]);
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+
+            return $this->json_response([
+                'status'  => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function json_response($data = [], $statusCode = 200)
+    {
+        return $this->output
+            ->set_status_header($statusCode)
+            ->set_content_type('application/json')
+            ->set_output(json_encode($data));
     }
 }

@@ -14,11 +14,10 @@
                 <h3 class="card-title">Health Status</h3>
             </div>
             <div class="card-body">
-                <a href="<?= base_url() ?>RTC/edit" class="btn btn-primary w-100">Edit</a><br><br>
+                <a href="<?= base_url() ?>rtc/edit" class="btn btn-primary w-100">Edit</a><br><br>
                 <table id="datatable" class="table table-bordered table-striped datatable-filter-column">
                     <thead>
                         <tr>
-                            <th><input type="checkbox" id="select-all"></th>
                             <th>NO</th>
                             <th>MATRIX POINT</th>
                             <th>SITE</th>
@@ -34,7 +33,6 @@
                         <?php $i = 1; ?>
                         <?php foreach ($positions as $i_pos => $pos_i) : ?>
                             <tr>
-                                <td><input type="checkbox" class="row-checkbox"></td>
                                 <td><?= $i++ ?></td>
                                 <td><?= $pos_i['mp_name'] ?></td>
                                 <td><?= $pos_i['oa_name'] ?></td>

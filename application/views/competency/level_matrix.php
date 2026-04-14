@@ -77,7 +77,7 @@
                             role="tabpanel"
                             aria-labelledby="custom-tabs-<?= md5($oal_i['oal_id']) ?>-tab">
 
-                            <a href="<?= base_url() ?>competency/level_matrix/dictionary" class="btn btn-primary w-100">
+                            <a href="<?= base_url() ?>comp_settings/level_matrix/dictionary" class="btn btn-primary w-100">
                                 Dictionary of Competency
                             </a>
 

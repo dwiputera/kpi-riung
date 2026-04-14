@@ -11,85 +11,74 @@ class M_comp_level_target extends CI_Model
     public function get_comp_level_target($value = null, $by = 'md5(id)', $many = true)
     {
         $where = '';
-        if ($value) $where = "WHERE $by = '$value'";
+        if ($value) {
+            $where = "WHERE $by = " . $this->db->escape($value);
+        }
+
         $query = $this->db->query("
-            SELECT * FROM comp_lvl_target clt
+            SELECT *
+            FROM comp_lvl_target
             $where
         ");
+
         if (($value && !$many) || $many == false) {
-            $query = $query->row_array();
-        } else {
-            $query = $query->result_array();
+            return $query->row_array();
         }
-        return $query;
+
+        return $query->result_array();
     }
 
     public function submit()
     {
-        $json = $this->input->post('target_json');
+        $targets = $this->input->post('targets');
+        if (!is_array($targets) || empty($targets)) {
+            return false;
+        }
 
-        if (!$json) return false;
+        $this->db->trans_begin();
 
-        $decoded = json_decode($json, true);
-        if (!is_array($decoded)) return false;
+        foreach ($targets as $area_lvl_pstn_id => $compTargets) {
+            if (!is_array($compTargets)) {
+                continue;
+            }
 
-        $positions = $this->m_pstn->get_area_lvl_pstn();         // area_lvl_pstn_id
-        $competencies = $this->m_c_lvl->get_comp_level();        // comp_lvl_id
-        $targets = $this->m_c_l_targ->get_comp_level_target();   // existing comp_lvl_target
+            foreach ($compTargets as $comp_lvl_id => $target) {
+                $area_lvl_pstn_id = (int) $area_lvl_pstn_id;
+                $comp_lvl_id      = (int) $comp_lvl_id;
 
-        $data_updates = [];
-        $data_inserts = [];
+                // bersihkan value
+                $target = trim((string)$target);
+                $target = str_replace(',', '.', $target);
+                $target = ($target === '') ? 0 : (float)$target;
 
-        foreach ($decoded as $hashed_comp_lvl_id => $position_map) {
-            // Cari comp_lvl_id asli
-            $comp_lvl = array_filter($competencies, function ($c) use ($hashed_comp_lvl_id) {
-                return md5($c['id']) === $hashed_comp_lvl_id;
-            });
-            $comp_lvl = reset($comp_lvl);
-            if (!$comp_lvl) continue;
+                $existing = $this->db
+                    ->get_where('comp_lvl_target', [
+                        'area_lvl_pstn_id' => $area_lvl_pstn_id,
+                        'comp_lvl_id'      => $comp_lvl_id,
+                    ])
+                    ->row_array();
 
-            foreach ($position_map as $hashed_pos_id => $target_value) {
-                if ($target_value === '' || $target_value === null) continue;
-
-                // Cari area_lvl_pstn_id asli
-                $position = array_filter($positions, function ($p) use ($hashed_pos_id) {
-                    return md5($p['id']) === $hashed_pos_id;
-                });
-                $position = reset($position);
-                if (!$position) continue;
-
-                // Cek apakah sudah ada entry di tabel target
-                $existing = array_filter($targets, function ($t) use ($comp_lvl, $position) {
-                    return $t['comp_lvl_id'] == $comp_lvl['id'] && $t['area_lvl_pstn_id'] == $position['id'];
-                });
-                $existing = reset($existing);
+                $data = [
+                    'area_lvl_pstn_id' => $area_lvl_pstn_id,
+                    'comp_lvl_id'      => $comp_lvl_id,
+                    'target'           => $target,
+                ];
 
                 if ($existing) {
-                    $data_updates[] = [
-                        'id' => $existing['id'],
-                        'target' => $target_value
-                    ];
+                    $this->db->where('id', $existing['id']);
+                    $this->db->update('comp_lvl_target', $data);
                 } else {
-                    $data_inserts[] = [
-                        'comp_lvl_id' => $comp_lvl['id'],
-                        'area_lvl_pstn_id' => $position['id'],
-                        'target' => $target_value
-                    ];
+                    $this->db->insert('comp_lvl_target', $data);
                 }
             }
         }
 
-        $success_update = true;
-        $success_insert = true;
-
-        if (!empty($data_updates)) {
-            $success_update = $this->db->update_batch('comp_lvl_target', $data_updates, 'id');
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+            return false;
         }
 
-        if (!empty($data_inserts)) {
-            $success_insert = $this->db->insert_batch('comp_lvl_target', $data_inserts);
-        }
-
-        return $success_update && $success_insert;
+        $this->db->trans_commit();
+        return true;
     }
 }

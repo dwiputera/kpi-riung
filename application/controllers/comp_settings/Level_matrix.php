@@ -8,7 +8,6 @@ class Level_matrix extends MY_Controller
         parent::__construct();
         $this->load->database();
 
-        // Models
         $this->load->model('competency/m_comp_level', 'm_c_lvl');
         $this->load->model('competency/m_comp_level_target', 'm_c_l_targ');
         $this->load->model('organization/m_level', 'm_lvl');
@@ -18,9 +17,9 @@ class Level_matrix extends MY_Controller
 
     public function index()
     {
-        $positions     = $this->m_pstn->get_subordinates(md5(1));
-        $competencies  = $this->m_c_lvl->get_comp_level();
-        $targets       = $this->m_c_l_targ->get_comp_level_target();
+        $positions    = $this->m_pstn->get_subordinates(md5(1));
+        $competencies = $this->m_c_lvl->get_comp_level();
+        $targets      = $this->m_c_l_targ->get_comp_level_target();
 
         $data = [
             'admin'         => true,
@@ -90,7 +89,7 @@ class Level_matrix extends MY_Controller
 
     public function comp_lvl_target($action)
     {
-        $level_active = $this->input->get('level_active', true);
+        $level_active = $this->input->post('level_active', true) ?: $this->input->get('level_active', true);
         $suffix = $level_active ? ('?level_active=' . $level_active) : '';
 
         switch ($action) {

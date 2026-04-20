@@ -76,13 +76,14 @@ class Talent extends MY_Controller
         });
 
         $data['correlation_matrix'] = $correlation_matrix;
-        $data['rtc'] = $this->M_rtc->get("
-            WHERE NRP = '$employee[NRP]' 
-            AND md5(oalp_id) = '$position_id_hash' 
-            AND rtc.year >= $year 
-            ORDER BY rtc.year ASC
-            LIMIT 1
-        ", false);
+        $this->db->from('rtc');
+        $this->db->where('NRP', $employee['NRP']);
+        $this->db->where('md5(oalp_id)', $position_id_hash);
+        $this->db->where('year >=', $year);
+        $this->db->order_by('year', 'ASC');
+        $this->db->limit(1);
+
+        $data['rtc'] = $this->db->get()->row_array();
         $data['tour_of_duties'] = $this->m_tod->get_tod_with_mp("WHERE NRP = '$employee[NRP]' ORDER BY date DESC");
         $data['target_position'] = $this->m_p->get_area_lvl_pstn($position_id_hash, 'md5(oalp.id)', false);
         $data['comp_lvl'] = $this->m_cl->get_comp_level();

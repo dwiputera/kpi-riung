@@ -11,7 +11,7 @@ class Image extends CI_Controller
         // --- Normalisasi input (support spasi & underscore) ---
         $raw = trim((string)$key);
         if ($raw === '') {
-            $this->outputDefault($basePath . 'default.JPG', 90);
+            $this->outputDefault($basePath . 'default.jpg', 90);
             return;
         }
 
@@ -63,7 +63,7 @@ class Image extends CI_Controller
         }
 
         if (empty($matches)) {
-            $this->outputDefault($basePath . 'default.JPG', $q);
+            $this->outputDefault($basePath . 'default.jpg', $q);
             return;
         }
 
@@ -73,14 +73,14 @@ class Image extends CI_Controller
 
         $blob = @file_get_contents($filePath);
         if ($blob === false) {
-            $this->outputDefault($basePath . 'default.JPG', $q);
+            $this->outputDefault($basePath . 'default.jpg', $q);
             return;
         }
 
         // --- GD load image ---
         $src = @imagecreatefromstring($blob);
         if (!$src) {
-            $this->outputDefault($basePath . 'default.JPG', $q);
+            $this->outputDefault($basePath . 'default.jpg', $q);
             return;
         }
 

@@ -137,6 +137,8 @@ class M_rtc extends CI_Model
             $this->db->like('NRP', $keyword);
             $this->db->or_like('FullName', $keyword);
             $this->db->group_end();
+
+            $this->db->where('ActionType !=', 'Terminate');
         }
 
         $this->db->order_by('FullName', 'ASC');

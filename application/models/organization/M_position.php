@@ -235,34 +235,81 @@ class M_position extends CI_Model
     {
         $data_update = [];
         $success = false;
-        $area_id = $this->db->get_where('org_area', array('md5(id)' => $this->input->post('area_id')))->row_array()['id'];
+
+        $position_row = $this->db->get_where('org_area_lvl_pstn', [
+            'md5(id)' => $this->input->post('position_id')
+        ])->row_array();
+
+        if (!$position_row) {
+            return false;
+        }
+
+        $area_row = $this->db->get_where('org_area', [
+            'md5(id)' => $this->input->post('area_id')
+        ])->row_array();
+
+        $area_lvl_row = $this->db->get_where('org_area_lvl', [
+            'md5(id)' => $this->input->post('area_lvl')
+        ])->row_array();
+
+        if (!$area_row || !$area_lvl_row) {
+            return false;
+        }
+
         $type = $this->input->post('type') == "on" ? 'matrix_point' : null;
+
+        $parent_id = null;
+        if ($this->input->post('parent_id')) {
+            $parent_row = $this->db->get_where('org_area_lvl_pstn', [
+                'md5(id)' => $this->input->post('parent_id')
+            ])->row_array();
+
+            if ($parent_row) {
+                $parent_id = $parent_row['id'];
+            }
+        }
+
+        $matrix_point_id = null;
+        if ($this->input->post('matrix_point')) {
+            $matrix_point_row = $this->db->get_where('org_area_lvl_pstn', [
+                'md5(id)' => $this->input->post('matrix_point')
+            ])->row_array();
+
+            if ($matrix_point_row) {
+                $matrix_point_id = $matrix_point_row['id'];
+            }
+        }
+
         $data = [
-            'id' => $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $this->input->post('position_id')))->row_array()['id'],
-            'area_id' => $area_id,
-            'area_lvl_id' => $this->db->get_where('org_area_lvl', array('md5(id)' => $this->input->post('area_lvl')))->row_array()['id'],
+            'id' => $position_row['id'],
+            'parent' => $parent_id,
+            'area_id' => $area_row['id'],
+            'area_lvl_id' => $area_lvl_row['id'],
             'name' => $this->input->post('position_name'),
-            'matrix_point' => $this->db->get_where('org_area_lvl_pstn', array('md5(id)' => $this->input->post('matrix_point')))->row_array()['id'],
+            'matrix_point' => $matrix_point_id,
             'type' => $type,
         ];
 
         if ($this->input->post('update_subordinate_area') == "on") {
             $data_update[] = $data;
 
-            $subordinates = $this->m_pstn->get_subordinates($this->input->post('position_id'));
-            foreach ($subordinates as $i_subor => $subor_i) {
-                $data = [
+            $subordinates = $this->get_subordinates($this->input->post('position_id'));
+            foreach ($subordinates as $subor_i) {
+                $row = [
                     'id' => $subor_i['id'],
-                    'area_id' => $area_id,
+                    'area_id' => $area_row['id'],
                 ];
-                $data_update[] = $data;
+                $data_update[] = $row;
             }
 
-            if ($data_update) $success = $this->db->update_batch('org_area_lvl_pstn', $data_update, 'id');
+            if ($data_update) {
+                $success = $this->db->update_batch('org_area_lvl_pstn', $data_update, 'id');
+            }
         } else {
-            $this->db->where('md5(id)', $this->input->post('position_id'));
+            $this->db->where('id', $position_row['id']);
             $success = $this->db->update('org_area_lvl_pstn', $data);
         }
+
         return $success;
     }
 

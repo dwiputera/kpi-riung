@@ -98,6 +98,7 @@
                                             data-type="<?= $pstn['type'] ?>"
                                             data-position_name="<?= $pstn['name'] ?>"
                                             data-matrix_point="<?= $pstn['matrix_point'] ? md5($pstn['matrix_point']) : null ?>"
+                                            data-parent_id="<?= $pstn['oalp_parent'] ? md5($pstn['oalp_parent']) : '' ?>"
                                             data-oal_id="<?= md5($pstn['oal_id']) ?>" href="#<?= $parent_key_hash ?>">
                                             <strong class="btn btn-primary btn-xs">update Position</strong>
                                         </a>
@@ -345,6 +346,40 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label for="parent_id_update">Parent</label>
+                        <select class="form-control select2" id="parent_id_update" name="parent_id">
+                            <option value="">-- No Parent / Root --</option>
+
+                            <?php
+                            if (!function_exists('renderParentOptionsFormatted')) {
+                                function renderParentOptionsFormatted($items, $prefix = '')
+                                {
+                                    foreach ($items as $item) {
+                                        $mp       = !empty($item['mp_name']) ? $item['mp_name'] : '-';
+                                        $area     = !empty($item['oa_name']) ? $item['oa_name'] : '-';
+                                        $level    = !empty($item['oal_name']) ? $item['oal_name'] : '-';
+                                        $position = !empty($item['name']) ? $item['name'] : '-';
+
+                                        $label = $mp . ' | ' . $area . ' | ' . $level . ' | ' . $position;
+
+                                        echo '<option value="' . md5($item['id']) . '">' . $prefix . htmlspecialchars($label) . '</option>';
+
+                                        if (!empty($item['children'])) {
+                                            renderParentOptionsFormatted($item['children'], $prefix);
+                                        }
+
+                                        if (!empty($item['children_mp'])) {
+                                            renderParentOptionsFormatted($item['children_mp'], $prefix);
+                                        }
+                                    }
+                                }
+                            }
+
+                            renderParentOptionsFormatted($area_lvl_pstn);
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="area_lvl2">Level</label>
                         <select class="form-control select2" id="area_lvl2" name="area_lvl" required>
                             <option value="">-- Choose Level --</option>
@@ -446,6 +481,7 @@
         var position_id = button.data('position_id');
         var area_id = button.data('area_id');
         var matrix_point = button.data('matrix_point');
+        var parent_id = button.data('parent_id');
         var position_name = button.data('position_name');
         var oal_id = button.data('oal_id');
         var type = button.data('type');
@@ -456,6 +492,11 @@
         modal.find('#area_lvl2').val(oal_id).trigger('change'); // trigger change for Select2
         modal.find('#area_id').val(area_id).trigger('change'); // trigger change for Select2
         modal.find('#matrix_point').val(matrix_point).trigger('change'); // trigger change for Select2
+
+        modal.find('#parent_id_update option').prop('disabled', false).show();
+        modal.find('#parent_id_update option[value="' + position_id + '"]').prop('disabled', true).hide();
+        modal.find('#parent_id_update').val(parent_id).trigger('change');
+
         // Atur checkbox berdasarkan type
         if (type == 'matrix_point') {
             modal.find('#type').prop('checked', true);

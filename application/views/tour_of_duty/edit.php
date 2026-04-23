@@ -34,6 +34,7 @@
                                 <!-- editable -->
                                 <th>NRP</th>
                                 <th>Date</th>
+                                <th>Position(string)</th>
                                 <th>Matrix Point ID</th>
                             </tr>
                         </thead>
@@ -60,6 +61,7 @@
                                     <!-- editable -->
                                     <td contenteditable="true" data-name="NRP"><?= $tod_i['NRP'] ?></td>
                                     <td contenteditable="true" data-name="date"><?= $tod_i['date'] ?></td>
+                                    <td contenteditable="true" data-name="position"><?= $tod_i['position'] ?></td>
 
                                     <!-- editable: isi "1,2,3" -->
                                     <td contenteditable="true" data-name="matrix_points"><?= $mp_string ?></td>

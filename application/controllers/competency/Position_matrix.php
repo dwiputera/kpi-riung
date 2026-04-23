@@ -1,4 +1,7 @@
 <?php
+
+use GuzzleHttp\RedirectMiddleware;
+
 defined('BASEPATH') or exit('No direct script access allowed');
 
 class Position_matrix extends MY_Controller
@@ -43,6 +46,8 @@ class Position_matrix extends MY_Controller
                 }
                 $matrix_point_ids = array_unique($matrix_point_ids);
             }
+        } else {
+            redirect('general/profile');
         }
 
         $matrix_points = $this->db->where_in('id', $matrix_point_ids)->get('org_area_lvl_pstn')->result_array();

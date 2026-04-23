@@ -37,7 +37,6 @@ class Profile extends MY_Controller
         $data['competency_matrix_level'] = null;
 
         if ($position) {
-            # code...
             $superiors = array_reverse($this->m_pstn->get_superiors($position_id_md5));
             $subordinates = $this->m_pstn->get_subordinates($user_oalp_id_md5);
             $subordinates = array_shift($subordinates);

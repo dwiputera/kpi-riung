@@ -69,6 +69,8 @@ class Level_matrix extends MY_Controller
 
             // 5) Matriks Plan/Actual/Gap per competency
             $data['employees'] = $this->create_employee_matrix($employees_sub, $competencies, $scores, $targets);
+        } else {
+            redirect('general/profile');
         }
 
         // View

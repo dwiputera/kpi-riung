@@ -195,65 +195,15 @@
     <div class="modal-dialog modal-xl" role="document">
         <form action="<?= site_url('organization_settings/position/add') ?>" method="post">
             <input type="hidden" name="parent_id">
-            <input type="hidden" id="method" name="method" value="automatic">
+            <input type="hidden" name="parent_key" id="modalParentKey">
             <div class="modal-content">
-                <div class="modal-header p-0 pt-1 border-bottom-0">
-                    <ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="custom-tabs-three-automatic-tab" data-toggle="pill" href="#custom-tabs-three-automatic" role="tab" aria-controls="custom-tabs-three-automatic" aria-selected="true">AUTOMATIC</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="custom-tabs-three-manual-tab" data-toggle="pill" href="#custom-tabs-three-manual" role="tab" aria-controls="custom-tabs-three-manual" aria-selected="true">MANUAL</a>
-                        </li>
-                    </ul>
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Position</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="tab-content" id="custom-tabs-three-tabContent">
-                        <div class="tab-pane fade show active" id="custom-tabs-three-automatic" role="tabpanel" aria-labelledby="custom-tabs-three-automatic-tab">
-                            <input type="hidden" name="parent_key" id="modalParentKey">
-
-                            <!-- User Select Dropdown -->
-                            <div class="form-group">
-                                <label for="userPositionSelect">Select User</label>
-                                <select class="form-control select2" id="userPositionSelect" style="width: 100%;">
-                                    <option value="">-- Choose User --</option>
-                                    <?php foreach ($users as $index => $user): ?>
-                                        <option value="<?= $index ?>"><?= $user['NRP'] ?> | <?= $user['PSubarea'] ?> | <?= $user['EmployeeSubgroup'] ?> | <?= $user['OrgUnitName'] ?> | <?= $user['PositionName'] ?> | <?= $user['FullName'] ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-
-                            <!-- Auto-filled Text Fields -->
-                            <div class="form-group">
-                                <label for="fullName">Full Name</label>
-                                <input type="text" class="form-control automatic-column" name="FullName" id="fullName" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="nrp">NRP</label>
-                                <input type="text" class="form-control automatic-column" name="NRP" id="nrp" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="psubarea">PSubarea</label>
-                                <input type="text" class="form-control automatic-column" name="PSubarea" id="psubarea" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="employeeSubgroup">Employee Subgroup</label>
-                                <input type="text" class="form-control automatic-column" name="EmployeeSubgroup" id="employeeSubgroup" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="orgUnitName">Org Unit Name</label>
-                                <input type="text" class="form-control automatic-column" name="OrgUnitName" id="orgUnitName" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="PositionName">Position Name</label>
-                                <input type="text" class="form-control automatic-column" name="PositionName" id="PositionName" readonly>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Add</button>
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="custom-tabs-three-manual" role="tabpanel" aria-labelledby="custom-tabs-three-manual-tab">
+                        <div class="tab-pane show active" id="custom-tabs-three-manual" role="tabpanel" aria-labelledby="custom-tabs-three-manual-tab">
                             <!-- Optional: Manual Position Name -->
                             <div class="form-group">
                                 <select class="form-control select2" id="area_lvl" name="area_lvl">
@@ -510,21 +460,5 @@
         var position_id = button.data('position_id'); // Extract info from data-* attribute
         var modal = $(this);
         modal.find('#position_id').val(position_id);
-    });
-
-    $('#custom-tabs-three-manual-tab').on('shown.bs.tab', function() {
-        $('#positionName').prop('required', true).prop('disabled', false);
-        $('#userPositionSelect').prop('required', false).prop('disabled', true);
-        $('#area_lvl').prop('required', true);
-        $('.automatic-column').prop('disabled', true);
-        $('#method').val('manual');
-    });
-
-    $('#custom-tabs-three-automatic-tab').on('shown.bs.tab', function() {
-        $('#positionName').prop('required', false).prop('disabled', true);
-        $('#userPositionSelect').prop('required', true).prop('disabled', false);
-        $('#area_lvl').prop('required', false);
-        $('.automatic-column').prop('disabled', false);
-        $('#method').val('automatic');
     });
 </script>

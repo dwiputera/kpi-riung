@@ -204,30 +204,9 @@ class M_position extends CI_Model
         } else {
             $data['area_lvl_id'] = $this->db->get_where('org_area_lvl', array('parent' => 0))->row_array()['id'];
         }
-        if ($this->input->post('method') == 'automatic') {
-            $area_id = $this->db->get_where('org_area', array('name' => $this->input->post('PSubarea')))->row_array()['id'];
-            $employeesubgroup = $this->input->post('EmployeeSubgroup');
-            $employeesubgroup = $employeesubgroup == 'Junior Staff' ? 'Officer HO/GroupLead' : $employeesubgroup;
-            $data['area_lvl_id'] = $this->db->get_where('org_area_lvl', array('name' => $employeesubgroup, 'area_id' => $area_id))->row_array()['id'];
-            $data['name'] = substr($this->input->post('OrgUnitName'), 5);
-            if ($this->input->post('OrgUnitName') == 'PT Riung Mitra Lestari') {
-                $data['name'] = $this->db->get_where('rml_sso_la.users', array('NRP' => $this->input->post('NRP')))->row_array()['PositionName'];
-            }
-            if ($employeesubgroup == 'Officer HO/GroupLead') {
-                $data['name'] = substr($this->input->post('PositionName'),  18);
-            }
-        } else {
-            $data['name'] = $this->input->post('position_name');
-        }
+        $data['name'] = $this->input->post('position_name');
         $success = $this->db->insert('org_area_lvl_pstn', $data);
         $insert_id = $this->db->insert_id();
-        if ($this->input->post('method') == 'automatic') {
-            $data = [
-                'area_lvl_pstn_id' => $insert_id,
-                'NRP' => $this->input->post('NRP'),
-            ];
-            $success = $this->db->insert('org_area_lvl_pstn_user', $data);
-        }
         return $insert_id;
     }
 

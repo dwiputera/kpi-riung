@@ -64,7 +64,7 @@ class M_culture_fit extends CI_Model
                 WHERE rn = 1
             )
 
-            SELECT *, cfu.id id, cfu.NRP NRP,
+            SELECT *, cfu.id id, cfu.NRP NRP, cfu.layer cfu_layer,
                 oalp.id oalp_id, oalp.name oalp_name, oalp.parent oalp_parent,
                 oal.id oal_id, oal.name oal_name,
                 oa.id oa_id, oa.name oa_name
@@ -139,7 +139,7 @@ class M_culture_fit extends CI_Model
                 WHERE rn = 1
             )
 
-            SELECT *, cfu.id id, cfu.NRP NRP,
+            SELECT *, cfu.id id, cfu.NRP NRP, cfu.layer cfu_layer,
                 oalp.id oalp_id, oalp.name oalp_name, oalp.parent oalp_parent,
                 oal.id oal_id, oal.name oal_name,
                 oa.id oa_id, oa.name oa_name

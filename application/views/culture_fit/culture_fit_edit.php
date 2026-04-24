@@ -99,7 +99,7 @@
                                     <td contenteditable="true" data-name="NRP"><?= $cf_i['NRP'] ?></td>
                                     <td contenteditable="true" data-name="level"><?= $cf_i['level'] ?></td>
                                     <td contenteditable="true" data-name="jabatan"><?= $cf_i['jabatan'] ?></td>
-                                    <td contenteditable="true" data-name="layer"><?= $cf_i['layer'] ?></td>
+                                    <td contenteditable="true" data-name="layer"><?= $cf_i['cfu_layer'] ?></td>
                                     <td contenteditable="true" data-name="manager"><?= $cf_i['manager'] ?></td>
                                     <td contenteditable="true" data-name="NRP_manager"><?= $cf_i['NRP_manager'] ?></td>
                                     <td contenteditable="true" data-name="division"><?= $cf_i['division'] ?></td>
